@@ -1,0 +1,7 @@
+{
+  "phone": "0912345678",
+  "name": "測試乘客",
+  "role": "passenger",
+  "status": "idle",
+  "verified": true
+}

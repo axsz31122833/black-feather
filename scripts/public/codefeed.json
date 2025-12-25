@@ -1,0 +1,25 @@
+{
+  "updatedAt": "2025-12-16T09:30:00Z",
+  "items": [
+    {
+      "path": "index.html",
+      "title": "進度面板與快速開啟",
+      "snippet": "<div class=\"progress-panel\" id=\"bfPanel\">...<button class=\"btn\" id=\"bfRefresh\">刷新</button>..."
+    },
+    {
+      "path": "src/pages/AdminDashboard.tsx",
+      "title": "派單面板：半徑/框選/排序/過濾",
+      "snippet": "const [sortMode, setSortMode] = useState<'distance' | 'recent'>('distance')\nconst [onlyOnline, setOnlyOnline] = useState(false)\n<select value={sortMode}>...</select>\n<label><input type=\"checkbox\" checked={onlyOnline} /></label>"
+    },
+    {
+      "path": "src/pages/DriverHome.tsx",
+      "title": "司機到達/上車與上線心跳",
+      "snippet": "useEffect(() => { if (!isOnline) return; const id = setInterval(async () => { await supabase.from('ops_events').insert({ event_type: 'driver_ping', payload:{ lat: driverLocation?.lat, lng: driverLocation?.lng } }) }, 30000); return () => clearInterval(id) }, [isOnline, driverLocation])\nconst handleArrived = async () => { await supabase.from('ops_events').insert({ event_type: 'driver_arrived', ref_id: currentTrip.id }) }"
+    },
+    {
+      "path": "src/pages/PassengerHome.tsx",
+      "title": "乘客 ETA 與動態加價",
+      "snippet": "ds.route({ origin: driverLocation, destination: pickupCoords, travelMode: google.maps.TravelMode.DRIVING }, (res, status) => { if (status===google.maps.DirectionsStatus.OK) setArrivalSeconds(res.routes[0].legs[0].duration.value) });\nuseEffect(() => { setSurgeMultiplier(arrivalSeconds>600?1.5:arrivalSeconds>300?1.2:1.0) }, [arrivalSeconds])"
+    }
+  ]
+}

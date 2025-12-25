@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="48" fill="#0b0d12"/>
+  <path d="M256 96c-48 0-90 26-112 67l-37 72c-10 21 6 42 28 42h254c22 0 38-21 28-42l-37-72c-22-41-64-67-112-67z" fill="#111827" stroke="#7c3aed" stroke-width="8"/>
+  <circle cx="160" cy="320" r="36" fill="#7c3aed"/>
+  <circle cx="352" cy="320" r="36" fill="#7c3aed"/>
+  <text x="256" y="440" font-size="72" text-anchor="middle" fill="#e5e7eb" font-family="system-ui">BF</text>
+</svg>
+

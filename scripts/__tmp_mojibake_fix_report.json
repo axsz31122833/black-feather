@@ -1,0 +1,228 @@
+{
+  "fixed": [
+    {
+      "file": "src/contexts/AppContext.jsx",
+      "beforeChinese": 0,
+      "afterChinese": 83,
+      "beforeMojibake": 418,
+      "afterMojibake": 0
+    },
+    {
+      "file": "src/lib/taxi-api.js",
+      "beforeChinese": 0,
+      "afterChinese": 202,
+      "beforeMojibake": 1464,
+      "afterMojibake": 527
+    },
+    {
+      "file": "src/lib/taxi-api.min.backup.js",
+      "beforeChinese": 0,
+      "afterChinese": 202,
+      "beforeMojibake": 1464,
+      "afterMojibake": 527
+    },
+    {
+      "file": "src/pages/DriverDashboard.jsx",
+      "beforeChinese": 0,
+      "afterChinese": 141,
+      "beforeMojibake": 587,
+      "afterMojibake": 0
+    },
+    {
+      "file": "src/pages/DriverOrdersPage.jsx",
+      "beforeChinese": 0,
+      "afterChinese": 101,
+      "beforeMojibake": 414,
+      "afterMojibake": 0
+    },
+    {
+      "file": "src/pages/LoginPage.jsx",
+      "beforeChinese": 0,
+      "afterChinese": 151,
+      "beforeMojibake": 450,
+      "afterMojibake": 0
+    },
+    {
+      "file": "src/pages/RegisterPage.jsx",
+      "beforeChinese": 0,
+      "afterChinese": 166,
+      "beforeMojibake": 489,
+      "afterMojibake": 0
+    }
+  ],
+  "skipped": [
+    {
+      "file": "DEPLOYMENT.md",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "README.md",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "report.md",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/App.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/main.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/supabaseClient.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/AirtableStatusBanner.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/HealthCheckBanner.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/IssueReportModal.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/MapSelector.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/MapView.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/OSMMap.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ProtectedRoute.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/RoleSwitcher.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/hooks/use-toast.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/airtable.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/api.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/firebase-auth.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/firebase-db.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/firebase.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/functions.js",
+      "reason": "no-improvement"
+    },
+    {
+      "file": "src/lib/mapsLoader.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/price.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/supabase.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/taxi-api-client.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/taxi-api.corrupted.backup.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/lib/utils.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/pages/AdminDashboard.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/pages/AdminUsersPage.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/pages/PassengerDashboard.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/pages/PassengerRidePage.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/pages/PricingInfoPage.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/shims/airtable-mock.js",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/badge.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/button.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/card.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/dialog.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/input.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/select.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/tabs.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/textarea.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/toast.jsx",
+      "reason": "no-mojibake-detected"
+    },
+    {
+      "file": "src/components/ui/toaster.jsx",
+      "reason": "no-mojibake-detected"
+    }
+  ],
+  "failed": []
+}

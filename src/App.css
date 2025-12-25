@@ -1,0 +1,163 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 224 71.4% 4.1%;
+    --foreground: 210 20% 98%;
+    --card: 224 71.4% 4.1%;
+    --card-foreground: 210 20% 98%;
+    --popover: 224 71.4% 4.1%;
+    --popover-foreground: 210 20% 98%;
+    --primary: 263.4 70% 50.4%;
+    --primary-foreground: 210 20% 98%;
+    --secondary: 215 27.9% 16.9%;
+    --secondary-foreground: 210 20% 98%;
+    --muted: 215 27.9% 16.9%;
+    --muted-foreground: 217.9 10.6% 64.9%;
+    --accent: 215 27.9% 16.9%;
+    --accent-foreground: 210 20% 98%;
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 20% 98%;
+    --border: 215 27.9% 16.9%;
+    --input: 215 27.9% 16.9%;
+    --ring: 263.4 70% 50.4%;
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+/* 深色專業主題 */
+.bg-gradient-dark {
+  background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+}
+
+.glass {
+  background: rgba(15, 23, 42, 0.8);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.status-idle {
+  @apply bg-green-500/20 text-green-400 border-green-500/30;
+}
+
+.status-busy {
+  @apply bg-yellow-500/20 text-yellow-400 border-yellow-500/30;
+}
+
+.status-offline {
+  @apply bg-red-500/20 text-red-400 border-red-500/30;
+}
+
+.status-completed {
+  @apply bg-blue-500/20 text-blue-400 border-blue-500/30;
+}
+
+.status-pending {
+  @apply bg-orange-500/20 text-orange-400 border-orange-500/30;
+}
+
+/* 進階訂單狀態樣式 */
+.status-requested {
+  @apply bg-orange-500/20 text-orange-400 border-orange-500/30;
+}
+
+.status-assigned {
+  @apply bg-yellow-500/20 text-yellow-400 border-yellow-500/30;
+}
+
+.status-accepted {
+  @apply bg-cyan-500/20 text-cyan-400 border-cyan-500/30;
+}
+
+.status-enroute {
+  @apply bg-indigo-500/20 text-indigo-400 border-indigo-500/30;
+}
+
+.status-arrived {
+  @apply bg-teal-500/20 text-teal-400 border-teal-500/30;
+}
+
+/* 自定義滾動條 */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #475569;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
+
+/* 動畫效果 */
+.fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.pulse-success {
+  animation: pulseSuccess 2s infinite;
+}
+
+@keyframes pulseSuccess {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* 地圖容器樣式 */
+.map-container {
+  @apply rounded-lg overflow-hidden border border-border;
+}
+
+/* 卡片hover效果 */
+.card-hover {
+  @apply transition-all duration-200 hover:shadow-lg hover:shadow-primary/10 hover:border-primary/30;
+}
+
+/* 按鈕動畫 */
+.btn-primary {
+  @apply bg-primary hover:bg-primary/90 text-primary-foreground transition-colors duration-200;
+}
+
+.btn-success {
+  @apply bg-green-600 hover:bg-green-700 text-white transition-colors duration-200;
+}
+
+.btn-danger {
+  @apply bg-red-600 hover:bg-red-700 text-white transition-colors duration-200;
+}
+
+.btn-warning {
+  @apply bg-yellow-600 hover:bg-yellow-700 text-white transition-colors duration-200;
+}

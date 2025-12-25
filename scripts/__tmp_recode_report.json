@@ -1,0 +1,135 @@
+{
+  "converted": [
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\index.html",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 14,
+      "afterLines": 14
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\supabaseClient.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 41,
+      "afterLines": 41
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\shims\\airtable-mock.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 42,
+      "afterLines": 42
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\airtable.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 18,
+      "afterLines": 18
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\api.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 64,
+      "afterLines": 64
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\firebase-auth.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 128,
+      "afterLines": 128
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\firebase-db.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 152,
+      "afterLines": 152
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\firebase.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 45,
+      "afterLines": 45
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\functions.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 109,
+      "afterLines": 109
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\mapsLoader.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 30,
+      "afterLines": 30
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\price.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 24,
+      "afterLines": 24
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\supabase.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 13,
+      "afterLines": 13
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\taxi-api-client.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 35,
+      "afterLines": 35
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\taxi-api.corrupted.backup.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 611,
+      "afterLines": 611
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\taxi-api.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 1,
+      "afterLines": 1
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\taxi-api.min.backup.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 1,
+      "afterLines": 1
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\lib\\utils.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 95,
+      "afterLines": 95
+    },
+    {
+      "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\src\\hooks\\use-toast.js",
+      "hadBOM": false,
+      "afterHasBOM": false,
+      "beforeLines": 152,
+      "afterLines": 152
+    }
+  ],
+  "distInfo": {
+    "file": "C:\\Users\\axsz3\\OneDrive\\桌面\\BF\\black-feather-taxi\\dist\\index.html",
+    "hasBOM": false,
+    "size": 484
+  }
+}

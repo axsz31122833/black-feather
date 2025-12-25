@@ -1,0 +1,13 @@
+{
+  "phone": "0971827625",
+  "name": "陳豐家",
+  "role": "driver",
+  "status": "idle",
+  "nickname": "豐",
+  "verified": true,
+  "location": {
+    "lat": 24.1769764,
+    "lng": 120.6424333,
+    "ts": "2025-10-25T21:11:12.781Z"
+  }
+}

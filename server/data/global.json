@@ -1,0 +1,313 @@
+{
+  "users": [
+    {
+      "id": "090000006",
+      "phone": "090000006",
+      "password_hash": "381d9e757a247dc27bf1d04d6ff9365e:4cc3a1f9c11542a680712f584c28011e2125b41c3243620ebcd829954663e0dc19e033befc6b887b0e0f0838cb7b70b60a2bcc2797e460896184a3561da02d71",
+      "role": "passenger",
+      "name": "????",
+      "created_at": "2025-10-15T19:05:21.069Z",
+      "remember_me": false
+    },
+    {
+      "id": "090000007",
+      "phone": "090000007",
+      "password_hash": null,
+      "role": "passenger",
+      "name": "????",
+      "created_at": "2025-10-15T19:13:39.431Z",
+      "remember_me": false
+    },
+    {
+      "id": "0901234567",
+      "phone": "0901234567",
+      "password_hash": null,
+      "role": "passenger",
+      "name": "????",
+      "created_at": "2025-10-23T20:11:38.168Z",
+      "remember_me": false
+    },
+    {
+      "id": "0900000099",
+      "phone": "0900000099",
+      "password_hash": "19e88797afe85e73ae79ac0542844b94:313ae0080f3090627496209e5cad60583cf7625cfa35282aa38826f6f189c8aa972c9257ae65c60b39fda385f4d77b893607f9182e20c3df76ec4cdbb3f16e00",
+      "role": "admin",
+      "name": "?????",
+      "created_at": "2025-10-25T20:48:45.275Z",
+      "remember_me": false
+    },
+    {
+      "id": "0900000101",
+      "phone": "0900000101",
+      "password_hash": "dcb814341573748165c00d66232507fb:456895c930bce46a10b00eace289effaaa2316385609e8fd0b9c706ad74e0fe7e36e1219c36b5fcb1a9cc88b639e5f2af5f25d4ae2fba3ad9429680c9453124d",
+      "role": "driver",
+      "name": "??????",
+      "created_at": "2025-10-25T20:49:22.404Z",
+      "remember_me": false
+    },
+    {
+      "id": "0900000102",
+      "phone": "0900000102",
+      "password_hash": "607362c5d0123bddf69424dd0945eb36:3c35c133ee214b641fcb05c96079a57d04fc8141e824b64ef1ce8eff8357b80bea09380661e4df70e6fa9f09b98d6ab19c32fe4bb73d687240fa579cffaca359",
+      "role": "driver",
+      "name": "??????",
+      "created_at": "2025-10-25T20:49:31.748Z",
+      "remember_me": false
+    },
+    {
+      "id": "0900000103",
+      "phone": "0900000103",
+      "password_hash": "e5dd4f2854bc216ff465883248234265:814cafb52653e4193ed280057753edc6fb6f049df0e37f6d8d2cf5a4e576686b8676542fa54b6790ac8cf2fff794d66d9a35b4d513705fac63c1e6eef319f18d",
+      "role": "driver",
+      "name": "??????",
+      "created_at": "2025-10-25T20:49:40.533Z",
+      "remember_me": false
+    },
+    {
+      "id": "0971827625",
+      "phone": "0971827625",
+      "password_hash": "8df0bc586b3415972eb7fd6117f619e8:1ccbf4d8500b3f290441afdfb08d08eb0a37187401f4e0e16a4d079171c862ba75a4ee6785df7e0c690ae35ff3fd43256ab1b924052d0c80d038ee4f090bdd19",
+      "role": "driver",
+      "name": "陳豐家",
+      "created_at": "2025-10-25T21:10:52.735Z",
+      "remember_me": false
+    }
+  ],
+  "profiles": [
+    {
+      "user_id": "090000001",
+      "vehicle_info": null,
+      "rating_avg": 5,
+      "total_orders": 0,
+      "current_status": "idle",
+      "location": null
+    },
+    {
+      "user_id": "090000006",
+      "vehicle_info": null,
+      "rating_avg": null,
+      "total_orders": 0,
+      "current_status": "idle",
+      "location": null
+    },
+    {
+      "user_id": "090000007",
+      "vehicle_info": null,
+      "rating_avg": null,
+      "total_orders": 0,
+      "current_status": "idle",
+      "location": null
+    },
+    {
+      "user_id": "0901234567",
+      "vehicle_info": null,
+      "rating_avg": null,
+      "total_orders": 0,
+      "current_status": "idle",
+      "location": null
+    },
+    {
+      "user_id": "0900000099",
+      "vehicle_info": null,
+      "rating_avg": null,
+      "total_orders": 0,
+      "current_status": "idle",
+      "location": null
+    },
+    {
+      "user_id": "0900000101",
+      "vehicle_info": "BF-8881",
+      "rating_avg": null,
+      "total_orders": 0,
+      "current_status": "online",
+      "location": null
+    },
+    {
+      "user_id": "0900000102",
+      "vehicle_info": "BF-8882",
+      "rating_avg": null,
+      "total_orders": 0,
+      "current_status": "online",
+      "location": null
+    },
+    {
+      "user_id": "0900000103",
+      "vehicle_info": "BF-8883",
+      "rating_avg": null,
+      "total_orders": 0,
+      "current_status": "online",
+      "location": null
+    },
+    {
+      "user_id": "0971827625",
+      "vehicle_info": null,
+      "rating_avg": null,
+      "total_orders": 0,
+      "current_status": "idle",
+      "location": {
+        "lat": 24.1769764,
+        "lng": 120.6424333,
+        "ts": "2025-10-25T21:11:12.781Z"
+      }
+    }
+  ],
+  "orders": [
+    {
+      "id": "ORDER_1761425399489_y0pfbhbpl",
+      "passenger_id": "+886912345678",
+      "driver_id": "0900000101",
+      "type": "standard",
+      "status": "completed",
+      "start_point": "?????",
+      "end_point": "?????",
+      "distance_km": 3.5,
+      "duration_min": 10,
+      "fare_estimate": 150,
+      "fare_final": null,
+      "created_at": "2025-10-25T20:49:59.489Z",
+      "assigned_at": null,
+      "completed_at": "2025-10-25T20:51:58.316Z",
+      "review": null
+    },
+    {
+      "id": "ORDER_1761426165212_cyj1xdpdf",
+      "passenger_id": "0912345678",
+      "driver_id": "0900000101",
+      "type": "standard",
+      "status": "completed",
+      "start_point": {
+        "lat": 24.13694,
+        "lng": 120.68472
+      },
+      "end_point": {
+        "lat": 24.14725,
+        "lng": 120.6731
+      },
+      "distance_km": null,
+      "duration_min": null,
+      "fare_estimate": 70,
+      "fare_final": null,
+      "created_at": "2025-10-25T21:02:45.212Z",
+      "assigned_at": null,
+      "completed_at": "2025-10-25T21:03:08.517Z",
+      "review": null
+    },
+    {
+      "id": "ORDER_1761749292095_ypnqq9xb7",
+      "passenger_id": "0987654001",
+      "driver_id": "0900000101",
+      "type": "standard",
+      "status": "pending",
+      "start_point": {
+        "lat": 25.033964,
+        "lng": 121.564468
+      },
+      "end_point": {
+        "lat": 25.047759,
+        "lng": 121.531345
+      },
+      "distance_km": null,
+      "duration_min": null,
+      "fare_estimate": 70,
+      "fare_final": null,
+      "created_at": "2025-10-29T14:48:12.095Z",
+      "assigned_at": null,
+      "completed_at": null,
+      "review": null
+    },
+    {
+      "id": "ORDER_1761749339353_bz535dg4a",
+      "passenger_id": "0987654001",
+      "driver_id": "0900000102",
+      "type": "standard",
+      "status": "pending",
+      "start_point": {
+        "lat": 25.033964,
+        "lng": 121.564468
+      },
+      "end_point": {
+        "lat": 25.047759,
+        "lng": 121.531345
+      },
+      "distance_km": null,
+      "duration_min": null,
+      "fare_estimate": 70,
+      "fare_final": null,
+      "created_at": "2025-10-29T14:48:59.353Z",
+      "assigned_at": null,
+      "completed_at": null,
+      "review": null
+    },
+    {
+      "id": "ORDER_1761750407656_f6tr9vnrh",
+      "passenger_id": "0987654001",
+      "driver_id": "0900000103",
+      "type": "standard",
+      "status": "completed",
+      "start_point": {
+        "lat": 25.033964,
+        "lng": 121.564468
+      },
+      "end_point": {
+        "lat": 25.047759,
+        "lng": 121.531345
+      },
+      "distance_km": null,
+      "duration_min": null,
+      "fare_estimate": 70,
+      "fare_final": null,
+      "created_at": "2025-10-29T15:06:47.656Z",
+      "assigned_at": null,
+      "completed_at": "2025-10-29T15:06:47.673Z",
+      "review": null
+    },
+    {
+      "id": "ORDER_1761750783126_iun7xvizn",
+      "passenger_id": "0987654001",
+      "driver_id": "090000001",
+      "type": "standard",
+      "status": "completed",
+      "start_point": {
+        "lat": 25.033964,
+        "lng": 121.564468
+      },
+      "end_point": {
+        "lat": 25.047759,
+        "lng": 121.531345
+      },
+      "distance_km": null,
+      "duration_min": null,
+      "fare_estimate": 70,
+      "fare_final": null,
+      "created_at": "2025-10-29T15:13:03.126Z",
+      "assigned_at": null,
+      "completed_at": "2025-10-29T15:13:03.136Z",
+      "review": null
+    },
+    {
+      "id": "ORDER_1761752555886_q000cbgpb",
+      "passenger_id": "0987654001",
+      "driver_id": "090000001",
+      "type": "standard",
+      "status": "completed",
+      "start_point": {
+        "lat": 25.033964,
+        "lng": 121.564468
+      },
+      "end_point": {
+        "lat": 25.047759,
+        "lng": 121.531345
+      },
+      "distance_km": null,
+      "duration_min": null,
+      "fare_estimate": 70,
+      "fare_final": null,
+      "created_at": "2025-10-29T15:42:35.886Z",
+      "assigned_at": null,
+      "completed_at": "2025-10-29T15:42:35.897Z",
+      "review": null
+    }
+  ],
+  "messages": [],
+  "logs": []
+}

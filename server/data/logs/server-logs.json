@@ -1,0 +1,493 @@
+[
+  {
+    "id": "f002d3ba-aaf5-43b3-b5e2-fa4e4b27e830",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-14T18:43:51.682Z"
+  },
+  {
+    "id": "01d32ef9-c495-4440-b7b0-178dbdc4e8dc",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1760467431686_ca1ju8kua",
+        "passengerPhone": "0912345678",
+        "driverPhone": "0900000001",
+        "driverName": "????",
+        "pickup": "????",
+        "dropoff": "??101",
+        "status": "pending",
+        "createdAt": "2025-10-14T18:43:51.686Z",
+        "estimatedPrice": 220,
+        "pickup_lat": 25.0478,
+        "pickup_lng": 121.517,
+        "dropoff_lat": 25.0338,
+        "dropoff_lng": 121.5645,
+        "estimated_distance_meters": 7000,
+        "estimated_duration_seconds": 900,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": "??????"
+      },
+      "driver": {
+        "phone": "0900000001",
+        "name": "????",
+        "role": "driver",
+        "status": "online",
+        "nickname": "???",
+        "car_plate": "ABC-1234",
+        "verified": true
+      }
+    },
+    "ts": "2025-10-14T18:43:51.691Z"
+  },
+  {
+    "id": "1122eea0-e3ab-4f49-8f0d-e08377ef5fde",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-15T17:58:13.563Z"
+  },
+  {
+    "id": "a13d4351-c02b-4439-b1fd-7a0ff9b26ca3",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1760551093567_qkb0z5ba9",
+        "passengerPhone": "0912345678",
+        "driverPhone": "0900000001",
+        "driverName": "????",
+        "pickup": "台北車站",
+        "dropoff": "台北101",
+        "status": "pending",
+        "createdAt": "2025-10-15T17:58:13.567Z",
+        "estimatedPrice": 70,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "0900000001",
+        "name": "????",
+        "role": "driver",
+        "status": "idle",
+        "nickname": "???",
+        "car_plate": "ABC-1234",
+        "verified": true
+      }
+    },
+    "ts": "2025-10-15T17:58:13.570Z"
+  },
+  {
+    "id": "c678158e-1633-4d1a-88e9-34c5812a77b4",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-15T18:00:52.756Z"
+  },
+  {
+    "id": "6772c4b9-7927-4d0e-9323-e6027be62ad3",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1760551252759_aumjtw0hc",
+        "passengerPhone": "0987654001",
+        "driverPhone": "090000001",
+        "driverName": "司機測試",
+        "pickup": {
+          "address": "????"
+        },
+        "dropoff": {
+          "address": "??101"
+        },
+        "status": "pending",
+        "createdAt": "2025-10-15T18:00:52.759Z",
+        "estimatedPrice": 70,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "090000001",
+        "role": "driver",
+        "name": "司機測試",
+        "status": "idle",
+        "vehicle": {
+          "plate": "TEST-001",
+          "model": "Toyota Altis",
+          "color": "白色"
+        },
+        "rating": 4.5,
+        "totalTrips": 0
+      }
+    },
+    "ts": "2025-10-15T18:00:52.762Z"
+  },
+  {
+    "id": "84cf23c2-1f76-400b-a3c4-42308533c315",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-15T18:42:55.583Z"
+  },
+  {
+    "id": "3374e8b1-20c6-42d8-a433-b3df8c91c7af",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1760553775586_8vxof507y",
+        "passengerPhone": "0987654001",
+        "driverPhone": "090000001",
+        "driverName": "司機測試",
+        "pickup": {
+          "lat": 25.033964,
+          "lng": 121.564468
+        },
+        "dropoff": {
+          "lat": 25.047759,
+          "lng": 121.531345
+        },
+        "status": "pending",
+        "createdAt": "2025-10-15T18:42:55.586Z",
+        "estimatedPrice": 70,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "090000001",
+        "role": "driver",
+        "name": "司機測試",
+        "status": "idle",
+        "vehicle": {
+          "plate": "TEST-001",
+          "model": "Toyota Altis",
+          "color": "白色"
+        },
+        "rating": 4.5,
+        "totalTrips": 0
+      }
+    },
+    "ts": "2025-10-15T18:42:55.589Z"
+  },
+  {
+    "id": "4530d60f-2bf7-449f-92df-48aa30778e3e",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-25T04:37:48.271Z"
+  },
+  {
+    "id": "dbaefc94-4e76-4a96-8a2c-9941912b7e1a",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-25T04:37:48.281Z"
+  },
+  {
+    "id": "8809e331-f2ae-4418-87c3-c7de7f750876",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-25T04:37:48.293Z"
+  },
+  {
+    "id": "cc737eec-a311-4a39-908b-99b59a6d8fcd",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-25T04:37:48.303Z"
+  },
+  {
+    "id": "bcdb5c2d-f41e-4295-853a-31d7af559f79",
+    "type": "client_error",
+    "payload": {
+      "userId": "0912345678",
+      "message": "叫車失敗",
+      "context": {
+        "error": "Request failed with status code 404",
+        "stack": "AxiosError: Request failed with status code 404\n    at settle (http://localhost:5173/node_modules/.vite/deps/axios.js?v=86a7c34a:1257:12)\n    at XMLHttpRequest.onloadend (http://localhost:5173/node_modules/.vite/deps/axios.js?v=86a7c34a:1593:7)\n    at Axios.request (http://localhost:5173/node_modules/.vite/deps/axios.js?v=86a7c34a:2201:41)\n    at async postWithRetry (http://localhost:5173/src/lib/taxi-api.js:16:19)\n    at async TaxiAPI.requestRide (http://localhost:5173/src/lib/taxi-api.js:93:30)\n    at async requestRide (http://localhost:5173/src/contexts/AppContext.jsx:369:20)\n    at async handleRequestRide (http://localhost:5173/src/pages/PassengerDashboard.jsx:149:22)",
+        "payload": {
+          "passengerPhone": "0912345678",
+          "pickup": "估算位置",
+          "dropoff": "松山機場",
+          "pickup_lat": 25.053,
+          "pickup_lng": 121.5259,
+          "dropoff_lat": 25.066477,
+          "dropoff_lng": 121.5548877,
+          "estimated_distance_meters": 0,
+          "estimated_duration_seconds": 0,
+          "estimated_price": 85,
+          "map_provider": "osm"
+        }
+      }
+    },
+    "ts": "2025-10-25T04:37:48.313Z"
+  },
+  {
+    "id": "094d2385-8eaa-4dd9-aa60-26eb5687bfbd",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-25T20:49:59.484Z"
+  },
+  {
+    "id": "5070fa94-ee9e-4b22-b3eb-070e13eaf6c0",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1761425399489_y0pfbhbpl",
+        "passengerPhone": "+886912345678",
+        "driverPhone": "0900000101",
+        "driverName": "??????",
+        "pickup": "?????",
+        "dropoff": "?????",
+        "status": "pending",
+        "createdAt": "2025-10-25T20:49:59.489Z",
+        "estimatedPrice": 150,
+        "pickup_lat": 24.1369,
+        "pickup_lng": 120.6865,
+        "dropoff_lat": 24.1575,
+        "dropoff_lng": 120.6645,
+        "estimated_distance_meters": 3500,
+        "estimated_duration_seconds": 600,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "0900000101",
+        "name": "??????",
+        "role": "driver",
+        "status": "online",
+        "car_plate": "BF-8881",
+        "verified": true
+      }
+    },
+    "ts": "2025-10-25T20:49:59.493Z"
+  },
+  {
+    "id": "3326bb22-376a-466b-8968-340f8b7fae62",
+    "type": "supabase_url_missing",
+    "payload": {
+      "message": "Supabase URL 未設定，使用本地 API 作為備援"
+    },
+    "ts": "2025-10-25T21:02:45.208Z"
+  },
+  {
+    "id": "d0bbb819-686f-47c7-9823-901d27a47805",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1761426165212_cyj1xdpdf",
+        "passengerPhone": "0912345678",
+        "driverPhone": "0900000101",
+        "driverName": "黑羽司機一號",
+        "pickup": {
+          "lat": 24.13694,
+          "lng": 120.68472
+        },
+        "dropoff": {
+          "lat": 24.14725,
+          "lng": 120.6731
+        },
+        "status": "pending",
+        "createdAt": "2025-10-25T21:02:45.212Z",
+        "estimatedPrice": 70,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "0900000101",
+        "name": "黑羽司機一號",
+        "role": "driver",
+        "status": "idle",
+        "car_plate": "BF-8881",
+        "verified": true
+      }
+    },
+    "ts": "2025-10-25T21:02:45.215Z"
+  },
+  {
+    "id": "63564be1-d483-46bf-99bb-5393e3dedaa8",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1761749292095_ypnqq9xb7",
+        "passengerPhone": "0987654001",
+        "driverPhone": "0900000101",
+        "driverName": "黑羽司機一號",
+        "pickup": {
+          "lat": 25.033964,
+          "lng": 121.564468
+        },
+        "dropoff": {
+          "lat": 25.047759,
+          "lng": 121.531345
+        },
+        "status": "pending",
+        "createdAt": "2025-10-29T14:48:12.095Z",
+        "estimatedPrice": 70,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "0900000101",
+        "name": "黑羽司機一號",
+        "role": "driver",
+        "status": "idle",
+        "car_plate": "BF-8881",
+        "verified": true
+      }
+    },
+    "ts": "2025-10-29T14:48:12.100Z"
+  },
+  {
+    "id": "94f43e9c-557d-4654-8980-5435694eb67d",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1761749339353_bz535dg4a",
+        "passengerPhone": "0987654001",
+        "driverPhone": "0900000102",
+        "driverName": "黑羽司機二號",
+        "pickup": {
+          "lat": 25.033964,
+          "lng": 121.564468
+        },
+        "dropoff": {
+          "lat": 25.047759,
+          "lng": 121.531345
+        },
+        "status": "pending",
+        "createdAt": "2025-10-29T14:48:59.353Z",
+        "estimatedPrice": 70,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "0900000102",
+        "name": "黑羽司機二號",
+        "role": "driver",
+        "status": "idle",
+        "car_plate": "BF-8882",
+        "verified": true
+      }
+    },
+    "ts": "2025-10-29T14:48:59.357Z"
+  },
+  {
+    "id": "b1cdde87-8a75-450d-9dd1-229993c1183d",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1761750407656_f6tr9vnrh",
+        "passengerPhone": "0987654001",
+        "driverPhone": "0900000103",
+        "driverName": "黑羽司機三號",
+        "pickup": {
+          "lat": 25.033964,
+          "lng": 121.564468
+        },
+        "dropoff": {
+          "lat": 25.047759,
+          "lng": 121.531345
+        },
+        "status": "pending",
+        "createdAt": "2025-10-29T15:06:47.656Z",
+        "estimatedPrice": 70,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "0900000103",
+        "name": "黑羽司機三號",
+        "role": "driver",
+        "status": "idle",
+        "car_plate": "BF-8883",
+        "verified": true
+      }
+    },
+    "ts": "2025-10-29T15:06:47.659Z"
+  },
+  {
+    "id": "77443706-e228-4884-998b-012c52b6b14a",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1761750783126_iun7xvizn",
+        "passengerPhone": "0987654001",
+        "driverPhone": "090000001",
+        "driverName": "司機測試",
+        "pickup": {
+          "lat": 25.033964,
+          "lng": 121.564468
+        },
+        "dropoff": {
+          "lat": 25.047759,
+          "lng": 121.531345
+        },
+        "status": "pending",
+        "createdAt": "2025-10-29T15:13:03.126Z",
+        "estimatedPrice": 70,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "090000001",
+        "name": "司機測試",
+        "role": "driver",
+        "status": "online"
+      }
+    },
+    "ts": "2025-10-29T15:13:03.129Z"
+  },
+  {
+    "id": "34e38c29-0e92-4de5-bcff-2fd6dfc95c85",
+    "type": "ride_request_success",
+    "payload": {
+      "order": {
+        "id": "ORDER_1761752555886_q000cbgpb",
+        "passengerPhone": "0987654001",
+        "driverPhone": "090000001",
+        "driverName": "司機測試",
+        "pickup": {
+          "lat": 25.033964,
+          "lng": 121.564468
+        },
+        "dropoff": {
+          "lat": 25.047759,
+          "lng": 121.531345
+        },
+        "status": "pending",
+        "createdAt": "2025-10-29T15:42:35.886Z",
+        "estimatedPrice": 70,
+        "service_type": "standard",
+        "deposit": 0,
+        "notes": ""
+      },
+      "driver": {
+        "phone": "090000001",
+        "name": "司機測試",
+        "role": "driver",
+        "status": "idle"
+      }
+    },
+    "ts": "2025-10-29T15:42:35.889Z"
+  }
+]

@@ -1,0 +1,19 @@
+import Airtable from 'airtable';
+
+const base = new Airtable({ apiKey: import.meta.env.VITE_AIRTABLE_API_KEY })
+  .base(import.meta.env.VITE_AIRTABLE_BASE_ID);
+
+export const airtable = {
+  async get(table, filter = '') {
+    const records = await base(table).select({ filterByFormula: filter }).all();
+    return records.map(r => ({ id: r.id, ...r.fields }));
+  },
+  async create(table, data) {
+    const record = await base(table).create([{ fields: data }]);
+    return { id: record[0].id, ...record[0].fields };
+  },
+  async update(table, id, data) {
+    await base(table).update([{ id, fields: data }]);
+  },
+};
+
