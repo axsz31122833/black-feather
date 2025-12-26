@@ -1,8 +1,6 @@
 import { setOptions, importLibrary } from '@googlemaps/js-api-loader'
 import { getMapsKey } from '../config/env'
 
-const GOOGLE_MAPS_API_KEY = getMapsKey()
-
 let mapInstance: google.maps.Map | null = null
 let geocoderInstance: google.maps.Geocoder | null = null
 let placesServiceInstance: google.maps.places.PlacesService | null = null
@@ -11,7 +9,7 @@ let placesServiceInstance: google.maps.places.PlacesService | null = null
 export const initGoogleMaps = async (): Promise<void> => {
   try {
     setOptions({ 
-      key: GOOGLE_MAPS_API_KEY,
+      key: getMapsKey(),
       libraries: ['places', 'geocoding']
     })
     await importLibrary('core')

@@ -2,7 +2,9 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
 import { useTripStore } from '../stores/trips'
-import { initGoogleMaps, createMap, geocodeAddress, reverseGeocode, createRoute, estimateTripPrice, getPickupSuggestions, getRouteWithFallbacks } from '../utils/maps'
+import { estimateTripPrice, getRouteWithFallbacks, initGoogleMaps, createMap, geocodeAddress as gGeocode, reverseGeocode as gReverseGeocode } from '../utils/maps'
+import RideLeafletMap from '../components/RideLeafletMap'
+import { env } from '../config/env'
 import { recordPayment } from '../utils/payments'
 import { supabase } from '../lib/supabase'
 import { MapPin, Search, Car, Clock, DollarSign, Navigation, Menu, User } from 'lucide-react'
@@ -46,6 +48,35 @@ export default function PassengerHome() {
   const [surgeMultiplier, setSurgeMultiplier] = useState(1)
   const [rideMode, setRideMode] = useState<'immediate' | 'scheduled'>('immediate')
   const [scheduledTime, setScheduledTime] = useState('')
+  const useGoogle = !!env.MAPS_API_KEY
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 25.033, lng: 121.565 })
+  const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
+  const [mapSuggestions, setMapSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>>([])
+  const geocodeOSM = async (address: string): Promise<{ lat: number; lng: number }> => {
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(address)}`
+    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } })
+    const json = await resp.json()
+    const first = json && json[0]
+    if (!first) throw new Error('not_found')
+    return { lat: parseFloat(first.lat), lng: parseFloat(first.lon) }
+  }
+  const reverseOSM = async (lat: number, lng: number): Promise<string> => {
+    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
+    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } })
+    const json = await resp.json()
+    return json?.display_name || '位置'
+  }
+  const pickupSuggestionsOSM = async (center: { lat: number; lng: number }, radiusMeters = 400): Promise<Array<{ name: string; location: { lat: number; lng: number } }>> => {
+    const delta = radiusMeters / 111000
+    const viewbox = `${center.lng - delta},${center.lat - delta},${center.lng + delta},${center.lat + delta}`
+    const keywords = ['entrance', 'store', 'station', 'pickup', 'meeting']
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&bounded=1&viewbox=${viewbox}&q=${encodeURIComponent(keywords.join(' '))}&limit=6`
+    try {
+      const resp = await fetch(url, { headers: { 'Accept': 'application/json' } })
+      const json = await resp.json()
+      return (json || []).map((r: any) => ({ name: r.display_name || '推薦地點', location: { lat: parseFloat(r.lat), lng: parseFloat(r.lon) } }))
+    } catch { return [] }
+  }
 
   const carTypes: CarType[] = [
     {
@@ -166,102 +197,62 @@ export default function PassengerHome() {
 
   const initializeMap = async () => {
     try {
-      await initGoogleMaps()
-      
-      // Get current location
-      navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const coords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
+      if (useGoogle) {
+        await initGoogleMaps()
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const coords = { lat: position.coords.latitude, lng: position.coords.longitude }
+            setCurrentLocation(coords)
+            if (mapRef.current) {
+              const mapInstance = await createMap(mapRef.current, { center: coords, zoom: 15 })
+              setMap(mapInstance)
+              new google.maps.Marker({ position: coords, map: mapInstance, title: '您的位置', icon: { url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png' } })
+              gReverseGeocode(coords.lat, coords.lng).then(address => {
+                setPickupAddress(address)
+                setPickupCoords(coords)
+              })
+            }
+          },
+          async () => {
+            const defaultCoords = { lat: 25.033, lng: 121.565 }
+            setCurrentLocation(defaultCoords)
+            if (mapRef.current) {
+              const mapInstance = await createMap(mapRef.current, { center: defaultCoords, zoom: 13 })
+              setMap(mapInstance)
+            }
           }
-          setCurrentLocation(coords)
-          
-          if (mapRef.current) {
-            const mapInstance = await createMap(mapRef.current, {
-              center: coords,
-              zoom: 15
-            })
-            setMap(mapInstance)
-            
-            // Add current location marker
-            new google.maps.Marker({
-              position: coords,
-              map: mapInstance,
-              title: '您的位置',
-              icon: {
-                url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-              }
-            })
-            
-            // Get address for current location
-            reverseGeocode(coords.lat, coords.lng).then(address => {
-              setPickupAddress(address)
+        )
+      } else {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const coords = { lat: position.coords.latitude, lng: position.coords.longitude }
+            setCurrentLocation(coords)
+            setMapCenter(coords)
+            try {
+              const addr = await reverseOSM(coords.lat, coords.lng)
+              setPickupAddress(addr)
               setPickupCoords(coords)
-            })
+            } catch {}
+          },
+          async () => {
+            const defaultCoords = { lat: 25.033, lng: 121.565 }
+            setCurrentLocation(defaultCoords)
+            setMapCenter(defaultCoords)
           }
-        },
-        async (error) => {
-          console.error('Error getting location:', error)
-          // Default to Taipei
-          const defaultCoords = { lat: 25.0330, lng: 121.5654 }
-          setCurrentLocation(defaultCoords)
-          if (mapRef.current) {
-            const mapInstance = await createMap(mapRef.current, {
-              center: defaultCoords,
-              zoom: 13
-            })
-            setMap(mapInstance)
-          }
-        }
-      )
+        )
+      }
     } catch (error) {
       console.error('Error initializing map:', error)
     }
   }
 
   const displayTripRoute = async () => {
-    if (!currentTrip || !map) return
-    
     try {
+      if (!currentTrip) return
       const pickupCoords = currentTrip.pickup_location
       const dropoffCoords = currentTrip.dropoff_location
-      
-      // Add pickup marker
-      new google.maps.Marker({
-        position: pickupCoords,
-        map,
-        title: '上車地點',
-        icon: {
-          url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
-        }
-      })
-      
-      // Add dropoff marker
-      new google.maps.Marker({
-        position: dropoffCoords,
-        map,
-        title: '下車地點',
-        icon: {
-          url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
-        }
-      })
-      
-      // Create route
-      const route = await createRoute(pickupCoords, dropoffCoords)
-      
-      // Draw route on map
-      const directionsRenderer = new google.maps.DirectionsRenderer({
-        map,
-        suppressMarkers: true
-      })
-      directionsRenderer.setDirections(route.directions)
-      
-      // Fit map to show both points
-      const bounds = new google.maps.LatLngBounds()
-      bounds.extend(pickupCoords)
-      bounds.extend(dropoffCoords)
-      map.fitBounds(bounds)
+      const r = await getRouteWithFallbacks(pickupCoords, dropoffCoords)
+      setRoutePath(r.path || [])
     } catch (error) {
       console.error('Error displaying trip route:', error)
     }
@@ -271,12 +262,14 @@ export default function PassengerHome() {
     if (!pickupAddress.trim()) return
     
     try {
-      const result = await geocodeAddress(pickupAddress)
+      const result = useGoogle ? await gGeocode(pickupAddress) : await geocodeOSM(pickupAddress)
       if (result) {
         setPickupCoords(result)
-        if (map) {
-          map.setCenter(result)
+        if (useGoogle && map) {
+          map.setCenter(result as any)
           map.setZoom(15)
+        } else {
+          setMapCenter(result)
         }
         if (dropoffCoords) {
           calculateRoute(result, dropoffCoords)
@@ -292,12 +285,14 @@ export default function PassengerHome() {
     if (!dropoffAddress.trim()) return
     
     try {
-      const result = await geocodeAddress(dropoffAddress)
+      const result = useGoogle ? await gGeocode(dropoffAddress) : await geocodeOSM(dropoffAddress)
       if (result) {
         setDropoffCoords(result)
-        if (map) {
-          map.setCenter(result)
+        if (useGoogle && map) {
+          map.setCenter(result as any)
           map.setZoom(15)
+        } else {
+          setMapCenter(result)
         }
         if (pickupCoords) {
           calculateRoute(pickupCoords, result)
@@ -317,7 +312,7 @@ export default function PassengerHome() {
   const recommendPickup = async () => {
     if (!pickupCoords) return
     try {
-      const list = await getPickupSuggestions(pickupCoords, 500)
+      const list = useGoogle ? await (await import('../utils/maps')).getPlacesService().then(()=>[]) : await pickupSuggestionsOSM(pickupCoords, 500)
       setSuggestions(list)
       // Compute ETA to the entered pickup for each suggestion
       const etas: Record<string, number> = {}
@@ -327,28 +322,8 @@ export default function PassengerHome() {
           etas[`${s.location.lat},${s.location.lng}`] = r.durationMin
         } catch {}
       }
-      // attach popup markers
-      if (map) {
-        // Clear previous markers
-        suggestionMarkers.forEach(m => m.setMap(null))
-        const markers: google.maps.Marker[] = []
-        list.forEach(s => {
-          const marker = new google.maps.Marker({
-            position: s.location,
-            map,
-            title: s.name,
-            icon: { url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' }
-          })
-          const key = `${s.location.lat},${s.location.lng}`
-          const etaMin = etas[key]
-          const iw = new google.maps.InfoWindow({ content: `${s.name}｜ETA 至輸入上車：約 ${etaMin != null ? etaMin : '—'} 分` })
-          marker.addListener('click', () => {
-            iw.open(map, marker)
-            useSuggestionAsPickup(s.location, s.name)
-          })
-          markers.push(marker)
-        })
-        setSuggestionMarkers(markers)
+      if (!useGoogle) {
+        setMapSuggestions(list.map(s => ({ ...s, etaMin: etas[`${s.location.lat},${s.location.lng}`] })))
       }
     } catch {
       setSuggestions([])
@@ -358,17 +333,13 @@ export default function PassengerHome() {
   const useSuggestionAsPickup = async (loc: { lat: number; lng: number }, name?: string) => {
     try {
       setPickupCoords(loc)
-      const addr = await reverseGeocode(loc.lat, loc.lng).catch(() => name || '推薦集合點')
+      const addr = useGoogle ? await gReverseGeocode(loc.lat, loc.lng).catch(() => name || '推薦集合點') : await reverseOSM(loc.lat, loc.lng).catch(() => name || '推薦集合點')
       setPickupAddress(addr)
-      if (map) {
-        map.setCenter(loc)
+      if (useGoogle && map) {
+        map.setCenter(loc as any)
         map.setZoom(16)
-        new google.maps.Marker({
-          position: loc,
-          map,
-          title: name || '推薦集合點',
-          icon: { url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png' }
-        })
+      } else {
+        setMapCenter(loc)
       }
       if (dropoffCoords) calculateRoute(loc, dropoffCoords)
     } catch {}
@@ -388,37 +359,8 @@ export default function PassengerHome() {
         const carPrice = estimateTripPrice(r.distanceKm, carType.id)
         carType.price = carPrice
       })
-      if (map) {
-        const center = { lat: (pickup.lat + dropoff.lat) / 2, lng: (pickup.lng + dropoff.lng) / 2 }
-        const content = `距離：約 ${r.distanceKm.toFixed(1)} 公里｜時間：約 ${r.durationMin} 分鐘（${r.source}）`
-        if (!routeInfoWindow) {
-          const iw = new google.maps.InfoWindow({ content })
-          iw.setPosition(center)
-          iw.open(map)
-          setRouteInfoWindow(iw)
-        } else {
-          routeInfoWindow.setContent(content)
-          routeInfoWindow.setPosition(center)
-          routeInfoWindow.open(map)
-        }
-        if (routePolyline) {
-          routePolyline.setMap(null)
-          setRoutePolyline(null)
-        }
-        try {
-          const g = await getRouteWithFallbacks(pickup, dropoff)
-          const path = g.path || []
-          const latlngs = path.map(p => new google.maps.LatLng(p.lat, p.lng))
-          const poly = new google.maps.Polyline({
-            path: latlngs.length ? latlngs : [new google.maps.LatLng(pickup.lat, pickup.lng), new google.maps.LatLng(dropoff.lat, dropoff.lng)],
-            geodesic: true,
-            strokeColor: g.source === 'google' ? '#2563eb' : (g.source === 'osrm' ? '#10b981' : '#6b7280'),
-            strokeOpacity: 0.8,
-            strokeWeight: 4
-          })
-          poly.setMap(map)
-          setRoutePolyline(poly)
-        } catch {}
+      if (!useGoogle) {
+        setRoutePath(r.path || [])
       }
     } catch (error) {
       console.error('Error calculating route:', error)
@@ -661,7 +603,20 @@ export default function PassengerHome() {
       </div>
 
       {/* Map */}
-      <div ref={mapRef} className="h-full w-full" />
+      {useGoogle ? (
+        <div ref={mapRef} className="h-full w-full" />
+      ) : (
+        <div className="h-full w-full">
+          <RideLeafletMap
+            center={mapCenter}
+            pickup={pickupCoords || undefined}
+            dropoff={dropoffCoords || undefined}
+            driver={driverLocation || undefined}
+            path={routePath}
+            suggestions={mapSuggestions}
+          />
+        </div>
+      )}
 
       {/* Booking Panel */}
       <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-6 max-h-96 overflow-y-auto">
