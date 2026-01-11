@@ -3,11 +3,12 @@
   "framework": "vite",
   "builds": [
     {
-      "src": "package.json",
+      "src": "scripts/package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "dist" }
+      "config": { "distDir": "scripts/dist" }
     }
   ],
-  "buildCommand": "npm run build",
-  "outputDirectory": "dist"
+  "buildCommand": "npm run build --prefix scripts",
+  "outputDirectory": "scripts/dist",
+  "installCommand": "npm ci --prefix scripts"
 }

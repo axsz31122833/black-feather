@@ -1,0 +1,33 @@
+name: Deploy to Vercel (Hook)
+on:
+push:
+branches: [ "main" ]
+workflow_dispatch:
+jobs:
+build:
+runs-on: ubuntu-latest
+steps:
+- uses: actions/checkout@v4
+- uses: actions/setup-node@v4
+with:
+node-version: '22.x'
+cache: 'npm'
+cache-dependency-path: 'scripts/package-lock.json'
+- name: Install
+working-directory: scripts
+run: npm ci
+- name: Build
+working-directory: scripts
+run: npm run build
+deploy:
+needs: build
+runs-on: ubuntu-latest
+steps:
+- name: Trigger Vercel Deploy Hook
+run: |
+http_code=$(curl -s -o /dev/null -w "%{http_code}" -X POST "${{ secrets.DEPLOY_HOOK_URL }}")
+echo "Deploy hook response code: $http_code"
+if [ "$http_code" -lt 200 ] || [ "$http_code" -ge 300 ]; then
+echo "Deploy Hook failed"
+exit 1
+fi
