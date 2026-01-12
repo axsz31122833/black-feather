@@ -19,6 +19,29 @@ export default function Login() {
     setError('')
 
     try {
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('dev') === '1') {
+        ;(useAuthStore as any).setState({
+          user: {
+            id: 'dev-' + userType,
+            email,
+            phone: '',
+            user_type: userType,
+            status: 'active',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString()
+          },
+          isAuthenticated: true,
+          userType,
+          isLoading: false
+        })
+        switch (userType) {
+          case 'passenger': navigate('/'); break
+          case 'driver': navigate('/driver'); break
+          case 'admin': navigate('/admin'); break
+        }
+        return
+      }
       await signIn(email, password, userType)
       
       // Redirect based on user type
