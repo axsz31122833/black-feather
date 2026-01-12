@@ -1,14 +1,14 @@
-{
+﻿{
   "version": 2,
   "framework": "vite",
   "builds": [
     {
-      "src": "scripts/package.json",
+      "src": "package.json",
       "use": "@vercel/static-build",
-      "config": { "distDir": "scripts/dist" }
+      "config": { "distDir": "dist" }
     }
   ],
-  "buildCommand": "npm run build --prefix scripts",
-  "outputDirectory": "scripts/dist",
-  "installCommand": "npm ci --prefix scripts"
+  "installCommand": "npm ci",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist"
 }
