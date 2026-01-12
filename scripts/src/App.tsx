@@ -12,7 +12,6 @@ import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 import { useAuthStore } from './stores/auth'
 import GlobalMonitor from './components/GlobalMonitor'
-import EnvBanner from './components/EnvBanner'
 import PushInit from './components/PushInit'
 import { supabase } from './lib/supabase'
 
@@ -57,7 +56,6 @@ function App() {
             <Link to="/admin">管理端</Link>
           </nav>
         </header>
-        <EnvBanner />
         <main className="container">
           <PushInit />
           <Suspense fallback={<div style={{ padding: 24 }}>載入中...</div>}>
