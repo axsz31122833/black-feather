@@ -48,7 +48,7 @@ export default function PassengerHome() {
   const [surgeMultiplier, setSurgeMultiplier] = useState(1)
   const [rideMode, setRideMode] = useState<'immediate' | 'scheduled'>('immediate')
   const [scheduledTime, setScheduledTime] = useState('')
-  const useGoogle = !!env.MAPS_API_KEY
+  const useGoogle = false
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 25.033, lng: 121.565 })
   const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
   const [mapSuggestions, setMapSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>>([])
@@ -312,7 +312,7 @@ export default function PassengerHome() {
   const recommendPickup = async () => {
     if (!pickupCoords) return
     try {
-      const list = useGoogle ? await (await import('../utils/maps')).getPlacesService().then(()=>[]) : await pickupSuggestionsOSM(pickupCoords, 500)
+      const list = await pickupSuggestionsOSM(pickupCoords, 500)
       setSuggestions(list)
       // Compute ETA to the entered pickup for each suggestion
       const etas: Record<string, number> = {}
@@ -322,9 +322,7 @@ export default function PassengerHome() {
           etas[`${s.location.lat},${s.location.lng}`] = r.durationMin
         } catch {}
       }
-      if (!useGoogle) {
-        setMapSuggestions(list.map(s => ({ ...s, etaMin: etas[`${s.location.lat},${s.location.lng}`] })))
-      }
+      setMapSuggestions(list.map(s => ({ ...s, etaMin: etas[`${s.location.lat},${s.location.lng}`] })))
     } catch {
       setSuggestions([])
     }

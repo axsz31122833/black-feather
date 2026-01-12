@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { assignDriver, runScheduleChecker, sendPush } from '../lib/rideApi'
 import { retry } from '../utils/retry'
 import { Users, Car, DollarSign, TrendingUp, User, MapPin, Clock, Shield, ArrowLeft, LogOut } from 'lucide-react'
-import { createRoute } from '../utils/maps'
+import { getRouteWithFallbacks } from '../utils/maps'
 import { lazy, Suspense } from 'react'
 const DispatchMap = lazy(() => import('../components/DispatchMap'))
 import DbMigrationsCheck from './components/DbMigrationsCheck'
@@ -549,8 +549,8 @@ export default function AdminDashboard() {
 
   const getRealtimeEtaMinutes = async (origin: { lat: number; lng: number }, destination: { lat: number; lng: number }) => {
     try {
-      const r = await createRoute(origin, destination)
-      return Math.max(1, r.duration) // minutes
+      const r = await getRouteWithFallbacks(origin, destination)
+      return Math.max(1, r.durationMin)
     } catch {
       const distKm = haversine(origin.lat, origin.lng, destination.lat, destination.lng)
       return Math.max(1, Math.round((distKm / 30) * 60))

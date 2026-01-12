@@ -7,9 +7,4 @@ export const env = {
   PLATFORM_JKOPAY_ACCOUNT: import.meta.env.VITE_PLATFORM_JKOPAY_ACCOUNT || ''
 }
 
-export const getMapsKey = () => {
-  if (!env.MAPS_API_KEY) {
-    throw new Error('Missing VITE_GOOGLE_MAPS_API_KEY')
-  }
-  return env.MAPS_API_KEY
-}
+export const getMapsKey = () => env.MAPS_API_KEY

@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
+import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../lib/supabase'
 
 type User = Database['public']['Tables']['users']['Row']
@@ -30,8 +31,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signIn: async (email: string, password: string, userType: 'passenger' | 'driver' | 'admin') => {
     try {
       set({ isLoading: true })
-      
-      const { data, error } = await supabase.auth.signInWithPassword({
+      const client = (supabase as any)?.auth?.signInWithPassword
+        ? supabase
+        : createClient(
+            (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
+            (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
+          )
+      const { data, error } = await client.auth.signInWithPassword({
         email,
         password,
       })
@@ -40,7 +46,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (data.user) {
         // Get user profile
-        const { data: userData, error: userError } = await supabase
+        const { data: userData, error: userError } = await client
           .from('users')
           .select('*')
           .eq('id', data.user.id)
@@ -73,8 +79,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUp: async (email: string, password: string, phone: string, userType: 'passenger' | 'driver') => {
     try {
       set({ isLoading: true })
-      
-      const { data, error } = await supabase.auth.signUp({
+      const client = (supabase as any)?.auth?.signUp
+        ? supabase
+        : createClient(
+            (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
+            (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
+          )
+      const { data, error } = await client.auth.signUp({
         email,
         password,
       })
@@ -83,7 +94,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
       if (data.user) {
         // Create user profile
-        const { error: profileError } = await supabase
+        const { error: profileError } = await client
           .from('users')
           .insert({
             id: data.user.id,
@@ -96,7 +107,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
         // Create driver profile if user is a driver
         if (userType === 'driver') {
-          const { error: driverError } = await supabase
+          const { error: driverError } = await client
             .from('driver_profiles')
             .insert({
               user_id: data.user.id,
@@ -131,7 +142,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     try {
-      const { error } = await supabase.auth.signOut()
+      const client = (supabase as any)?.auth?.signOut
+        ? supabase
+        : createClient(
+            (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
+            (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
+          )
+      const { error } = await client.auth.signOut()
       if (error) throw error
       
       set({ 
@@ -148,11 +165,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   checkAuth: async () => {
     try {
       set({ isLoading: true })
-      
-      const { data: { user } } = await supabase.auth.getUser()
+      const client = (supabase as any)?.auth?.getUser
+        ? supabase
+        : createClient(
+            (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
+            (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
+          )
+      const { data: { user } } = await client.auth.getUser()
       
       if (user) {
-        const { data: userData, error } = await supabase
+        const { data: userData, error } = await client
           .from('users')
           .select('*')
           .eq('id', user.id)
@@ -184,7 +206,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user } = get()
       if (!user || user.user_type !== 'driver') return
 
-      const { data, error } = await supabase
+      const client = (supabase as any)?.from ? supabase : createClient(
+        (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
+        (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
+      )
+      const { data, error } = await client
         .from('driver_profiles')
         .select('*')
         .eq('user_id', user.id)

@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
 import { useTripStore } from '../stores/trips'
-import { initGoogleMaps, createMap, createRoute } from '../utils/maps'
+import RideLeafletMap from '../components/RideLeafletMap'
+import { getRouteWithFallbacks } from '../utils/maps'
 import { supabase } from '../lib/supabase'
 import { MapPin, Navigation, DollarSign, Clock, User, Power, Menu, Car, TrendingUp } from 'lucide-react'
 import TripChat from '../components/TripChat'
@@ -15,8 +16,8 @@ export default function DriverHome() {
   const { user, driverProfile, signOut } = useAuthStore()
   const { currentTrip, updateTripStatus, subscribeToTrips, updateDriverLocation, subscribeToDriverLocation, driverLocation } = useTripStore()
   
-  const mapRef = useRef<HTMLDivElement>(null)
-  const [map, setMap] = useState<google.maps.Map | null>(null)
+  const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 25.033, lng: 121.565 })
+  const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
   const [isOnline, setIsOnline] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [todayEarnings, setTodayEarnings] = useState(0)
@@ -28,7 +29,7 @@ export default function DriverHome() {
   const [fuelLiters, setFuelLiters] = useState<number>(0)
   const [scheduledList, setScheduledList] = useState<any[]>([])
   const [postFlowStep, setPostFlowStep] = useState<number>(0)
-  const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
+  const [driverMarker, setDriverMarker] = useState<any>(null)
   const watchIdRef = useRef<number | null>(null)
   const [showAccept, setShowAccept] = useState(false)
   const [nextHint, setNextHint] = useState<string>('')
@@ -67,10 +68,10 @@ export default function DriverHome() {
   }, [isOnline, driverLocation])
 
   useEffect(() => {
-    if (currentTrip && map) {
+    if (currentTrip) {
       displayTripRoute()
     }
-  }, [currentTrip, map])
+  }, [currentTrip])
   useEffect(() => {
     if (currentTrip?.status === 'completed') setPostFlowStep(1)
     else setPostFlowStep(0)
@@ -78,114 +79,32 @@ export default function DriverHome() {
 
   const initializeMap = async () => {
     try {
-      await initGoogleMaps()
-      
-      // Get current location
       navigator.geolocation.getCurrentPosition(
-        async (position) => {
-          const coords = {
-            lat: position.coords.latitude,
-            lng: position.coords.longitude
-          }
-          
-          if (mapRef.current) {
-            const mapInstance = await createMap(mapRef.current, {
-              center: coords,
-              zoom: 15
-            })
-            setMap(mapInstance)
-            
-            // Add current location marker
-            const marker = new google.maps.Marker({
-              position: coords,
-              map: mapInstance,
-              title: '您的位置',
-              icon: {
-                url: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-              }
-            })
-            setDriverMarker(marker)
-          }
+        (position) => {
+          const coords = { lat: position.coords.latitude, lng: position.coords.longitude }
+          setMapCenter(coords)
         },
-        async (error) => {
-          console.error('Error getting location:', error)
-          // Default to Taipei
-          const defaultCoords = { lat: 25.0330, lng: 121.5654 }
-          if (mapRef.current) {
-            const mapInstance = await createMap(mapRef.current, {
-              center: defaultCoords,
-              zoom: 13
-            })
-            setMap(mapInstance)
-          }
+        () => {
+          const defaultCoords = { lat: 25.033, lng: 121.565 }
+          setMapCenter(defaultCoords)
         }
       )
-    } catch (error) {
-      console.error('Error initializing map:', error)
-    }
+    } catch {}
   }
 
   const displayTripRoute = async () => {
-    if (!currentTrip || !map) return
-    
+    if (!currentTrip) return
     try {
       const pickupCoords = currentTrip.pickup_location
       const dropoffCoords = currentTrip.dropoff_location
-      
-      // Add pickup marker
-      new google.maps.Marker({
-        position: pickupCoords,
-        map,
-        title: '乘客上車地點',
-        icon: {
-          url: 'http://maps.google.com/mapfiles/ms/icons/green-dot.png'
-        }
-      })
-      
-      // Add dropoff marker
-      new google.maps.Marker({
-        position: dropoffCoords,
-        map,
-        title: '乘客目的地',
-        icon: {
-          url: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
-        }
-      })
-      
-      // Create route
-      const route = await createRoute(pickupCoords, dropoffCoords)
-      
-      // Draw route on map
-      const directionsRenderer = new google.maps.DirectionsRenderer({
-        map,
-        suppressMarkers: true
-      })
-      directionsRenderer.setDirections(route.directions)
-      
-      // Fit map to show both points
-      const bounds = new google.maps.LatLngBounds()
-      bounds.extend(pickupCoords)
-      bounds.extend(dropoffCoords)
-      map.fitBounds(bounds)
-
-      // Steps for junction hint
-      try {
-        const route = await createRoute(pickupCoords, dropoffCoords)
-        const legs = (route.directions.routes[0]?.legs || [])[0]
-        const s = (legs?.steps || []).map((st: any) => ({
-          instruction: st.instructions || '',
-          distance: st.distance?.value || 0
-        }))
-        setSteps(s)
-        setNextHint(s[0]?.instruction || '')
-      } catch {}
-    } catch (error) {
-      console.error('Error displaying trip route:', error)
-    }
+      const r = await getRouteWithFallbacks(pickupCoords, dropoffCoords)
+      setRoutePath(r.path || [])
+      setMapCenter({ lat: (pickupCoords.lat + dropoffCoords.lat) / 2, lng: (pickupCoords.lng + dropoffCoords.lng) / 2 })
+    } catch {}
   }
 
   const showRidePath = async () => {
-    if (!currentTrip || !map) return
+    if (!currentTrip) return
     try {
       const { data: evs } = await supabase
         .from('ops_events')
@@ -200,15 +119,7 @@ export default function DriverHome() {
         alert('軌跡資料不足')
         return
       }
-      const path = points.map(p => new google.maps.LatLng(p.lat, p.lng))
-      const poly = new google.maps.Polyline({
-        path,
-        geodesic: true,
-        strokeColor: '#7c3aed',
-        strokeOpacity: 0.8,
-        strokeWeight: 4
-      })
-      poly.setMap(map)
+      setRoutePath(points)
       let distKm = 0
       for (let i = 1; i < points.length; i++) {
         const a = points[i - 1], b = points[i]
@@ -254,7 +165,7 @@ export default function DriverHome() {
         watchIdRef.current = navigator.geolocation.watchPosition(
           async (pos) => {
             const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-            if (driverMarker) driverMarker.setPosition(coords)
+            setMapCenter(coords)
             await updateDriverLocation(currentTrip?.id || '', coords.lat, coords.lng)
             try {
             await sendOpsEvent('driver_location', currentTrip?.id || user?.id, coords)
@@ -288,15 +199,8 @@ export default function DriverHome() {
                 }
                 // threshold 50m
                 if (off > 50) {
-                  const route = await createRoute(coords, trip.dropoff_location)
-                  const legs = (route.directions.routes[0]?.legs || [])[0]
-                  const s = (legs?.steps || []).map((st: any) => ({
-                    instruction: st.instructions || '',
-                    distance: st.distance?.value || 0,
-                    location: st.end_location || null
-                  }))
-                  setSteps(s)
-                  setNextHint(s[0]?.instruction || '')
+                  const r = await getRouteWithFallbacks(coords, trip.dropoff_location)
+                  setRoutePath(r.path || [])
                 }
               }
             } catch {}
@@ -589,7 +493,14 @@ export default function DriverHome() {
       </div>
 
       {/* Map */}
-      <div ref={mapRef} className="h-full w-full" />
+      <RideLeafletMap
+        center={mapCenter}
+        pickup={currentTrip?.pickup_location || undefined}
+        dropoff={currentTrip?.dropoff_location || undefined}
+        driver={driverLocation || undefined}
+        path={routePath}
+        suggestions={[]}
+      />
 
         {/* Driver Status Panel */}
         <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-6">

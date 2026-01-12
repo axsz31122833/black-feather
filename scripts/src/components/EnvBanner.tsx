@@ -3,7 +3,6 @@ import { env } from '../config/env'
 
 export default function EnvBanner() {
   const missing: string[] = []
-  if (!env.MAPS_API_KEY) missing.push('Google Maps API Key')
   if (!env.SUPABASE_URL) missing.push('Supabase URL')
   if (!env.SUPABASE_ANON_KEY) missing.push('Supabase Anon Key')
   if (missing.length === 0) return null
@@ -13,4 +12,3 @@ export default function EnvBanner() {
     </div>
   )
 }
-

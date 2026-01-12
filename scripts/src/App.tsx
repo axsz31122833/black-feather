@@ -7,6 +7,7 @@ const PassengerRidePage = lazy(() => import('./pages/PassengerRidePage'))
 const DriverHome = lazy(() => import('./pages/DriverHome'))
 const DriverRidePage = lazy(() => import('./pages/DriverRidePage'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const DevBypass = lazy(() => import('./pages/DevBypass'))
 import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
 import { useAuthStore } from './stores/auth'
@@ -61,6 +62,7 @@ function App() {
           <PushInit />
           <Suspense fallback={<div style={{ padding: 24 }}>載入中...</div>}>
             <Routes>
+              <Route path="/dev-login" element={<DevBypass />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/" element={
