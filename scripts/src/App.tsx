@@ -17,7 +17,10 @@ import { supabase } from './lib/supabase'
 
 function App() {
   const { checkAuth } = useAuthStore()
-  useEffect(() => { checkAuth() }, [])
+  useEffect(() => {
+    if (window.location.search.includes('dev=1')) return
+    checkAuth()
+  }, [])
   useEffect(() => {
     const onMsg = (e: MessageEvent) => {
       const data: any = e.data

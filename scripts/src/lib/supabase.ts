@@ -1,9 +1,28 @@
 import { createClient } from '@supabase/supabase-js'
 
-const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co'
-const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
+const url = import.meta.env.VITE_SUPABASE_URL || ''
+const key = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+function makeMock() {
+  return {
+    auth: {
+      async getUser() { return { data: { user: null } } },
+      async signInWithPassword() { throw new Error('Auth disabled in dev mode') },
+      async signOut() { return { error: null } },
+      async signUp() { return { data: { user: null }, error: null } },
+    },
+    from() {
+      return {
+        async select() { return { data: null, error: null } },
+        async insert() { return { error: null } },
+        async eq() { return { select: async () => ({ data: null, error: null }) } as any },
+        async single() { return { data: null, error: null } },
+      }
+    },
+  } as any
+}
+
+export const supabase = url && key ? createClient(url, key) : makeMock()
 
 export type Database = {
   public: {
