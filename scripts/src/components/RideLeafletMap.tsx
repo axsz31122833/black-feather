@@ -1,5 +1,6 @@
 import React from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
+import L from 'leaflet'
 
 export default function RideLeafletMap({
   center,
@@ -22,6 +23,7 @@ export default function RideLeafletMap({
   const Mk: any = Marker
   const Pl: any = Polyline
   const Pp: any = Popup
+  const carIcon = L.divIcon({ html: '<span style="font-size:18px">🚖</span>' })
   return (
     <M center={[center.lat, center.lng]} zoom={13} style={{ width: '100%', height: '100%' }}>
       <T url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -36,7 +38,7 @@ export default function RideLeafletMap({
         </Mk>
       )}
       {driver && (
-        <Mk position={[driver.lat, driver.lng]}>
+        <Mk position={[driver.lat, driver.lng]} icon={carIcon}>
           <Pp>司機位置</Pp>
         </Mk>
       )}
