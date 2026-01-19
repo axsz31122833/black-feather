@@ -68,7 +68,7 @@ export default function Login() {
   ]
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4" style={{ background: 'linear-gradient(180deg,#0a0c11 0%, #0b0d12 100%)' }}>
+    <div style={{ background: 'linear-gradient(135deg, #000000 0%, #1a1a1a 50%, #000000 100%)', minHeight: '100vh' }}>
       <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">登入</h1>
