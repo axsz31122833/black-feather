@@ -48,15 +48,15 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <header className="app-header">
-          <div className="brand">Black Feather 車隊</div>
-          <nav className="nav">
-            <Link to="/login">登入</Link>
-            <Link to="/register">註冊</Link>
-            <Link to="/passenger">乘客</Link>
-            <Link to="/passenger/ride">乘客行程</Link>
-            <Link to="/driver">司機</Link>
-            <Link to="/driver/ride">司機行程</Link>
-            <Link to="/admin">管理端</Link>
+          <div className="brand text-yellow-300">Black Feather 車隊</div>
+          <nav className="nav flex items-center gap-6 text-yellow-300">
+            <Link to="/login" className="hover:text-white">登入</Link>
+            <Link to="/register" className="hover:text-white">註冊</Link>
+            <Link to="/passenger" className="hover:text-white">乘客</Link>
+            <Link to="/passenger/ride" className="hover:text-white">乘客行程</Link>
+            <Link to="/driver" className="hover:text-white">司機</Link>
+            <Link to="/driver/ride" className="hover:text-white">司機行程</Link>
+            <Link to="/admin" className="hover:text-white">管理端</Link>
           </nav>
         </header>
         <main className="container">
@@ -76,6 +76,11 @@ function App() {
                   <PassengerHome />
                 </ProtectedRoute>
               } />
+              <Route path="/passenger/home" element={
+                <ProtectedRoute roles={['passenger']}>
+                  <PassengerHome />
+                </ProtectedRoute>
+              } />
               <Route path="/passenger/ride" element={
                 <ProtectedRoute roles={['passenger']}>
                   <PassengerRidePage />
@@ -86,12 +91,22 @@ function App() {
                   <DriverHome />
                 </ProtectedRoute>
               } />
+              <Route path="/driver/home" element={
+                <ProtectedRoute roles={['driver']}>
+                  <DriverHome />
+                </ProtectedRoute>
+              } />
               <Route path="/driver/ride" element={
                 <ProtectedRoute roles={['driver']}>
                   <DriverRidePage />
                 </ProtectedRoute>
               } />
               <Route path="/admin" element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminDashboard />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/home" element={
                 <ProtectedRoute roles={['admin']}>
                   <AdminDashboard />
                 </ProtectedRoute>

@@ -74,9 +74,9 @@ export default function Login() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">登入</h1>
           <p className="text-gray-600">歡迎回來！請選擇您的身份</p>
           <div className="mt-4 grid grid-cols-1 gap-2">
-            <button onClick={() => navigate('/admin?dev=1&role=admin')} className="w-full py-3 rounded-lg" style={{ background:'#f59e0b', color:'#111' }}>進入管理端（跳過驗證）</button>
-            <button onClick={() => navigate('/driver?dev=1&role=driver')} className="w-full py-3 rounded-lg" style={{ background:'#f59e0b', color:'#111' }}>進入司機端（跳過驗證）</button>
-            <button onClick={() => navigate('/passenger?dev=1&role=passenger')} className="w-full py-3 rounded-lg" style={{ background:'#f59e0b', color:'#111' }}>進入乘客端（跳過驗證）</button>
+            <button onClick={() => navigate('/admin/home?dev=1&role=admin')} className="w-full py-3 rounded-lg" style={{ background:'#f59e0b', color:'#111' }}>進入管理端（跳過驗證）</button>
+            <button onClick={() => navigate('/driver/home?dev=1&role=driver')} className="w-full py-3 rounded-lg" style={{ background:'#f59e0b', color:'#111' }}>進入司機端（跳過驗證）</button>
+            <button onClick={() => navigate('/passenger/home?dev=1&role=passenger')} className="w-full py-3 rounded-lg" style={{ background:'#f59e0b', color:'#111' }}>進入乘客端（跳過驗證）</button>
           </div>
         </div>
 
