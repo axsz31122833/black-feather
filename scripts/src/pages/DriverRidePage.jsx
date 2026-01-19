@@ -32,7 +32,7 @@ export default function DriverRidePage() {
   }
 
   return (
-    <div style={{ position:'relative', height:'70vh' }}>
+    <div className="bg-transparent text-white" style={{ position:'relative', height:'70vh' }}>
       <MapContainer center={[dropoff.lat, dropoff.lng]} zoom={13} style={{ height:'100%', borderRadius:12, overflow:'hidden' }}>
         <TileLayer
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
