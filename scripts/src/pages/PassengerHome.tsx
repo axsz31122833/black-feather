@@ -492,7 +492,7 @@ export default function PassengerHome() {
 
   if (currentTrip && ['requested', 'accepted', 'in_progress'].includes(currentTrip.status)) {
     return (
-      <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
+      <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
         <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
@@ -565,7 +565,7 @@ export default function PassengerHome() {
   }
 
   return (
-    <div className="h-screen bg-gray-100 relative">
+    <div className="h-screen bg-transparent relative">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-white shadow-md p-4">
         <div className="flex items-center justify-between">

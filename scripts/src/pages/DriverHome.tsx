@@ -457,7 +457,7 @@ export default function DriverHome() {
   }
 
   return (
-    <div className="h-screen bg-gray-100 relative">
+    <div className="h-screen bg-transparent relative">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-white shadow-md p-4">
         <div className="flex items-center justify-between">
