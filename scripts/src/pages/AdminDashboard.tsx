@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase'
 import { assignDriver, runScheduleChecker, sendPush } from '../lib/rideApi'
 import { retry } from '../utils/retry'
 import { Users, Car, DollarSign, TrendingUp, User, MapPin, Clock, Shield, ArrowLeft, LogOut } from 'lucide-react'
-import { getRouteWithFallbacks } from '../utils/maps'
+import { getRouteWithFallbacks, initGoogleMaps } from '../utils/maps'
 import { lazy, Suspense } from 'react'
 const DispatchMap = lazy(() => import('../components/DispatchMap'))
 import DbMigrationsCheck from './components/DbMigrationsCheck'
@@ -118,6 +118,34 @@ export default function AdminDashboard() {
   const [pushUserId, setPushUserId] = useState('')
   const [pushTitle, setPushTitle] = useState('測試推播')
   const [pushBody, setPushBody] = useState('這是一則測試推播訊息')
+  const [adminPickupAddress, setAdminPickupAddress] = useState('')
+  const [adminDropoffAddress, setAdminDropoffAddress] = useState('')
+  useEffect(() => {
+    (async () => {
+      try {
+        await initGoogleMaps()
+        const center = radiusCenter || { lat: 24.147736, lng: 120.673648 }
+        const bounds = new (window as any).google.maps.Circle({ center, radius: 20000 }).getBounds()
+        const ap = new (window as any).google.maps.places.Autocomplete(document.getElementById('admin-pickup-input') as HTMLInputElement, { bounds, strictBounds: true })
+        ap.addListener('place_changed', () => {
+          const p = ap.getPlace()
+          if (p && p.geometry && p.geometry.location) {
+            const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+            setAdminPickupAddress(p.formatted_address || p.name || '')
+            setRadiusCenter(loc)
+          }
+        })
+        const ad = new (window as any).google.maps.places.Autocomplete(document.getElementById('admin-dropoff-input') as HTMLInputElement, { bounds, strictBounds: true })
+        ad.addListener('place_changed', () => {
+          const p = ad.getPlace()
+          if (p && p.geometry && p.geometry.location) {
+            const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+            setAdminDropoffAddress(p.formatted_address || p.name || '')
+          }
+        })
+      } catch {}
+    })()
+  }, [radiusCenter])
 
   useEffect(() => {
     loadDashboardData()
@@ -1406,7 +1434,19 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <h4 className="text-md font-semibold text-gray-200 mb-2">地圖</h4>
-                  <div id="admin-map" className="rounded-2xl shadow-2xl overflow-hidden w-full" style={{ height: 320 }}>
+                  <div id="admin-map" className="rounded-2xl shadow-2xl overflow-hidden w-full relative" style={{ height: 320 }}>
+                    <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[90%] max-w-xl z-20">
+                      <div className="rounded-2xl shadow-2xl border border-[#D4AF37]/50 bg-[#1a1a1a] p-3">
+                        <div className="mb-2">
+                          <label className="block text-xs text-gray-300 mb-1">🔍 您的位置（上車地點）</label>
+                          <input id="admin-pickup-input" value={adminPickupAddress} onChange={e=>setAdminPickupAddress(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="例如：台中市政府" />
+                        </div>
+                        <div>
+                          <label className="block text-xs text-gray-300 mb-1">📍 您要去哪？（目的地點）</label>
+                          <input id="admin-dropoff-input" value={adminDropoffAddress} onChange={e=>setAdminDropoffAddress(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="例如：台中火車站" />
+                        </div>
+                      </div>
+                    </div>
                     <Suspense fallback={<div className="p-3 text-xs text-gray-600">載入地圖...</div>}>
                       {(() => {
                         const ride = trips.find(t => t.id === dispatchRideId) as any

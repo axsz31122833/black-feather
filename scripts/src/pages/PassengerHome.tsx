@@ -55,6 +55,9 @@ export default function PassengerHome() {
   const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
   const [mapSuggestions, setMapSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>>([])
   const [preferHighway, setPreferHighway] = useState(false)
+  const [activeField, setActiveField] = useState<'pickup' | 'dropoff'>('pickup')
+  const pickupMarkerRef = useRef<google.maps.Marker | null>(null)
+  const dropoffMarkerRef = useRef<google.maps.Marker | null>(null)
   const [showHighwayAlert, setShowHighwayAlert] = useState(false)
   const formatMMSS = (sec: number) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')
@@ -267,6 +270,15 @@ export default function PassengerHome() {
                     setPickupAddress(p.formatted_address || p.name || '')
                     mapInstance.setCenter(loc as any)
                     mapInstance.setZoom(15)
+                    if (pickupMarkerRef.current) pickupMarkerRef.current.setMap(null)
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                    m.addListener('dragend', async () => {
+                      const pos = m.getPosition()!
+                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                      setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
+                      setPickupAddress(addr)
+                    })
+                    pickupMarkerRef.current = m
                   }
                 })
                 const acDrop = new (google.maps as any).places.Autocomplete(document.getElementById('dropoff-input') as HTMLInputElement, { bounds, strictBounds: true })
@@ -279,6 +291,85 @@ export default function PassengerHome() {
                     mapInstance.setCenter(loc as any)
                     mapInstance.setZoom(15)
                     if (pickupCoords) calculateRoute(pickupCoords, loc)
+                    if (dropoffMarkerRef.current) dropoffMarkerRef.current.setMap(null)
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                    m.addListener('dragend', async () => {
+                      const pos = m.getPosition()!
+                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                      setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
+                      setDropoffAddress(addr)
+                    })
+                    dropoffMarkerRef.current = m
+                  }
+                })
+                const acPickup2 = new (google.maps as any).places.Autocomplete(document.getElementById('pickup-input-ux') as HTMLInputElement, { bounds, strictBounds: true })
+                acPickup2.addListener('place_changed', () => {
+                  const p = acPickup2.getPlace()
+                  if (p && p.geometry && p.geometry.location) {
+                    const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                    setPickupCoords(loc)
+                    setPickupAddress(p.formatted_address || p.name || '')
+                    mapInstance.setCenter(loc as any)
+                    mapInstance.setZoom(15)
+                    if (pickupMarkerRef.current) pickupMarkerRef.current.setMap(null)
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                    m.addListener('dragend', async () => {
+                      const pos = m.getPosition()!
+                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                      setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
+                      setPickupAddress(addr)
+                    })
+                    pickupMarkerRef.current = m
+                  }
+                })
+                const acDrop2 = new (google.maps as any).places.Autocomplete(document.getElementById('dropoff-input-ux') as HTMLInputElement, { bounds, strictBounds: true })
+                acDrop2.addListener('place_changed', () => {
+                  const p = acDrop2.getPlace()
+                  if (p && p.geometry && p.geometry.location) {
+                    const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                    setDropoffCoords(loc)
+                    setDropoffAddress(p.formatted_address || p.name || '')
+                    mapInstance.setCenter(loc as any)
+                    mapInstance.setZoom(15)
+                    if (pickupCoords) calculateRoute(pickupCoords, loc)
+                    if (dropoffMarkerRef.current) dropoffMarkerRef.current.setMap(null)
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                    m.addListener('dragend', async () => {
+                      const pos = m.getPosition()!
+                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                      setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
+                      setDropoffAddress(addr)
+                    })
+                    dropoffMarkerRef.current = m
+                  }
+                })
+                mapInstance.addListener('click', async (e: any) => {
+                  const loc = { lat: e.latLng.lat(), lng: e.latLng.lng() }
+                  const addr = await gReverseGeocode(loc.lat, loc.lng)
+                  if (activeField === 'pickup') {
+                    setPickupCoords(loc)
+                    setPickupAddress(addr)
+                    if (pickupMarkerRef.current) pickupMarkerRef.current.setMap(null)
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                    m.addListener('dragend', async () => {
+                      const pos = m.getPosition()!
+                      const a = await gReverseGeocode(pos.lat(), pos.lng())
+                      setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
+                      setPickupAddress(a)
+                    })
+                    pickupMarkerRef.current = m
+                  } else {
+                    setDropoffCoords(loc)
+                    setDropoffAddress(addr)
+                    if (dropoffMarkerRef.current) dropoffMarkerRef.current.setMap(null)
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                    m.addListener('dragend', async () => {
+                      const pos = m.getPosition()!
+                      const a = await gReverseGeocode(pos.lat(), pos.lng())
+                      setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
+                      setDropoffAddress(a)
+                    })
+                    dropoffMarkerRef.current = m
                   }
                 })
               } catch {}
@@ -753,6 +844,34 @@ export default function PassengerHome() {
           />
         </div>
       )}
+      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl z-20">
+        <div className="rounded-2xl shadow-2xl border border-[#D4AF37]/50 bg-[#1a1a1a] p-4">
+          <div className="mb-3">
+            <label className="block text-sm text-gray-300 mb-2">🔍 您的位置（上車地點）</label>
+            <input
+              type="text"
+              value={pickupAddress}
+              onChange={(e) => setPickupAddress(e.target.value)}
+              onFocus={() => setActiveField('pickup')}
+              id="pickup-input-ux"
+              className="w-full px-3 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              placeholder="例如：台中市西屯區..."
+            />
+          </div>
+          <div>
+            <label className="block text-sm text-gray-300 mb-2">📍 您要去哪？（目的地點）</label>
+            <input
+              type="text"
+              value={dropoffAddress}
+              onChange={(e) => setDropoffAddress(e.target.value)}
+              onFocus={() => setActiveField('dropoff')}
+              id="dropoff-input-ux"
+              className="w-full px-3 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              placeholder="例如：台中火車站..."
+            />
+          </div>
+        </div>
+      </div>
 
       {/* Booking Panel */}
       <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-6 max-h-96 overflow-y-auto">
@@ -962,7 +1081,7 @@ export default function PassengerHome() {
         <button
           onClick={handleBookRide}
           disabled={!pickupCoords || !dropoffCoords || isLoading}
-          className="w-full py-3 px-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-black"
+          className="w-full py-4 px-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-black text-lg"
           style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
         >
           {isLoading ? '預約中...' : '立即叫車'}
