@@ -35,6 +35,8 @@ export default function DriverHome() {
   const [nextHint, setNextHint] = useState<string>('')
   const [steps, setSteps] = useState<Array<{ instruction: string; distance: number }>>([])
   const [waitCountdownSec, setWaitCountdownSec] = useState<number>(0)
+  const [incomingOffer, setIncomingOffer] = useState<any>(null)
+  const [offerCountdown, setOfferCountdown] = useState<number>(0)
 
   useEffect(() => {
     if (user) {
@@ -80,6 +82,27 @@ export default function DriverHome() {
     }, 1000)
     return () => clearInterval(t)
   }, [waitCountdownSec])
+  useEffect(() => {
+    if (!user) return
+    const ch = supabase
+      .channel('driver-offers')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter: `event_type=eq.dispatch_offer` }, (payload: any) => {
+        const ev = payload.new
+        if (ev?.payload?.driver_id === user.id) {
+          setIncomingOffer(ev.payload)
+          try {
+            const exp = new Date(ev.payload.expires_at).getTime()
+            const left = Math.max(0, Math.floor((exp - Date.now()) / 1000))
+            setOfferCountdown(left || 30)
+          } catch { setOfferCountdown(30) }
+        }
+      })
+      .subscribe()
+    const timer = setInterval(() => {
+      setOfferCountdown(v => v > 0 ? v - 1 : 0)
+    }, 1000)
+    return () => { ch.unsubscribe(); clearInterval(timer) }
+  }, [user?.id])
   useEffect(() => {
     if (currentTrip?.status === 'completed') setPostFlowStep(1)
     else setPostFlowStep(0)
@@ -420,6 +443,7 @@ export default function DriverHome() {
     if (!currentTrip) return
     try {
       await supabase.from('ops_events').insert({ event_type: 'driver_arrived', ref_id: currentTrip.id })
+      try { await supabase.from('trips').update({ arrived_at: new Date().toISOString() }).eq('id', currentTrip.id) } catch {}
       alert('已標記：到達上車地點')
       setWaitCountdownSec(300)
     } catch (error) {
@@ -687,6 +711,44 @@ export default function DriverHome() {
                     已抵達
                   </button>
                 </>
+              )}
+              {incomingOffer && offerCountdown > 0 && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+                  <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundImage: 'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color: '#111' }}>
+                    <div className="text-xl font-bold mb-1">新訂單</div>
+                    <div className="text-xs mb-3">倒數 {offerCountdown} 秒</div>
+                    <div className="space-y-2 text-sm">
+                      <div>上車：{incomingOffer.pickup?.lat?.toFixed(4)}, {incomingOffer.pickup?.lng?.toFixed(4)}</div>
+                      <div>目的地：{incomingOffer.dropoff?.lat?.toFixed(4)}, {incomingOffer.dropoff?.lng?.toFixed(4)}</div>
+                      <div>預估車資：${incomingOffer.price}</div>
+                    </div>
+                    <div className="mt-4 flex justify-end space-x-2">
+                      <button
+                        onClick={async () => {
+                          setIncomingOffer(null)
+                          try { await supabase.from('ops_events').insert({ event_type: 'dispatch_reject', payload: { driver_id: user?.id } }) } catch {}
+                        }}
+                        className="px-4 py-2 rounded-2xl" style={{ background: '#111', color: '#FFD700' }}
+                      >
+                        拒絕
+                      </button>
+                      <button
+                        onClick={async () => {
+                          if (!incomingOffer) return
+                          try {
+                            const { assignDriver } = await import('../lib/rideApi.js') as any
+                            await assignDriver({ ride_id: incomingOffer.trip_id, driver_id: user?.id })
+                            try { await supabase.from('drivers').update({ status: 'on_trip' }).eq('id', user?.id) } catch {}
+                            setIncomingOffer(null)
+                          } catch { setIncomingOffer(null) }
+                        }}
+                        className="px-4 py-2 rounded-2xl" style={{ background: '#111', color: '#FFD700' }}
+                      >
+                        接受
+                      </button>
+                    </div>
+                  </div>
+                </div>
               )}
               {currentTrip.status === 'requested' && (
                 <button

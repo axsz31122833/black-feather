@@ -55,6 +55,12 @@ export default function PassengerHome() {
   const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
   const [mapSuggestions, setMapSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>>([])
   const [preferHighway, setPreferHighway] = useState(false)
+  const [showHighwayAlert, setShowHighwayAlert] = useState(false)
+  const formatMMSS = (sec: number) => {
+    const m = Math.floor(sec / 60).toString().padStart(2, '0')
+    const s = Math.floor(sec % 60).toString().padStart(2, '0')
+    return `${m}:${s}`
+  }
   const geocodeOSM = async (address: string): Promise<{ lat: number; lng: number }> => {
     const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(address)}`
     const resp = await fetch(url, { headers: { 'Accept': 'application/json' } })
@@ -500,6 +506,47 @@ export default function PassengerHome() {
           status: 'requested'
         })
         try {
+          const { data: latest } = await supabase
+            .from('trips')
+            .select('id,created_at')
+            .eq('passenger_id', user.id)
+            .eq('status', 'requested')
+            .order('created_at', { ascending: false })
+            .limit(1)
+          const tripId = (latest && latest[0]?.id) || currentTrip?.id || null
+          const { data: drivers } = await supabase
+            .from('drivers')
+            .select('id,name,phone,is_online,current_lat,current_lng,status,last_seen_at')
+          const within5km = (drivers || []).filter(d => {
+            if (!d?.is_online || d?.status === 'on_trip') return false
+            if (typeof d?.current_lat !== 'number' || typeof d?.current_lng !== 'number') return false
+            const toRad = (v: number) => (v * Math.PI) / 180
+            const R = 6371
+            const dLat = toRad((pickupCoords as any).lat - d.current_lat)
+            const dLng = toRad((pickupCoords as any).lng - d.current_lng)
+            const sa = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(d.current_lat)) * Math.cos(toRad((pickupCoords as any).lat)) * Math.sin(dLng / 2) ** 2
+            const c = 2 * Math.atan2(Math.sqrt(sa), Math.sqrt(1 - sa))
+            const distKm = R * c
+            return distKm <= 5
+          }).slice(0, 5)
+          const expiresAt = new Date(Date.now() + 30000).toISOString()
+          for (const d of within5km) {
+            try {
+              await supabase.from('ops_events').insert({
+                event_type: 'dispatch_offer',
+                ref_id: tripId,
+                payload: {
+                  driver_id: d.id,
+                  pickup: pickupCoords,
+                  dropoff: dropoffCoords,
+                  price: estimatedPrice,
+                  expires_at: expiresAt
+                }
+              })
+            } catch {}
+          }
+        } catch {}
+        try {
           const distKm = distance
           if (distKm > 30) {
             const { data: latest } = await supabase
@@ -883,14 +930,14 @@ export default function PassengerHome() {
                   onChange={(e) => {
                     const v = e.target.checked
                     setPreferHighway(v)
-                    alert('行走高速道路通常較快，但里程與通行費會增加預估金額。')
+                    if (v) setShowHighwayAlert(true)
                     if (pickupCoords && dropoffCoords) calculateRoute(pickupCoords, dropoffCoords)
                   }}
                 />
                 <span>行經高速/快速道路</span>
               </label>
               {driverArrivedAt && (
-                <span className="text-sm">司機已等候 {Math.floor((Date.now() - driverArrivedAt) / 60000)} 分鐘</span>
+                <span className="text-sm">司機已等候 {formatMMSS(((Date.now() - driverArrivedAt) / 1000))}</span>
               )}
             </div>
             {surgeMultiplier > 1 && (
@@ -931,5 +978,16 @@ export default function PassengerHome() {
         )}
       </div>
     </div>
+    {showHighwayAlert && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
+        <div className="w-full max-w-md rounded-2xl p-6" style={{ backgroundImage: 'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color: '#111' }}>
+          <div className="text-lg font-bold mb-2">提醒</div>
+          <div className="text-sm mb-4">選擇高速道路可能縮短行程時間，但預估金額將包含里程增加與潛在通行費。</div>
+          <div className="flex justify-end space-x-2">
+            <button onClick={() => setShowHighwayAlert(false)} className="px-4 py-2 rounded-2xl" style={{ background: '#111', color: '#FFD700' }}>知道了</button>
+          </div>
+        </div>
+      </div>
+    )}
   )
 }
