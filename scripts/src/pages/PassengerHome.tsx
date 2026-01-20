@@ -794,6 +794,7 @@ export default function PassengerHome() {
   }
 
   return (
+    <>
     <div className="h-screen bg-transparent relative">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-white shadow-md p-4">
@@ -1108,5 +1109,6 @@ export default function PassengerHome() {
         </div>
       </div>
     )}
+    </>
   )
 }
