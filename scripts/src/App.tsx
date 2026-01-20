@@ -49,7 +49,7 @@ function App() {
       <BrowserRouter>
         <header className="app-header">
           <div className="brand" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>Black Feather 車隊</div>
-          <nav className="nav flex items-center gap-10" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
+          <nav className="nav flex items-center gap-12" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
             <Link to="/login" className="hover:text-white">登入</Link>
             <Link to="/register" className="hover:text-white">註冊</Link>
             <Link to="/passenger" className="hover:text-white">乘客</Link>

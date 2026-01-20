@@ -6,6 +6,7 @@
   min-height: 100vh !important;
   background: linear-gradient(180deg, #050505 0%, #1A1A1A 100%) !important;
   color: white;
+  letter-spacing: 0.02em;
 }
 
 @tailwind base;
@@ -21,4 +22,30 @@
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+input, select, textarea {
+  color: #ffffff !important;
+  background-color: #1a1a1a !important;
+  border: 1px solid rgba(212, 175, 55, 0.3) !important;
+}
+input::placeholder, textarea::placeholder {
+  color: #d1d5db !important;
+}
+label {
+  display: block;
+  margin-bottom: 6px;
+}
+button {
+  background-image: linear-gradient(to right, #D4AF37, #B8860B) !important;
+  color: #111111 !important;
+  border: 1px solid rgba(212, 175, 55, 0.35);
+}
+.nav a {
+  position: relative;
+  transition: text-shadow 0.2s ease, color 0.2s ease;
+}
+.nav a:hover {
+  text-decoration: underline;
+  text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
 }
