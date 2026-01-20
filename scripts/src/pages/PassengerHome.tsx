@@ -245,6 +245,11 @@ export default function PassengerHome() {
                 setPickupAddress(address)
                 setPickupCoords(coords)
               })
+              try { (google.maps as any).event.trigger(mapInstance, 'resize') } catch {}
+              setTimeout(() => { try { (google.maps as any).event.trigger(mapInstance, 'resize') } catch {} }, 300)
+              const onResize = () => { try { (google.maps as any).event.trigger(mapInstance, 'resize') } catch {} }
+              window.addEventListener('resize', onResize)
+              setTimeout(() => { window.removeEventListener('resize', onResize) }, 60000)
               try {
                 const bounds = new google.maps.Circle({ center: coords as any, radius: 20000 }).getBounds()
                 const acPickup = new (google.maps as any).places.Autocomplete(document.getElementById('pickup-input') as HTMLInputElement, { bounds, strictBounds: true })
@@ -279,6 +284,8 @@ export default function PassengerHome() {
             if (mapRef.current) {
               const mapInstance = await createMap(mapRef.current, { center: defaultCoords, zoom: 13 })
               setMap(mapInstance)
+              try { (google.maps as any).event.trigger(mapInstance, 'resize') } catch {}
+              setTimeout(() => { try { (google.maps as any).event.trigger(mapInstance, 'resize') } catch {} }, 300)
             }
           }
         )
@@ -686,7 +693,7 @@ export default function PassengerHome() {
 
       {/* Map */}
       {useGoogle ? (
-        <div ref={mapRef} className="h-full w-full" />
+        <div id="map" ref={mapRef} className="h-full w-full" />
       ) : (
         <div className="h-full w-full">
           <RideLeafletMap

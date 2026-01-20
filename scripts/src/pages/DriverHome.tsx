@@ -91,10 +91,12 @@ export default function DriverHome() {
         (position) => {
           const coords = { lat: position.coords.latitude, lng: position.coords.longitude }
           setMapCenter(coords)
+          try { setTimeout(() => { const el = document.getElementById('driver-map'); if (el) window.dispatchEvent(new Event('resize')) }, 300) } catch {}
         },
         () => {
           const defaultCoords = { lat: 25.033, lng: 121.565 }
           setMapCenter(defaultCoords)
+          try { setTimeout(() => { const el = document.getElementById('driver-map'); if (el) window.dispatchEvent(new Event('resize')) }, 300) } catch {}
         }
       )
     } catch {}
@@ -502,6 +504,7 @@ export default function DriverHome() {
       </div>
 
       {/* Map */}
+      <div id="driver-map" className="h-full w-full">
       <RideLeafletMap
         center={mapCenter}
         pickup={currentTrip?.pickup_location || undefined}
@@ -510,6 +513,7 @@ export default function DriverHome() {
         path={routePath}
         suggestions={[]}
       />
+      </div>
 
         {/* Driver Status Panel */}
         <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-6">

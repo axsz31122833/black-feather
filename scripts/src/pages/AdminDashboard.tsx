@@ -1406,7 +1406,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <h4 className="text-md font-semibold text-gray-200 mb-2">地圖</h4>
-                  <div className="rounded-2xl shadow-2xl overflow-hidden" style={{ height: 320 }}>
+                  <div id="admin-map" className="rounded-2xl shadow-2xl overflow-hidden w-full" style={{ height: 320 }}>
                     <Suspense fallback={<div className="p-3 text-xs text-gray-600">載入地圖...</div>}>
                       {(() => {
                         const ride = trips.find(t => t.id === dispatchRideId) as any

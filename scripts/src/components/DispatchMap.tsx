@@ -1,5 +1,5 @@
 import React from 'react'
-import { MapContainer, TileLayer, Marker, Popup, Circle } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Popup, Circle, useMap } from 'react-leaflet'
 
 type Driver = {
   id: string
@@ -35,8 +35,20 @@ export default function DispatchMap({
     return ageSec < 120 ? '#22c55e' : ageSec < 600 ? '#f59e0b' : '#9ca3af'
   }
   const isCand = (id: string) => candidateIds.includes(id)
+  const MapInvalidator = () => {
+    const map = useMap()
+    React.useEffect(() => {
+      try { map.invalidateSize() } catch {}
+      const t = setTimeout(() => { try { map.invalidateSize() } catch {} }, 300)
+      const onResize = () => { try { map.invalidateSize() } catch {} }
+      window.addEventListener('resize', onResize)
+      return () => { clearTimeout(t); window.removeEventListener('resize', onResize) }
+    }, [map])
+    return null
+  }
   return (
-    <MapContainer {...({ center: defaultCenter as any, zoom: 12, style: { height: '100%' } } as any)}>
+    <MapContainer {...({ center: defaultCenter as any, zoom: 12, style: { height: '100%', width: '100%' } } as any)}>
+      <MapInvalidator />
       <TileLayer {...({ url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', crossOrigin: 'anonymous' } as any)} />
       {pickup && (
         <Marker position={[pickup.lat, pickup.lng]}>
@@ -72,4 +84,3 @@ export default function DispatchMap({
     </MapContainer>
   )
 }
-

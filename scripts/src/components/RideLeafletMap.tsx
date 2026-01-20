@@ -1,5 +1,5 @@
 import React from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
 
 export default function RideLeafletMap({
@@ -24,8 +24,20 @@ export default function RideLeafletMap({
   const Pl: any = Polyline
   const Pp: any = Popup
   const carIcon = L.divIcon({ html: '<span style="font-size:18px">🚖</span>' })
+  const MapInvalidator = () => {
+    const map = useMap()
+    React.useEffect(() => {
+      try { map.invalidateSize() } catch {}
+      const t = setTimeout(() => { try { map.invalidateSize() } catch {} }, 300)
+      const onResize = () => { try { map.invalidateSize() } catch {} }
+      window.addEventListener('resize', onResize)
+      return () => { clearTimeout(t); window.removeEventListener('resize', onResize) }
+    }, [map])
+    return null
+  }
   return (
     <M center={[center.lat, center.lng]} zoom={13} style={{ width: '100%', height: '100%' }}>
+      <MapInvalidator />
       <T url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       {pickup && (
         <Mk position={[pickup.lat, pickup.lng]}>
