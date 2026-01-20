@@ -34,6 +34,7 @@ export default function DriverHome() {
   const [showAccept, setShowAccept] = useState(false)
   const [nextHint, setNextHint] = useState<string>('')
   const [steps, setSteps] = useState<Array<{ instruction: string; distance: number }>>([])
+  const [waitCountdownSec, setWaitCountdownSec] = useState<number>(0)
 
   useEffect(() => {
     if (user) {
@@ -72,6 +73,13 @@ export default function DriverHome() {
       displayTripRoute()
     }
   }, [currentTrip])
+  useEffect(() => {
+    if (!waitCountdownSec) return
+    const t = setInterval(() => {
+      setWaitCountdownSec(v => v > 0 ? v - 1 : 0)
+    }, 1000)
+    return () => clearInterval(t)
+  }, [waitCountdownSec])
   useEffect(() => {
     if (currentTrip?.status === 'completed') setPostFlowStep(1)
     else setPostFlowStep(0)
@@ -411,6 +419,7 @@ export default function DriverHome() {
     try {
       await supabase.from('ops_events').insert({ event_type: 'driver_arrived', ref_id: currentTrip.id })
       alert('已標記：到達上車地點')
+      setWaitCountdownSec(300)
     } catch (error) {
       console.error('Error marking arrived:', error)
       alert('標記到達失敗，請稍後再試')
@@ -646,6 +655,11 @@ export default function DriverHome() {
 
             {/* Action Buttons */}
             <div className="flex space-x-2 mt-4">
+              {waitCountdownSec > 0 && (
+                <div className="px-3 py-2 rounded-2xl bg-[#1a1a1a] border border-[#D4AF37]/30 text-white">
+                  等候倒數：{Math.floor(waitCountdownSec / 60)} 分 {waitCountdownSec % 60} 秒
+                </div>
+              )}
               {currentTrip && (
                 <>
                   <button

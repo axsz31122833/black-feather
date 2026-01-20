@@ -54,6 +54,7 @@ export default function PassengerHome() {
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 25.033, lng: 121.565 })
   const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
   const [mapSuggestions, setMapSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>>([])
+  const [preferHighway, setPreferHighway] = useState(false)
   const geocodeOSM = async (address: string): Promise<{ lat: number; lng: number }> => {
     const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(address)}`
     const resp = await fetch(url, { headers: { 'Accept': 'application/json' } })
@@ -405,7 +406,8 @@ export default function PassengerHome() {
   const calculateRoute = async (pickup: { lat: number; lng: number }, dropoff: { lat: number; lng: number }) => {
     try {
       const r = await getRouteWithFallbacks(pickup, dropoff)
-      const price = calculateFare(r.durationMin, r.distanceKm)
+      const adjKm = preferHighway ? r.distanceKm * 1.1 : r.distanceKm
+      const price = calculateFare(r.durationMin, adjKm)
       
       setDistance(r.distanceKm)
       setEstimatedTime(`${r.durationMin} 分鐘`)
@@ -413,7 +415,7 @@ export default function PassengerHome() {
       
       // Update car type prices
       carTypes.forEach(carType => {
-        const carPrice = calculateFare(r.durationMin, r.distanceKm)
+        const carPrice = calculateFare(r.durationMin, adjKm)
         carType.price = carPrice
       })
       if (!useGoogle) {
@@ -421,6 +423,29 @@ export default function PassengerHome() {
       }
     } catch (error) {
       console.error('Error calculating route:', error)
+    }
+  }
+
+  const handleCancelTrip = async () => {
+    if (!currentTrip || !user) return
+    try {
+      const waitedMs = driverArrivedAt ? (Date.now() - driverArrivedAt) : 0
+      const waitedMin = Math.floor(waitedMs / 60000)
+      if (waitedMin >= 5) {
+        const ok = window.confirm('司機已等候超過 5 分鐘，取消需支付 $100 取消費。是否確認取消？')
+        if (!ok) return
+        await supabase.from('trips').update({ status: 'cancelled_with_fee' }).eq('id', currentTrip.id)
+        try { await supabase.from('ops_events').insert({ event_type: 'cancelled_with_fee', ref_id: currentTrip.id, payload: { fee: 100 } }) } catch {}
+        alert('已取消行程（需支付 $100 取消費）')
+      } else {
+        const ok = window.confirm('確認取消行程？')
+        if (!ok) return
+        await supabase.from('trips').update({ status: 'cancelled' }).eq('id', currentTrip.id)
+        try { await supabase.from('ops_events').insert({ event_type: 'cancelled', ref_id: currentTrip.id }) } catch {}
+        alert('已取消行程')
+      }
+    } catch {
+      alert('取消失敗，請稍後再試')
     }
   }
 
@@ -843,6 +868,24 @@ export default function PassengerHome() {
               </span>
               <span className="font-bold text-lg text-blue-600">${Math.round(estimatedPrice * surgeMultiplier)}</span>
             </div>
+            <div className="mt-3 flex items-center justify-between">
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={preferHighway}
+                  onChange={(e) => {
+                    const v = e.target.checked
+                    setPreferHighway(v)
+                    alert('行走高速道路通常較快，但里程與通行費會增加預估金額。')
+                    if (pickupCoords && dropoffCoords) calculateRoute(pickupCoords, dropoffCoords)
+                  }}
+                />
+                <span>行經高速/快速道路</span>
+              </label>
+              {driverArrivedAt && (
+                <span className="text-sm">司機已等候 {Math.floor((Date.now() - driverArrivedAt) / 60000)} 分鐘</span>
+              )}
+            </div>
             {surgeMultiplier > 1 && (
               <div className="mt-1 text-xs text-yellow-700">動態加價 x{surgeMultiplier.toFixed(1)}（依司機供給與抵達時間）</div>
             )}
@@ -870,6 +913,15 @@ export default function PassengerHome() {
         >
           {isLoading ? '預約中...' : '立即叫車'}
         </button>
+        {currentTrip && ['requested','accepted'].includes(currentTrip.status) && (
+          <button
+            onClick={handleCancelTrip}
+            className="w-full mt-3 py-3 px-4 rounded-2xl text-black"
+            style={{ backgroundImage: 'linear-gradient(to right, #FFD700, #B8860B)' }}
+          >
+            取消行程
+          </button>
+        )}
       </div>
     </div>
   )

@@ -36,6 +36,9 @@ label {
   display: block;
   margin-bottom: 6px;
 }
+.form-group {
+  margin-bottom: 1rem;
+}
 button {
   background-image: linear-gradient(to right, #D4AF37, #B8860B) !important;
   color: #111111 !important;

@@ -850,17 +850,41 @@ export default function AdminDashboard() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
-            {/* Stats Cards */}
+            <div className="mb-6">
+              <button
+                onClick={() => setActiveTab('overview')}
+                className="px-4 py-2 rounded-2xl text-black"
+                style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
+              >
+                設定面板
+              </button>
+              <div className="mt-3 rounded-2xl bg-[#1a1a1a] border border-[#D4AF37]/30 shadow-2xl p-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <label className="text-sm text-gray-300 mb-4">基本費</label>
+                    <input className="w-full px-3 py-2 rounded-2xl bg-[#1a1a1a] text-white border border-[#D4AF37]/30" placeholder="70" />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-300 mb-4">每分鐘</label>
+                    <input className="w-full px-3 py-2 rounded-2xl bg-[#1a1a1a] text-white border border-[#D4AF37]/30" placeholder="3" />
+                  </div>
+                  <div>
+                    <label className="text-sm text-gray-300 mb-4">每公里</label>
+                    <input className="w-full px-3 py-2 rounded-2xl bg-[#1a1a1a] text-white border border-[#D4AF37]/30" placeholder="15" />
+                  </div>
+                </div>
+              </div>
+            </div>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl border border-[#D4AF37]/30 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">總用戶數</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.totalUsers}</p>
+                    <p className="text-sm font-medium text-gray-300">總用戶數</p>
+                    <p className="text-3xl font-bold text-white">{stats.totalUsers}</p>
                   </div>
-                  <Users className="w-8 h-8 text-blue-600" />
+                  <Users className="w-8 h-8" />
                 </div>
-                <div className="mt-4 flex items-center text-sm text-gray-600">
+                <div className="mt-4 flex items-center text-sm text-gray-300">
                   <span>乘客: {stats.passengers}</span>
                   <span className="mx-2">|</span>
                   <span>司機: {stats.drivers}</span>
@@ -868,46 +892,43 @@ export default function AdminDashboard() {
                   <span>管理員: {stats.admins}</span>
                 </div>
               </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl border border-[#D4AF37]/30 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">總行程數</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.totalTrips}</p>
+                    <p className="text-sm font-medium text-gray-300">總行程數</p>
+                    <p className="text-3xl font-bold text-white">{stats.totalTrips}</p>
                   </div>
-                  <Car className="w-8 h-8 text-green-600" />
+                  <Car className="w-8 h-8" />
                 </div>
                 <div className="mt-4 flex items-center">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-300">
                     進行中: {stats.activeTrips} 筆
                   </span>
                 </div>
               </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl border border-[#D4AF37]/30 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">總收入</p>
-                    <p className="text-3xl font-bold text-gray-900">${stats.totalRevenue}</p>
+                    <p className="text-sm font-medium text-gray-300">總收入</p>
+                    <p className="text-3xl font-bold text-white">${stats.totalRevenue}</p>
                   </div>
-                  <DollarSign className="w-8 h-8 text-yellow-600" />
+                  <DollarSign className="w-8 h-8" />
                 </div>
                 <div className="mt-4 flex items-center">
-                  <TrendingUp className="w-4 h-4 text-green-500 mr-1" />
-                  <span className="text-sm text-green-600">+12% 本月</span>
+                  <TrendingUp className="w-4 h-4 mr-1" />
+                  <span className="text-sm text-gray-300">+12% 本月</span>
                 </div>
               </div>
-
-              <div className="bg-white rounded-lg shadow-md p-6">
+              <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl border border-[#D4AF37]/30 p-6 text-white">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-600">活躍行程</p>
-                    <p className="text-3xl font-bold text-gray-900">{stats.activeTrips}</p>
+                    <p className="text-sm font-medium text-gray-300">活躍行程</p>
+                    <p className="text-3xl font-bold text-white">{stats.activeTrips}</p>
                   </div>
-                  <MapPin className="w-8 h-8 text-purple-600" />
+                  <MapPin className="w-8 h-8" />
                 </div>
                 <div className="mt-4 flex items-center">
-                  <span className="text-sm text-gray-600">
+                  <span className="text-sm text-gray-300">
                     即時監控中
                   </span>
                 </div>
@@ -915,29 +936,29 @@ export default function AdminDashboard() {
             </div>
 
             {/* Recent Activity */}
-            <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">最近活動</h3>
+            <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl border border-[#D4AF37]/30 p-6 text-white">
+              <h3 className="text-lg font-semibold mb-4">最近活動</h3>
               <div className="space-y-4">
                 {trips.slice(0, 5).map((trip) => (
-                  <div key={trip.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div key={trip.id} className="flex items-center justify-between p-4 bg-[#111111] rounded-2xl border border-[#D4AF37]/20">
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
-                        <MapPin className="w-5 h-5 text-green-600" />
-                        <span className="text-sm text-gray-900">{trip.pickup_address}</span>
+                        <MapPin className="w-5 h-5" />
+                        <span className="text-sm">{trip.pickup_address}</span>
                       </div>
                       <div className="flex items-center space-x-2">
-                        <MapPin className="w-5 h-5 text-red-600" />
-                        <span className="text-sm text-gray-900">{trip.dropoff_address}</span>
+                        <MapPin className="w-5 h-5" />
+                        <span className="text-sm">{trip.dropoff_address}</span>
                       </div>
                     </div>
                     <div className="flex items-center space-x-4">
                       <span className={`px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(trip.status)}`}>
                         {getStatusText(trip.status)}
                       </span>
-                      <span className="text-sm font-medium text-gray-900">
+                      <span className="text-sm font-medium">
                         ${trip.final_price || trip.estimated_price}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs">
                         {formatDate(trip.created_at)}
                       </span>
                     </div>
