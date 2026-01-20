@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
 import { useTripStore } from '../stores/trips'
 import { estimateTripPrice, getRouteWithFallbacks, initGoogleMaps, createMap, geocodeAddress as gGeocode, reverseGeocode as gReverseGeocode } from '../utils/maps'
+import { calculateFare } from '../utils/fare'
 import RideLeafletMap from '../components/RideLeafletMap'
 import { env } from '../config/env'
 import { recordPayment } from '../utils/payments'
@@ -43,12 +44,13 @@ export default function PassengerHome() {
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [arrivalSeconds, setArrivalSeconds] = useState<number | null>(null)
+  const [driverArrivedAt, setDriverArrivedAt] = useState<number | null>(null)
   const [homeFavorite, setHomeFavorite] = useState<{ address: string; lat: number; lng: number } | null>(null)
   const [workFavorite, setWorkFavorite] = useState<{ address: string; lat: number; lng: number } | null>(null)
   const [surgeMultiplier, setSurgeMultiplier] = useState(1)
   const [rideMode, setRideMode] = useState<'immediate' | 'scheduled'>('immediate')
   const [scheduledTime, setScheduledTime] = useState('')
-  const useGoogle = false
+  const useGoogle = true
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 25.033, lng: 121.565 })
   const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
   const [mapSuggestions, setMapSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>>([])
@@ -114,6 +116,24 @@ export default function PassengerHome() {
       return unsubscribe
     }
   }, [currentTrip])
+  useEffect(() => {
+    try {
+      const ch = supabase
+        .channel('passenger-events')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ops_events' }, (payload: any) => {
+          const ev = payload.new
+          if (!ev) return
+          if (ev.ref_id === currentTrip?.id && ev.event_type === 'driver_arrived') {
+            setDriverArrivedAt(Date.now())
+          }
+          if (ev.ref_id === currentTrip?.id && ev.event_type === 'chat') {
+            // TripChat component will reflect realtime; no-op here
+          }
+        })
+        .subscribe()
+      return () => { ch.unsubscribe() }
+    } catch {}
+  }, [currentTrip?.id])
 
   useEffect(() => {
     initializeMap()
@@ -173,6 +193,19 @@ export default function PassengerHome() {
             setArrivalSeconds(r.durationMin * 60)
           })()
         } catch {}
+        try {
+          if (useGoogle) {
+            const svc = new (google.maps as any).DistanceMatrixService()
+            svc.getDistanceMatrix(
+              { origins: [driverLocation as any], destinations: [pickupCoords as any], travelMode: 'DRIVING' },
+              (res: any) => {
+                const elem = res?.rows?.[0]?.elements?.[0]
+                const sec = elem?.duration?.value || null
+                if (sec) setArrivalSeconds(sec)
+              }
+            )
+          }
+        } catch {}
       }
     }
   }, [driverLocation, map, currentTrip, driverMarker])
@@ -211,6 +244,32 @@ export default function PassengerHome() {
                 setPickupAddress(address)
                 setPickupCoords(coords)
               })
+              try {
+                const bounds = new google.maps.Circle({ center: coords as any, radius: 20000 }).getBounds()
+                const acPickup = new (google.maps as any).places.Autocomplete(document.getElementById('pickup-input') as HTMLInputElement, { bounds, strictBounds: true })
+                acPickup.addListener('place_changed', () => {
+                  const p = acPickup.getPlace()
+                  if (p && p.geometry && p.geometry.location) {
+                    const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                    setPickupCoords(loc)
+                    setPickupAddress(p.formatted_address || p.name || '')
+                    mapInstance.setCenter(loc as any)
+                    mapInstance.setZoom(15)
+                  }
+                })
+                const acDrop = new (google.maps as any).places.Autocomplete(document.getElementById('dropoff-input') as HTMLInputElement, { bounds, strictBounds: true })
+                acDrop.addListener('place_changed', () => {
+                  const p = acDrop.getPlace()
+                  if (p && p.geometry && p.geometry.location) {
+                    const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                    setDropoffCoords(loc)
+                    setDropoffAddress(p.formatted_address || p.name || '')
+                    mapInstance.setCenter(loc as any)
+                    mapInstance.setZoom(15)
+                    if (pickupCoords) calculateRoute(pickupCoords, loc)
+                  }
+                })
+              } catch {}
             }
           },
           async () => {
@@ -346,7 +405,7 @@ export default function PassengerHome() {
   const calculateRoute = async (pickup: { lat: number; lng: number }, dropoff: { lat: number; lng: number }) => {
     try {
       const r = await getRouteWithFallbacks(pickup, dropoff)
-      const price = estimateTripPrice(r.distanceKm, selectedCarType)
+      const price = calculateFare(r.durationMin, r.distanceKm)
       
       setDistance(r.distanceKm)
       setEstimatedTime(`${r.durationMin} 分鐘`)
@@ -354,7 +413,7 @@ export default function PassengerHome() {
       
       // Update car type prices
       carTypes.forEach(carType => {
-        const carPrice = estimateTripPrice(r.distanceKm, carType.id)
+        const carPrice = calculateFare(r.durationMin, r.distanceKm)
         carType.price = carPrice
       })
       if (!useGoogle) {
@@ -631,14 +690,34 @@ export default function PassengerHome() {
               type="text"
               value={pickupAddress}
               onChange={(e) => setPickupAddress(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              id="pickup-input"
+              className="flex-1 px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="輸入上車地址"
             />
             <button
               onClick={handlePickupSearch}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 rounded-2xl text-black transition-colors"
+              style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
             >
               <Search className="w-5 h-5" />
+            </button>
+            <button
+              onClick={async () => {
+                try {
+                  await navigator.geolocation.getCurrentPosition(async (pos) => {
+                    const coords = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+                    setPickupCoords(coords)
+                    const addr = useGoogle ? await gReverseGeocode(coords.lat, coords.lng) : await reverseOSM(coords.lat, coords.lng)
+                    setPickupAddress(addr)
+                    if (useGoogle && map) map.setCenter(coords as any)
+                    else setMapCenter(coords)
+                  })
+                } catch {}
+              }}
+              className="px-4 py-2 rounded-2xl text-black transition-colors"
+              style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
+            >
+              📍 使用當前位置
             </button>
             <button onClick={saveHome} className="px-3 py-2 bg-gray-200 rounded">存為住家</button>
             {homeFavorite && (
@@ -678,12 +757,14 @@ export default function PassengerHome() {
               type="text"
               value={dropoffAddress}
               onChange={(e) => setDropoffAddress(e.target.value)}
-              className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              id="dropoff-input"
+              className="flex-1 px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="輸入目的地地址"
             />
             <button
               onClick={handleDropoffSearch}
-              className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="px-4 py-2 rounded-2xl text-black transition-colors"
+              style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
             >
               <Search className="w-5 h-5" />
             </button>
@@ -784,7 +865,8 @@ export default function PassengerHome() {
         <button
           onClick={handleBookRide}
           disabled={!pickupCoords || !dropoffCoords || isLoading}
-          className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+          className="w-full py-3 px-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium text-black"
+          style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
         >
           {isLoading ? '預約中...' : '立即叫車'}
         </button>

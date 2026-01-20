@@ -646,6 +646,30 @@ export default function DriverHome() {
 
             {/* Action Buttons */}
             <div className="flex space-x-2 mt-4">
+              {currentTrip && (
+                <>
+                  <button
+                    onClick={async () => {
+                      if (!currentTrip || !user) return
+                      try { await supabase.from('ops_events').insert({ event_type: 'chat', ref_id: currentTrip.id, payload: { from: 'driver', text: '我尿急，稍後 3 分鐘' } }) } catch {}
+                    }}
+                    className="px-3 py-2 rounded-2xl text-black"
+                    style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
+                  >
+                    尿急
+                  </button>
+                  <button
+                    onClick={async () => {
+                      if (!currentTrip || !user) return
+                      try { await supabase.from('ops_events').insert({ event_type: 'chat', ref_id: currentTrip.id, payload: { from: 'driver', text: '我已抵達上車地點' } }) } catch {}
+                    }}
+                    className="px-3 py-2 rounded-2xl text-black"
+                    style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
+                  >
+                    已抵達
+                  </button>
+                </>
+              )}
               {currentTrip.status === 'requested' && (
                 <button
                   onClick={handleAcceptTrip}
@@ -662,18 +686,20 @@ export default function DriverHome() {
                   開始行程
                 </button>
               )}
-              {currentTrip.status === 'accepted' && (
-                <button
-                  onClick={handleArrived}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  到達上車地點
-                </button>
-              )}
+            {currentTrip.status === 'accepted' && (
+              <button
+                onClick={handleArrived}
+                className="px-4 py-3 rounded-2xl text-black font-semibold"
+                style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
+              >
+                到達上車地點
+              </button>
+            )}
               {currentTrip.status === 'accepted' && (
                 <button
                   onClick={handlePickedUp}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="px-4 py-2 rounded-2xl text-black"
+                  style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
                 >
                   乘客上車
                 </button>
@@ -681,7 +707,8 @@ export default function DriverHome() {
               {currentTrip.status === 'accepted' && (
                 <button
                   onClick={openNavigation}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
+                  className="px-4 py-2 rounded-2xl text-black"
+                  style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
                 >
                   導航至上車地點
                 </button>
@@ -689,7 +716,8 @@ export default function DriverHome() {
               {currentTrip && (
                 <button
                   onClick={showRidePath}
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+                  className="px-4 py-2 rounded-2xl text-black"
+                  style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
                 >
                   查看行程軌跡
                 </button>
