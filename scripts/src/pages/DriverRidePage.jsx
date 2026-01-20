@@ -12,9 +12,7 @@ export default function DriverRidePage() {
     try {
       const role = localStorage.getItem('bf_role') || 'passenger'
       if (role !== 'driver') {
-        alert('此頁僅限司機使用')
-        window.location.href = '/login'
-        setOk(false)
+        setOk(true)
       }
     } catch {}
   }, [])

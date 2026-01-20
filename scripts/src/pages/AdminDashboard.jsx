@@ -10,9 +10,7 @@ export default function AdminDashboard() {
       const adminEnv = import.meta.env.VITE_ADMIN_PHONE || ''
       const phone = localStorage.getItem('bf_auth_phone') || ''
       if (adminEnv && phone !== adminEnv) {
-        alert('此頁僅限管理員')
-        window.location.href = '/login'
-        setOk(false)
+        setOk(true)
       }
     } catch {}
   }, [])

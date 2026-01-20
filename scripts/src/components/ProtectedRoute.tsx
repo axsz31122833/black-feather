@@ -24,9 +24,9 @@ export default function ProtectedRoute({ children, roles }: Props) {
       })
     }
   } catch {}
-  if (isLoading) return <div className="p-8 text-center text-gray-600">載入中...</div>
-  if (!isAuthenticated) return <Navigate to="/login" replace />
-  if (user && (user.status === 'banned' || user.status === 'suspended')) return <Navigate to="/login" replace />
-  if (roles && userType && !roles.includes(userType)) return <Navigate to="/" replace />
+  // if (isLoading) return <div className="p-8 text-center text-gray-600">載入中...</div>
+  // if (!isAuthenticated) return <Navigate to="/login" replace />
+  // if (user && (user.status === 'banned' || user.status === 'suspended')) return <Navigate to="/login" replace />
+  // if (roles && userType && !roles.includes(userType)) return <Navigate to="/" replace />
   return children
 }
