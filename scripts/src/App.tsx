@@ -48,8 +48,8 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <header className="app-header">
-          <div className="brand text-yellow-300">Black Feather 車隊</div>
-          <nav className="nav flex items-center gap-6 text-yellow-300">
+          <div className="brand" style={{ color: '#D4AF37', textShadow: '0 0 8px rgba(212,175,55,0.6)' }}>Black Feather 車隊</div>
+          <nav className="nav flex items-center gap-8" style={{ color: '#D4AF37', textShadow: '0 0 8px rgba(212,175,55,0.6)' }}>
             <Link to="/login" className="hover:text-white">登入</Link>
             <Link to="/register" className="hover:text-white">註冊</Link>
             <Link to="/passenger" className="hover:text-white">乘客</Link>

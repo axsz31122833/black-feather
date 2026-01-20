@@ -7,7 +7,7 @@ type UserType = 'passenger' | 'driver' | 'admin'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { signIn, isLoading } = useAuthStore()
+  const { isLoading } = useAuthStore()
   
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,30 +19,20 @@ export default function Login() {
     setError('')
 
     try {
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('dev') === '1') {
-        ;(useAuthStore as any).setState({
-          user: {
-            id: 'dev-' + userType,
-            email,
-            phone: '',
-            user_type: userType,
-            status: 'active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString()
-          },
-          isAuthenticated: true,
-          userType,
-          isLoading: false
-        })
-        switch (userType) {
-          case 'passenger': navigate('/'); break
-          case 'driver': navigate('/driver'); break
-          case 'admin': navigate('/admin'); break
-        }
-        return
-      }
-      await signIn(email, password, userType)
+      ;(useAuthStore as any).setState({
+        user: {
+          id: 'dev-' + userType,
+          email,
+          phone: '',
+          user_type: userType,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        },
+        isAuthenticated: true,
+        userType,
+        isLoading: false
+      })
       
       // Redirect based on user type
       switch (userType) {
@@ -74,9 +64,9 @@ export default function Login() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">登入</h1>
           <p className="text-gray-600">歡迎回來！請選擇您的身份</p>
           <div className="mt-4 grid grid-cols-1 gap-2">
-            <button onClick={() => navigate('/admin/home?dev=1&role=admin')} className="w-full py-3 rounded-lg" style={{ background:'#f59e0b', color:'#111' }}>進入管理端（跳過驗證）</button>
-            <button onClick={() => navigate('/driver/home?dev=1&role=driver')} className="w-full py-3 rounded-lg" style={{ background:'#f59e0b', color:'#111' }}>進入司機端（跳過驗證）</button>
-            <button onClick={() => navigate('/passenger/home?dev=1&role=passenger')} className="w-full py-3 rounded-lg" style={{ background:'#f59e0b', color:'#111' }}>進入乘客端（跳過驗證）</button>
+            <button onClick={() => navigate('/admin/home?dev=1&role=admin')} className="w-full py-3 rounded-lg" style={{ background:'#D4AF37', color:'#111', boxShadow:'0 0 10px rgba(212,175,55,0.6)' }}>進入管理端（跳過驗證）</button>
+            <button onClick={() => navigate('/driver/home?dev=1&role=driver')} className="w-full py-3 rounded-lg" style={{ background:'#D4AF37', color:'#111', boxShadow:'0 0 10px rgba(212,175,55,0.6)' }}>進入司機端（跳過驗證）</button>
+            <button onClick={() => navigate('/passenger/home?dev=1&role=passenger')} className="w-full py-3 rounded-lg" style={{ background:'#D4AF37', color:'#111', boxShadow:'0 0 10px rgba(212,175,55,0.6)' }}>進入乘客端（跳過驗證）</button>
           </div>
         </div>
 
