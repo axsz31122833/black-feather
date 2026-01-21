@@ -13,7 +13,7 @@ export default function Register() {
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [phone, setPhone] = useState('')
-  const [userType, setUserType] = useState<UserType>('passenger')
+  const [name, setName] = useState('')
   const [error, setError] = useState('')
   const [inviteCode, setInviteCode] = useState('')
 
@@ -40,19 +40,32 @@ export default function Register() {
           return
         }
       }
-      await signUp(email, password, phone, 'passenger')
-      
-      // Redirect to appropriate dashboard
-      navigate(userType === 'passenger' ? '/' : '/driver')
+      await signUp(email, password, phone, 'passenger', name)
+      try {
+        const { supabase } = await import('../lib/supabase')
+        const { data: me } = await supabase.auth.getUser()
+        const uid = me?.user?.id
+        if (uid) {
+          const { data: inviter } = await supabase.from('users').select('id,name,phone').eq('phone', inviteCode).limit(1)
+          const inv = inviter && inviter[0]
+          await supabase.from('profiles').upsert({
+            user_id: uid,
+            name,
+            phone,
+            created_at: new Date().toISOString(),
+            ride_frequency: 0,
+            recommended_by_phone: inv?.phone || inviteCode,
+            recommended_by_name: inv?.name || null
+          }, { onConflict: 'user_id' } as any)
+        }
+      } catch {}
+      navigate('/')
     } catch (err) {
       setError(err instanceof Error ? err.message : '註冊失敗')
     }
   }
 
-  const userTypeOptions = [
-    { value: 'passenger', label: '乘客', icon: User, color: 'text-blue-600' },
-    { value: 'driver', label: '司機', icon: Car, color: 'text-green-600' }
-  ]
+  const userTypeOptions: any[] = []
 
   return (
     <div className="min-h-screen bg-transparent text-white flex items-center justify-center p-4">
@@ -70,29 +83,18 @@ export default function Register() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              用戶類型
+            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">
+              姓名
             </label>
-            <div className="grid grid-cols-2 gap-2">
-              {userTypeOptions.map((option) => {
-                const Icon = option.icon
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    onClick={() => setUserType(option.value as UserType)}
-                    className={`p-3 rounded-2xl border-2 transition-all ${
-                      userType === option.value
-                        ? 'border-[#D4AF37] bg-[#1a1a1a]'
-                        : 'border-[#D4AF37]/30 hover:border-[#D4AF37]/50'
-                    }`}
-                  >
-                    <Icon className={`w-6 h-6 mx-auto mb-1`} />
-                    <span className="text-xs text-gray-200">{option.label}</span>
-                  </button>
-                )
-              })}
-            </div>
+            <input
+              id="name"
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              placeholder="請輸入您的姓名"
+              required
+            />
           </div>
 
           <div>
@@ -125,22 +127,20 @@ export default function Register() {
             />
           </div>
           
-          {userType === 'passenger' && (
-            <div>
-              <label htmlFor="invite" className="block text-sm font-medium text-gray-200 mb-2">
-                邀請碼
-              </label>
-              <input
-                id="invite"
-                type="text"
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                placeholder="請輸入您的邀請碼（推薦人手機號碼）"
-                required
-              />
-            </div>
-          )}
+          <div>
+            <label htmlFor="invite" className="block text-sm font-medium text-gray-200 mb-2">
+              邀請碼
+            </label>
+            <input
+              id="invite"
+              type="text"
+              value={inviteCode}
+              onChange={(e) => setInviteCode(e.target.value)}
+              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              placeholder="請輸入您的邀請碼（推薦人手機號碼）"
+              required
+            />
+          </div>
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">

@@ -35,6 +35,8 @@ export default function DriverHome() {
   const [nextHint, setNextHint] = useState<string>('')
   const [steps, setSteps] = useState<Array<{ instruction: string; distance: number }>>([])
   const [waitCountdownSec, setWaitCountdownSec] = useState<number>(0)
+  const [showSupportModal, setShowSupportModal] = useState(false)
+  const [supportText, setSupportText] = useState('')
   const [incomingOffer, setIncomingOffer] = useState<any>(null)
   const [offerCountdown, setOfferCountdown] = useState<number>(0)
 
@@ -499,22 +501,29 @@ export default function DriverHome() {
     <div className="h-screen bg-transparent relative">
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-white shadow-md p-4">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">司機控制台</h1>
-          <div className="flex items-center space-x-4">
-            <button
-              onClick={() => navigate('/driver/trips')}
-              className="text-blue-600 hover:text-blue-800"
-            >
-              我的行程
-            </button>
-            <div className="relative">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">司機控制台</h1>
+            <div className="flex items-center space-x-4">
               <button
-                onClick={() => setShowMenu(!showMenu)}
-                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
+                onClick={() => navigate('/driver/trips')}
+                className="text-blue-600 hover:text-blue-800"
               >
-                <User className="w-5 h-5" />
-                <span className="text-sm">{user?.email}</span>
+                我的行程
+              </button>
+              <button
+                onClick={() => setShowSupportModal(true)}
+                className="px-3 py-2 rounded-2xl text-black"
+                style={{ backgroundImage: 'linear-gradient(to right, #FFD700, #B8860B)' }}
+              >
+                聯繫客服
+              </button>
+              <div className="relative">
+                <button
+                  onClick={() => setShowMenu(!showMenu)}
+                  className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
+                >
+                  <User className="w-5 h-5" />
+                  <span className="text-sm">{user?.email}</span>
               </button>
               {showMenu && (
                 <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2">
@@ -918,5 +927,6 @@ export default function DriverHome() {
         </div>
       )}
     </div>
+    
   )
 }

@@ -44,6 +44,8 @@ export default function PassengerHome() {
   const [routePolyline, setRoutePolyline] = useState<google.maps.Polyline | null>(null)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showSupportModal, setShowSupportModal] = useState(false)
+  const [supportText, setSupportText] = useState('')
   const [arrivalSeconds, setArrivalSeconds] = useState<number | null>(null)
   const [driverArrivedAt, setDriverArrivedAt] = useState<number | null>(null)
   const [homeFavorite, setHomeFavorite] = useState<{ address: string; lat: number; lng: number } | null>(null)
@@ -744,6 +746,13 @@ export default function PassengerHome() {
             >
               查看行程詳情
             </button>
+            <button
+              onClick={() => setShowSupportModal(true)}
+              className="w-full px-6 py-2 rounded-2xl text-black"
+              style={{ backgroundImage: 'linear-gradient(to right, #FFD700, #B8860B)' }}
+            >
+              聯繫客服
+            </button>
             {currentTrip.status === 'completed' && (
               <button
                 onClick={() => setShowPaymentModal(true)}
@@ -1108,6 +1117,26 @@ export default function PassengerHome() {
         )}
       </div>
     </div>
+    {showSupportModal && (
+      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+        <div className="bg-[#1a1a1a] border border-[#D4AF37]/30 rounded-2xl p-6 w-full max-w-md text-white">
+          <div className="text-lg font-bold mb-2" style={{ color:'#D4AF37' }}>聯繫客服</div>
+          <textarea value={supportText} onChange={e=>setSupportText(e.target.value)} className="w-full h-32 px-3 py-2 border border-[#D4AF37]/50 bg-[#0f0f0f] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="請輸入您的問題與需求" />
+          <div className="mt-3 flex justify-end gap-2">
+            <button onClick={()=>setShowSupportModal(false)} className="px-4 py-2 rounded-2xl border border-[#D4AF37]/30 text-white">取消</button>
+            <button onClick={async ()=>{
+              if (!user || !supportText.trim()) return
+              try {
+                await supabase.from('messages').insert({ from_user_id: user.id, role: 'passenger', text: supportText.trim(), created_at: new Date().toISOString() })
+                setSupportText('')
+                setShowSupportModal(false)
+                alert('已送出訊息')
+              } catch { alert('送出失敗，稍後重試') }
+            }} className="px-4 py-2 rounded-2xl text-black" style={{ backgroundImage: 'linear-gradient(to right, #FFD700, #B8860B)' }}>送出</button>
+          </div>
+        </div>
+      </div>
+    )}
     {showHighwayAlert && (
       <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.5)' }}>
         <div className="w-full max-w-md rounded-2xl p-6" style={{ backgroundImage: 'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color: '#111' }}>

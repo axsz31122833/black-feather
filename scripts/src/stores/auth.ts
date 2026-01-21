@@ -15,7 +15,7 @@ interface AuthState {
   
   // Actions
   signIn: (phone: string, password: string, userType: 'passenger' | 'driver' | 'admin') => Promise<void>
-  signUp: (email: string, password: string, phone: string, userType: 'passenger' | 'driver') => Promise<void>
+  signUp: (email: string, password: string, phone: string, userType: 'passenger' | 'driver', name?: string) => Promise<void>
   signOut: () => Promise<void>
   checkAuth: () => Promise<void>
   loadDriverProfile: () => Promise<void>
@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signUp: async (email: string, password: string, phone: string, userType: 'passenger' | 'driver') => {
+  signUp: async (email: string, password: string, phone: string, userType: 'passenger' | 'driver', name?: string) => {
     try {
       set({ isLoading: true })
       const client = (supabase as any)?.auth?.signUp
@@ -97,7 +97,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (error) throw error
 
       if (data.user) {
-        // Create user profile
         const { error: profileError } = await client
           .from('users')
           .insert({
@@ -105,6 +104,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             email,
             phone,
             user_type: userType,
+            name: name || null,
           })
 
         if (profileError) throw profileError

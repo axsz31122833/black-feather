@@ -131,6 +131,33 @@ export default function AdminDashboard() {
   }, [])
   const [autoDispatchEnabled, setAutoDispatchEnabled] = useState(false)
   const [eventTypes, setEventTypes] = useState<string[]>([])
+  const [messages, setMessages] = useState<Array<{ id: string; from_user_id: string; role: string; text: string; reply_text?: string; created_at: string; reply_at?: string }>>([])
+  useEffect(() => {
+    try {
+      const ch = supabase
+        .channel('messages-center')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'messages' }, (payload: any) => {
+          const m = payload.new
+          if (m) {
+            setMessages(prev => {
+              const idx = prev.findIndex(x => x.id === m.id)
+              if (idx >= 0) {
+                const cp = prev.slice()
+                cp[idx] = m
+                return cp
+              }
+              return [m, ...prev].slice(0, 200)
+            })
+          }
+        })
+        .subscribe()
+      ;(async () => {
+        const { data } = await supabase.from('messages').select('*').order('created_at', { ascending: false }).limit(50)
+        setMessages(data || [])
+      })()
+      return () => { ch.unsubscribe() }
+    } catch {}
+  }, [])
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [eventsResult, setEventsResult] = useState<any[]>([])
@@ -902,6 +929,45 @@ export default function AdminDashboard() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
+            <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
+              <div className="text-lg font-semibold mb-3">訊息中心</div>
+              {messages.length === 0 ? (
+                <div className="text-sm text-gray-300">目前沒有訊息</div>
+              ) : (
+                <div className="space-y-3">
+                  {messages.map(m => (
+                    <div key={m.id} className="rounded-2xl border border-[#D4AF37]/30 p-3">
+                      <div className="text-xs text-gray-400">{new Date(m.created_at).toLocaleString('zh-TW')}</div>
+                      <div className="text-sm font-medium">來自：{m.role}（{m.from_user_id}）</div>
+                      <div className="text-sm text-gray-200 mt-1">{m.text}</div>
+                      <div className="mt-2 flex items-center gap-2">
+                        <input
+                          defaultValue={m.reply_text || ''}
+                          onChange={e=>{
+                            const val = e.target.value
+                            setMessages(prev => prev.map(x => x.id===m.id ? { ...x, reply_text: val } : x))
+                          }}
+                          className="flex-1 px-3 py-2 border border-[#D4AF37]/50 bg-[#0f0f0f] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                          placeholder="回覆內容"
+                        />
+                        <button
+                          onClick={async () => {
+                            try {
+                              const item = messages.find(x => x.id===m.id)
+                              await supabase.from('messages').update({ reply_text: item?.reply_text || '', reply_at: new Date().toISOString() }).eq('id', m.id)
+                            } catch {}
+                          }}
+                          className="px-3 py-2 rounded-2xl text-black"
+                          style={{ backgroundImage: 'linear-gradient(to right, #FFD700, #B8860B)' }}
+                        >
+                          回覆
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
               <div className="text-lg font-semibold mb-3">用戶升級為司機</div>
               {promoteCandidates.length === 0 ? (
