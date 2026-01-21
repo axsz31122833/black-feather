@@ -39,7 +39,7 @@ function AuthRouter() {
 }
 
 function App() {
-  const { checkAuth, isAuthenticated } = useAuthStore() as any
+  const { checkAuth, isAuthenticated, userType } = useAuthStore() as any
   useEffect(() => {
     if (window.location.search.includes('dev=1')) return
     checkAuth()
@@ -67,18 +67,42 @@ function App() {
     }, 60000)
     return () => { window.removeEventListener('online', onOnline); clearInterval(timer) }
   }, [])
+  useEffect(() => {
+    if (!isAuthenticated) return
+    let watchId: number | null = null
+    try {
+      if (Notification.permission === 'default') { Notification.requestPermission().catch(()=>{}) }
+      watchId = navigator.geolocation.watchPosition(
+        (pos) => {
+          try {
+            localStorage.setItem('bf_last_lat', String(pos.coords.latitude))
+            localStorage.setItem('bf_last_lng', String(pos.coords.longitude))
+          } catch {}
+          try {
+            supabase.from('ops_events').insert({ event_type: 'user_geo', payload: { lat: pos.coords.latitude, lng: pos.coords.longitude } })
+          } catch {}
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 5000 }
+      ) as any
+    } catch {}
+    return () => { try { if (watchId != null) navigator.geolocation.clearWatch(watchId) } catch {} }
+  }, [isAuthenticated])
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <header className="app-header">
           <div className="brand" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>Black Feather 車隊</div>
-          {isAuthenticated && (
+          {isAuthenticated && userType && (userType === 'admin' || userType === 'driver') && (
             <nav className="nav flex items-center gap-12" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
               <Link to="/passenger" className="hover:text-white">乘客</Link>
-              <Link to="/passenger/ride" className="hover:text-white">乘客行程</Link>
-              <Link to="/driver" className="hover:text-white">司機</Link>
-              <Link to="/driver/ride" className="hover:text-white">司機行程</Link>
-              <Link to="/admin" className="hover:text-white">管理端</Link>
+              {userType === 'driver' && <Link to="/driver" className="hover:text-white">司機</Link>}
+              {userType === 'admin' && (
+                <>
+                  <Link to="/driver" className="hover:text-white">司機</Link>
+                  <Link to="/admin" className="hover:text-white">管理端</Link>
+                </>
+              )}
             </nav>
           )}
         </header>

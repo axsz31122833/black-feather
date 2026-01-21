@@ -67,6 +67,9 @@ export default function DriverHome() {
       try {
         const pos = driverLocation || null
         await supabase.from('ops_events').insert({ event_type: 'driver_ping', payload: pos ? { lat: pos.lat, lng: pos.lng } : {} })
+        if (user && pos) {
+          try { await supabase.from('driver_profiles').upsert({ user_id: user.id, current_lat: pos.lat, current_lng: pos.lng, last_seen_at: new Date().toISOString() }, { onConflict: 'user_id' } as any) } catch {}
+        }
       } catch {}
     }, 30000)
     return () => clearInterval(id)
@@ -97,6 +100,12 @@ export default function DriverHome() {
             const left = Math.max(0, Math.floor((exp - Date.now()) / 1000))
             setOfferCountdown(left || 30)
           } catch { setOfferCountdown(30) }
+          try {
+            if (document.visibilityState !== 'visible' && Notification.permission === 'granted') {
+              const n = new Notification('新訂單', { body: '有新的派單邀請，請回到黑羽車隊頁面處理', tag: 'bf-offer' })
+              setTimeout(() => n.close(), 4000)
+            }
+          } catch {}
         }
       })
       .subscribe()

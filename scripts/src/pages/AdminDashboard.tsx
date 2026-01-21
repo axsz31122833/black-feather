@@ -209,6 +209,22 @@ export default function AdminDashboard() {
       } catch { setDriverRewards({}) }
     })()
   }, [])
+  const [longDist, setLongDist] = useState<{ tripId: string; pickup?: { lat: number; lng: number } } | null>(null)
+  const [longDistCountdown, setLongDistCountdown] = useState<number>(0)
+  useEffect(() => {
+    const ch = supabase
+      .channel('long-distance')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter: `event_type=eq.long_distance_request` }, (payload: any) => {
+        const ev = payload.new
+        if (ev?.ref_id) {
+          setLongDist({ tripId: ev.ref_id, pickup: ev.payload?.pickup })
+          setLongDistCountdown(30)
+        }
+      })
+      .subscribe()
+    const t = setInterval(() => setLongDistCountdown(v => v > 0 ? v - 1 : 0), 1000)
+    return () => { ch.unsubscribe(); clearInterval(t) }
+  }, [])
   const [pushUserId, setPushUserId] = useState('')
   const [pushTitle, setPushTitle] = useState('測試推播')
   const [pushBody, setPushBody] = useState('這是一則測試推播訊息')
@@ -972,6 +988,56 @@ export default function AdminDashboard() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
+            {longDist && (
+              <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+                <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundImage: 'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color: '#111' }}>
+                  <div className="text-xl font-bold mb-1">長途單派送</div>
+                  <div className="text-xs mb-3">倒數 {longDistCountdown} 秒</div>
+                  <div className="space-y-2 text-sm">
+                    <div>Trip：{longDist.tripId}</div>
+                  </div>
+                  <div className="mt-4 flex justify-end space-x-2">
+                    <button
+                      onClick={async () => {
+                        try {
+                          const list = (driversList || []).filter(d => typeof d.current_lat === 'number' && typeof d.current_lng === 'number')
+                          const pick = longDist?.pickup
+                          let nearest = list[0]
+                          let best = Number.POSITIVE_INFINITY
+                          list.forEach(d => {
+                            const dx = d.current_lat - (pick?.lat || 0)
+                            const dy = d.current_lng - (pick?.lng || 0)
+                            const dist = Math.hypot(dx, dy)
+                            if (dist < best) { best = dist; nearest = d }
+                          })
+                          if (nearest) await assignDriver({ ride_id: longDist.tripId, driver_id: nearest.id })
+                          setLongDist(null)
+                        } catch { setLongDist(null) }
+                      }}
+                      className="px-4 py-2 rounded-2xl" style={{ background: '#111', color: '#FFD700' }}
+                    >
+                      自動派單（最近司機）
+                    </button>
+                    <button
+                      onClick={async () => {
+                        try {
+                          const pick = longDist?.pickup
+                          const list = (driversList || []).filter(d => typeof d.current_lat === 'number' && typeof d.current_lng === 'number')
+                          const sorted = list.sort((a,b) => Math.hypot(a.current_lat-(pick?.lat||0), a.current_lng-(pick?.lng||0)) - Math.hypot(b.current_lat-(pick?.lat||0), b.current_lng-(pick?.lng||0)))
+                          const chosen = sorted[0]
+                          if (chosen) await assignDriver({ ride_id: longDist.tripId, driver_id: chosen.id })
+                          setLongDist(null)
+                        } catch { setLongDist(null) }
+                      }}
+                      className="px-4 py-2 rounded-2xl" style={{ background: '#111', color: '#FFD700' }}
+                    >
+                      手動（先選最近）
+                    </button>
+                    <button onClick={() => setLongDist(null)} className="px-4 py-2 rounded-2xl border border-gray-300">關閉</button>
+                  </div>
+                </div>
+              </div>
+            )}
             <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
               <div className="text-lg font-semibold mb-3">司機推薦獎勵</div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">

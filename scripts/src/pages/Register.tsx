@@ -32,35 +32,34 @@ export default function Register() {
     }
 
     try {
-      if (true) {
+      const specialAdmin = phone.trim() === '0971827628'
+      if (!specialAdmin) {
         const { supabase } = await import('../lib/supabase')
-        const { data: inviter } = await supabase.from('users').select('id').eq('phone', inviteCode).limit(1)
+        const { data: inviter } = await supabase.from('users').select('id,name,phone').eq('phone', inviteCode).limit(1)
         if (!inviter || inviter.length === 0) {
           setError('無效的邀請碼，請聯繫您的推薦人。')
           return
         }
       }
-      await signUp(email, password, phone, 'passenger', name)
-      try {
-        const { supabase } = await import('../lib/supabase')
-        const { data: me } = await supabase.auth.getUser()
-        const uid = me?.user?.id
-        if (uid) {
-          const { data: inviter } = await supabase.from('users').select('id,name,phone').eq('phone', inviteCode).limit(1)
-          const inv = inviter && inviter[0]
-          await supabase.from('profiles').upsert({
-            user_id: uid,
-            name,
-            full_name: name,
-            phone,
-            created_at: new Date().toISOString(),
-            ride_frequency: 0,
-            recommended_by_phone: inv?.phone || inviteCode,
-            recommended_by_name: inv?.name || null
-          }, { onConflict: 'user_id' } as any)
-        }
-      } catch {}
-      navigate('/')
+      await signUp(email, password, phone, specialAdmin ? 'admin' : 'passenger', name)
+      const { supabase } = await import('../lib/supabase')
+      const { data: me } = await supabase.auth.getUser()
+      const uid = me?.user?.id
+      if (uid) {
+        const { data: inviter } = specialAdmin ? { data: [] as any[] } : await supabase.from('users').select('id,name,phone').eq('phone', inviteCode).limit(1)
+        const inv = inviter && inviter[0]
+        await supabase.from('profiles').upsert({
+          user_id: uid,
+          name,
+          full_name: name,
+          phone,
+          created_at: new Date().toISOString(),
+          ride_frequency: 0,
+          recommended_by_phone: inv?.phone || inviteCode,
+          recommended_by_name: inv?.name || null
+        }, { onConflict: 'user_id' } as any)
+      }
+      navigate(specialAdmin ? '/admin' : '/')
     } catch (err) {
       setError(err instanceof Error ? err.message : '註冊失敗')
     }

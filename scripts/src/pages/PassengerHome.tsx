@@ -35,6 +35,7 @@ export default function PassengerHome() {
   const [estimatedPrice, setEstimatedPrice] = useState(0)
   const [fareDetail, setFareDetail] = useState<{ distanceFee: number; timeFee: number; longFee: number; storeFee?: number } | null>(null)
   const [isStoreOrder, setIsStoreOrder] = useState(false)
+  const [isLongTrip, setIsLongTrip] = useState(false)
   const [estimatedTime, setEstimatedTime] = useState('')
   const [distance, setDistance] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
@@ -518,6 +519,7 @@ export default function PassengerHome() {
       let price = calculateFare(r.durationMin, adjKm)
       const bd = fareBreakdown(r.durationMin, adjKm)
       let storeFee = 0
+      setIsLongTrip(adjKm > 40)
       try {
         const { data: merch } = await supabase.from('partner_merchants').select('phone').eq('phone', user?.phone || '').limit(1)
         const isStore = !!(merch && merch.length > 0)
@@ -621,6 +623,9 @@ export default function PassengerHome() {
             .order('created_at', { ascending: false })
             .limit(1)
           const tripId = (latest && latest[0]?.id) || currentTrip?.id || null
+          if (tripId && isLongTrip) {
+            try { await supabase.from('ops_events').insert({ event_type: 'long_distance_request', ref_id: tripId, payload: { pickup: pickupCoords, threshold: 40 } }) } catch {}
+          }
           const { data: drivers } = await supabase
             .from('drivers')
             .select('id,name,phone,is_online,current_lat,current_lng,status,last_seen_at')

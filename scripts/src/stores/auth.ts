@@ -15,7 +15,7 @@ interface AuthState {
   
   // Actions
   signIn: (phone: string, password: string, userType: 'passenger' | 'driver' | 'admin') => Promise<void>
-  signUp: (email: string, password: string, phone: string, userType: 'passenger' | 'driver', name?: string) => Promise<void>
+  signUp: (email: string, password: string, phone: string, userType: 'passenger' | 'driver' | 'admin', name?: string) => Promise<void>
   signOut: () => Promise<void>
   checkAuth: () => Promise<void>
   loadDriverProfile: () => Promise<void>
@@ -80,7 +80,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
   },
 
-  signUp: async (email: string, password: string, phone: string, userType: 'passenger' | 'driver', name?: string) => {
+  signUp: async (email: string, password: string, phone: string, userType: 'passenger' | 'driver' | 'admin', name?: string) => {
     try {
       set({ isLoading: true })
       const client = (supabase as any)?.auth?.signUp
