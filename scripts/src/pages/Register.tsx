@@ -32,7 +32,7 @@ export default function Register() {
     }
 
     try {
-      if (userType === 'passenger') {
+      if (true) {
         const { supabase } = await import('../lib/supabase')
         const { data: inviter } = await supabase.from('users').select('id').eq('phone', inviteCode).limit(1)
         if (!inviter || inviter.length === 0) {
@@ -40,7 +40,7 @@ export default function Register() {
           return
         }
       }
-      await signUp(email, password, phone, userType)
+      await signUp(email, password, phone, 'passenger')
       
       // Redirect to appropriate dashboard
       navigate(userType === 'passenger' ? '/' : '/driver')

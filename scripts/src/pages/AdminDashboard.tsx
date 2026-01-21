@@ -106,6 +106,15 @@ export default function AdminDashboard() {
       }
     })()
   }, [])
+  const [promoteCandidates, setPromoteCandidates] = useState<Array<{ id: string; email: string; phone: string }>>([])
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: us } = await supabase.from('users').select('id,email,phone,user_type').eq('user_type','passenger').limit(50)
+        setPromoteCandidates((us || []).map(u => ({ id: u.id, email: u.email, phone: (u as any).phone || '' })))
+      } catch { setPromoteCandidates([]) }
+    })()
+  }, [])
   useEffect(() => {
     (async () => {
       try {
@@ -893,6 +902,36 @@ export default function AdminDashboard() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
+            <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
+              <div className="text-lg font-semibold mb-3">用戶升級為司機</div>
+              {promoteCandidates.length === 0 ? (
+                <div className="text-sm text-gray-300">目前沒有可升級的乘客</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {promoteCandidates.map(pd => (
+                    <div key={pd.id} className="rounded-2xl border border-[#D4AF37]/30 p-3 flex items-center justify-between">
+                      <div className="text-sm">
+                        <div className="font-medium">{pd.email}</div>
+                        <div className="text-gray-300">{pd.phone || '未提供電話'}</div>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await supabase.from('users').update({ user_type: 'driver' }).eq('id', pd.id)
+                            await supabase.from('driver_profiles').upsert({ user_id: pd.id, status: 'approved' }, { onConflict: 'user_id' } as any)
+                            setPromoteCandidates(list => list.filter(x => x.id !== pd.id))
+                          } catch {}
+                        }}
+                        className="px-3 py-2 rounded-2xl text-black"
+                        style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
+                      >
+                        升為司機
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
               <div className="text-lg font-semibold mb-3">司機審核</div>
               {pendingDrivers.length === 0 ? (

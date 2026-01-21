@@ -91,32 +91,32 @@ function App() {
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
               <Route path="/passenger" element={
-                <ProtectedRoute roles={['passenger']}>
+                <ProtectedRoute roles={['passenger','driver','admin']}>
                   <PassengerHome />
                 </ProtectedRoute>
               } />
               <Route path="/passenger/home" element={
-                <ProtectedRoute roles={['passenger']}>
+                <ProtectedRoute roles={['passenger','driver','admin']}>
                   <PassengerHome />
                 </ProtectedRoute>
               } />
               <Route path="/passenger/ride" element={
-                <ProtectedRoute roles={['passenger']}>
+                <ProtectedRoute roles={['passenger','driver','admin']}>
                   <PassengerRidePage />
                 </ProtectedRoute>
               } />
               <Route path="/driver" element={
-                <ProtectedRoute roles={['driver']}>
+                <ProtectedRoute roles={['driver','admin']}>
                   <DriverHome />
                 </ProtectedRoute>
               } />
               <Route path="/driver/home" element={
-                <ProtectedRoute roles={['driver']}>
+                <ProtectedRoute roles={['driver','admin']}>
                   <DriverHome />
                 </ProtectedRoute>
               } />
               <Route path="/driver/ride" element={
-                <ProtectedRoute roles={['driver']}>
+                <ProtectedRoute roles={['driver','admin']}>
                   <DriverRidePage />
                 </ProtectedRoute>
               } />

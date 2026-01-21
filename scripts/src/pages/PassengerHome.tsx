@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
 import { useTripStore } from '../stores/trips'
 import { estimateTripPrice, getRouteWithFallbacks, initGoogleMaps, createMap, geocodeAddress as gGeocode, reverseGeocode as gReverseGeocode } from '../utils/maps'
-import { calculateFare } from '../utils/fare'
+import { calculateFare, fareBreakdown } from '../utils/fare'
 import RideLeafletMap from '../components/RideLeafletMap'
 import { env } from '../config/env'
 import { recordPayment } from '../utils/payments'
@@ -33,6 +33,7 @@ export default function PassengerHome() {
   const [dropoffCoords, setDropoffCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedCarType, setSelectedCarType] = useState<'economy' | 'comfort' | 'business'>('economy')
   const [estimatedPrice, setEstimatedPrice] = useState(0)
+  const [fareDetail, setFareDetail] = useState<{ distanceFee: number; timeFee: number; longFee: number } | null>(null)
   const [estimatedTime, setEstimatedTime] = useState('')
   const [distance, setDistance] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
@@ -512,10 +513,12 @@ export default function PassengerHome() {
       const r = await getRouteWithFallbacks(pickup, dropoff)
       const adjKm = preferHighway ? r.distanceKm * 1.1 : r.distanceKm
       const price = calculateFare(r.durationMin, adjKm)
+      const bd = fareBreakdown(r.durationMin, adjKm)
       
       setDistance(r.distanceKm)
       setEstimatedTime(`${r.durationMin} 分鐘`)
       setEstimatedPrice(price)
+      setFareDetail({ distanceFee: bd.distanceFee, timeFee: bd.timeFee, longFee: bd.longFee })
       
       // Update car type prices
       carTypes.forEach(carType => {
@@ -1035,13 +1038,20 @@ export default function PassengerHome() {
               </span>
               <span className="font-medium">{estimatedTime}</span>
             </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">
-                <DollarSign className="w-4 h-4 inline mr-1" />
-                預估費用
-              </span>
-              <span className="font-bold text-lg text-blue-600">${Math.round(estimatedPrice * surgeMultiplier)}</span>
+          <div className="flex items-center justify-between">
+            <span className="text-sm text-gray-600">
+              <DollarSign className="w-4 h-4 inline mr-1" />
+              預估費用
+            </span>
+            <span className="font-bold text-lg text-blue-600">${Math.round(estimatedPrice * surgeMultiplier)}</span>
+          </div>
+          {fareDetail && (
+            <div className="mt-2 text-xs text-gray-700">
+              <div>里程費：${fareDetail.distanceFee}</div>
+              <div>時間費：${fareDetail.timeFee}</div>
+              <div>長途費：${fareDetail.longFee}</div>
             </div>
+          )}
             <div className="mt-3 flex items-center justify-between">
               <label className="flex items-center space-x-2">
                 <input
