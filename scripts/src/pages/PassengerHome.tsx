@@ -33,7 +33,8 @@ export default function PassengerHome() {
   const [dropoffCoords, setDropoffCoords] = useState<{ lat: number; lng: number } | null>(null)
   const [selectedCarType, setSelectedCarType] = useState<'economy' | 'comfort' | 'business'>('economy')
   const [estimatedPrice, setEstimatedPrice] = useState(0)
-  const [fareDetail, setFareDetail] = useState<{ distanceFee: number; timeFee: number; longFee: number } | null>(null)
+  const [fareDetail, setFareDetail] = useState<{ distanceFee: number; timeFee: number; longFee: number; storeFee?: number } | null>(null)
+  const [isStoreOrder, setIsStoreOrder] = useState(false)
   const [estimatedTime, setEstimatedTime] = useState('')
   const [distance, setDistance] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
@@ -514,13 +515,23 @@ export default function PassengerHome() {
     try {
       const r = await getRouteWithFallbacks(pickup, dropoff)
       const adjKm = preferHighway ? r.distanceKm * 1.1 : r.distanceKm
-      const price = calculateFare(r.durationMin, adjKm)
+      let price = calculateFare(r.durationMin, adjKm)
       const bd = fareBreakdown(r.durationMin, adjKm)
+      let storeFee = 0
+      try {
+        const { data: merch } = await supabase.from('partner_merchants').select('phone').eq('phone', user?.phone || '').limit(1)
+        const isStore = !!(merch && merch.length > 0)
+        setIsStoreOrder(isStore)
+        if (isStore) {
+          storeFee = 50
+          price = Math.max(100, Math.round((price + storeFee) / 10) * 10)
+        }
+      } catch {}
       
       setDistance(r.distanceKm)
       setEstimatedTime(`${r.durationMin} 分鐘`)
       setEstimatedPrice(price)
-      setFareDetail({ distanceFee: bd.distanceFee, timeFee: bd.timeFee, longFee: bd.longFee })
+      setFareDetail({ distanceFee: bd.distanceFee, timeFee: bd.timeFee, longFee: bd.longFee, storeFee })
       
       // Update car type prices
       carTypes.forEach(carType => {
@@ -1059,6 +1070,7 @@ export default function PassengerHome() {
               <div>里程費：${fareDetail.distanceFee}</div>
               <div>時間費：${fareDetail.timeFee}</div>
               <div>長途費：${fareDetail.longFee}</div>
+              {fareDetail.storeFee ? <div>店家加價：${fareDetail.storeFee}</div> : null}
             </div>
           )}
             <div className="mt-3 flex items-center justify-between">

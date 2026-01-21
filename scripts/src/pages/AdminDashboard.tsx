@@ -131,6 +131,33 @@ export default function AdminDashboard() {
   }, [])
   const [autoDispatchEnabled, setAutoDispatchEnabled] = useState(false)
   const [eventTypes, setEventTypes] = useState<string[]>([])
+  const [merchants, setMerchants] = useState<Array<{ id: string; name: string; phone: string; address?: string; jkopay?: string }>>([])
+  const [merchantStats, setMerchantStats] = useState<Record<string, { monthlyCount: number; monthlyReward: number }>>({})
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: ms } = await supabase.from('partner_merchants').select('id,name,phone,address,jkopay').order('name',{ ascending:true })
+        setMerchants(ms || [])
+        const thisMonthStart = new Date()
+        thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0)
+        const startIso = thisMonthStart.toISOString()
+        const stats: Record<string, { monthlyCount: number; monthlyReward: number }> = {}
+        for (const m of (ms || [])) {
+          const { data: tripsData } = await supabase
+            .from('trips')
+            .select('id')
+            .eq('status','completed')
+            .gte('created_at', startIso)
+            .eq('passenger_phone', m.phone)
+          const count = (tripsData || []).length
+          stats[m.id] = { monthlyCount: count, monthlyReward: count * 20 }
+        }
+        setMerchantStats(stats)
+      } catch {
+        setMerchants([]); setMerchantStats({})
+      }
+    })()
+  }, [])
   const [messages, setMessages] = useState<Array<{ id: string; from_user_id: string; role: string; text: string; reply_text?: string; created_at: string; reply_at?: string }>>([])
   useEffect(() => {
     try {
@@ -166,6 +193,22 @@ export default function AdminDashboard() {
   const [moderationAction, setModerationAction] = useState<'ban' | 'suspend' | 'activate'>('ban')
   const [alertCounts, setAlertCounts] = useState<{ frontErrors: number; risk: number }>({ frontErrors: 0, risk: 0 })
   const [metrics, setMetrics] = useState<{ avgLoadMs: number; driverPings: number }>({ avgLoadMs: 0, driverPings: 0 })
+  const [driverRewards, setDriverRewards] = useState<Record<string, { firstRideCount: number; totalBonus: number }>>({})
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.from('driver_rewards').select('driver_id,amount').order('created_at',{ ascending:false }).limit(1000)
+        const map: Record<string, { firstRideCount: number; totalBonus: number }> = {}
+        ;(data || []).forEach((r: any) => {
+          const id = r.driver_id
+          if (!map[id]) map[id] = { firstRideCount: 0, totalBonus: 0 }
+          map[id].firstRideCount += 1
+          map[id].totalBonus += Number(r.amount || 0)
+        })
+        setDriverRewards(map)
+      } catch { setDriverRewards({}) }
+    })()
+  }, [])
   const [pushUserId, setPushUserId] = useState('')
   const [pushTitle, setPushTitle] = useState('測試推播')
   const [pushBody, setPushBody] = useState('這是一則測試推播訊息')
@@ -929,6 +972,77 @@ export default function AdminDashboard() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
+            <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
+              <div className="text-lg font-semibold mb-3">司機推薦獎勵</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {(driversList || []).map(d => {
+                  const stat = driverRewards[d.id] || { firstRideCount: 0, totalBonus: 0 }
+                  return (
+                    <div key={d.id} className="rounded-2xl border border-[#D4AF37]/30 p-3 flex items-center justify-between">
+                      <div className="text-sm">
+                        <div className="font-medium">{d.name || '未提供姓名'}</div>
+                        <div className="text-gray-300">{d.phone || '未提供電話'}</div>
+                      </div>
+                      <div className="text-sm text-gray-200">
+                        <div>推薦叫車數：{stat.firstRideCount}</div>
+                        <div>累積獎勵金：${stat.totalBonus}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+            <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
+              <div className="text-lg font-semibold mb-3">合作店家管理</div>
+              {merchants.length === 0 ? (
+                <div className="text-sm text-gray-300">尚未建立店家資料</div>
+              ) : (
+                <div className="space-y-3">
+                  {merchants.map(m => {
+                    const st = merchantStats[m.id] || { monthlyCount: 0, monthlyReward: 0 }
+                    return (
+                      <div key={m.id} className="rounded-2xl border border-[#D4AF37]/30 p-3 grid grid-cols-1 md:grid-cols-4 gap-2">
+                        <div className="text-sm">
+                          <div className="font-medium">{m.name}</div>
+                          <div className="text-gray-300">{m.address || '未提供地址'}</div>
+                        </div>
+                        <div className="text-sm">
+                          <div>電話：{m.phone}</div>
+                          <div>街口：{m.jkopay || '未提供'}</div>
+                        </div>
+                        <div className="text-sm">
+                          <div>本月叫車數：{st.monthlyCount}</div>
+                          <div>店家分潤：${st.monthlyReward}</div>
+                        </div>
+                        <div className="flex justify-end">
+                          <button className="px-3 py-2 rounded-2xl text-black" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}>編輯</button>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+            <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
+              <div className="text-lg font-semibold mb-3">司機推薦獎勵</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {(driversList || []).map(d => {
+                  const stat = driverRewards[d.id] || { firstRideCount: 0, totalBonus: 0 }
+                  return (
+                    <div key={d.id} className="rounded-2xl border border-[#D4AF37]/30 p-3 flex items-center justify-between">
+                      <div className="text-sm">
+                        <div className="font-medium">{d.name || '未提供姓名'}</div>
+                        <div className="text-gray-300">{d.phone || '未提供電話'}</div>
+                      </div>
+                      <div className="text-sm text-gray-200">
+                        <div>推薦叫車數：{stat.firstRideCount}</div>
+                        <div>累積獎勵金：${stat.totalBonus}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
             <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
               <div className="text-lg font-semibold mb-3">訊息中心</div>
               {messages.length === 0 ? (

@@ -482,6 +482,46 @@ export default function DriverHome() {
       setTodayTrips(prev => prev + 1)
       // Stop location tracking when trip is completed
       stopLocationTracking()
+      try {
+        const passengerId = (currentTrip as any).passenger_id
+        let storeAddon = 0
+        if (passengerId) {
+          const { data: pu } = await supabase.from('users').select('phone').eq('id', passengerId).limit(1)
+          const phone = pu && pu[0]?.phone
+          if (phone) {
+            const { data: merch } = await supabase.from('partner_merchants').select('phone').eq('phone', phone).limit(1)
+            if (merch && merch.length > 0) storeAddon = 50
+          }
+        }
+        alert(`請回金 ${20 + storeAddon} 元至車隊街口：904851974`)
+        // 首叫獎勵：乘客第一次完成叫車
+        if (passengerId) {
+          const { data: cntData } = await supabase
+            .from('trips')
+            .select('id', { count: 'exact' } as any)
+            .eq('passenger_id', passengerId)
+            .eq('status','completed')
+          const count = (cntData as any)?.length != null ? (cntData as any).length : ((cntData as any)?.count ?? 0)
+          if (count === 1) {
+            const { data: prof } = await supabase.from('profiles').select('recommended_by_phone').eq('user_id', passengerId).limit(1)
+            const refPhone = prof && prof[0]?.recommended_by_phone
+            if (refPhone) {
+              const { data: drv } = await supabase.from('users').select('id').eq('phone', refPhone).eq('user_type','driver').limit(1)
+              const driverId = drv && drv[0]?.id
+              if (driverId) {
+                await supabase.from('driver_rewards').insert({
+                  driver_id: driverId,
+                  passenger_id: passengerId,
+                  trip_id: currentTrip.id,
+                  amount: 20,
+                  reason: 'first_ride_bonus',
+                  created_at: new Date().toISOString()
+                } as any)
+              }
+            }
+          }
+        }
+      } catch {}
     } catch (error) {
       console.error('Error completing trip:', error)
       alert('完成行程失敗，請稍後再試')
