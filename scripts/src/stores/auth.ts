@@ -14,7 +14,7 @@ interface AuthState {
   userType: 'passenger' | 'driver' | 'admin' | null
   
   // Actions
-  signIn: (email: string, password: string, userType: 'passenger' | 'driver' | 'admin') => Promise<void>
+  signIn: (phone: string, password: string, userType: 'passenger' | 'driver' | 'admin') => Promise<void>
   signUp: (email: string, password: string, phone: string, userType: 'passenger' | 'driver') => Promise<void>
   signOut: () => Promise<void>
   checkAuth: () => Promise<void>
@@ -28,7 +28,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: true,
   userType: null,
 
-  signIn: async (email: string, password: string, userType: 'passenger' | 'driver' | 'admin') => {
+  signIn: async (phone: string, password: string, userType: 'passenger' | 'driver' | 'admin') => {
     try {
       set({ isLoading: true })
       const client = (supabase as any)?.auth?.signInWithPassword
@@ -37,8 +37,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
             (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
           )
+      const { data: userByPhone, error: phoneErr } = await client
+        .from('users')
+        .select('id,email,user_type')
+        .eq('phone', phone)
+        .limit(1)
+      if (phoneErr) throw phoneErr
+      const targetEmail = userByPhone?.[0]?.email
+      if (!targetEmail) throw new Error('找不到此手機號碼的帳戶')
       const { data, error } = await client.auth.signInWithPassword({
-        email,
+        email: targetEmail,
         password,
       })
 
@@ -53,10 +61,6 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .single()
 
         if (userError) throw userError
-
-        if (userData.user_type !== userType) {
-          throw new Error('Invalid user type')
-        }
 
         set({ 
           user: userData, 

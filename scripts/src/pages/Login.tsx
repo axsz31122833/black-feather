@@ -11,7 +11,7 @@ export default function Login() {
   const [fadeIn, setFadeIn] = useState(false)
   useEffect(() => { setFadeIn(true) }, [])
   
-  const [email, setEmail] = useState('')
+  const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [userType, setUserType] = useState<UserType>('passenger')
   const [error, setError] = useState('')
@@ -21,7 +21,7 @@ export default function Login() {
     setError('')
 
     try {
-      await signIn(email, password, userType)
+      await signIn(phone, password, userType)
       if (userType === 'passenger') navigate('/')
       else if (userType === 'driver') navigate('/driver')
       else navigate('/admin')
@@ -56,6 +56,10 @@ export default function Login() {
           <div className={`rounded-2xl p-8 text-white transition-all duration-700 ease-out ${fadeIn ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`} style={{ background: 'rgba(255,255,255,0.05)', backdropFilter: 'blur(12px)', border: '1px solid rgba(212,175,55,0.25)', boxShadow: '0 0 24px rgba(212,175,55,0.15)' }}>
             <div className="text-2xl font-bold mb-2" style={{ color:'#D4AF37' }}>登入</div>
             <div className="text-sm text-gray-300 mb-6">歡迎回來！請選擇您的身份並登入。</div>
+            <div className="mb-4 rounded-xl p-4" style={{ background:'linear-gradient(180deg, rgba(10,10,10,0.8) 0%, rgba(18,18,18,0.8) 100%)', border:'1px solid rgba(212,175,55,0.25)' }}>
+              <div className="text-xl font-extrabold mb-1" style={{ color:'#D4AF37' }}>黑羽車隊 Black Feather</div>
+              <div className="text-sm text-gray-300">頂級移動美學，僅限受邀嘉賓。</div>
+            </div>
             <form onSubmit={handleSubmit} className="space-y-6">
               {error && (
                 <div className="bg-red-50/80 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
@@ -82,14 +86,14 @@ export default function Login() {
                 </div>
               </div>
               <div>
-                <label htmlFor="email" className="block text-sm font-medium text-gray-200 mb-2">電子郵件</label>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-200 mb-2">電話號碼</label>
                 <input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  id="phone"
+                  type="tel"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
                   className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-                  placeholder="請輸入您的電子郵件"
+                  placeholder="請輸入您的手機號碼"
                   required
                 />
               </div>
