@@ -51,6 +51,7 @@ export default function Register() {
           await supabase.from('profiles').upsert({
             user_id: uid,
             name,
+            full_name: name,
             phone,
             created_at: new Date().toISOString(),
             ride_frequency: 0,
@@ -91,8 +92,8 @@ export default function Register() {
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-              placeholder="請輸入您的姓名"
+              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text白 rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              placeholder="請輸入您的真實姓名"
               required
             />
           </div>

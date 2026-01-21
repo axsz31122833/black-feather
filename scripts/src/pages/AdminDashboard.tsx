@@ -1292,7 +1292,7 @@ export default function AdminDashboard() {
                           <div className="flex items-center">
                             <User className="w-8 h-8 text-gray-400 mr-3" />
                             <div>
-                              <div className="text-sm font-medium text-gray-900">{user.email}</div>
+                              <div className="text-sm font-medium text-gray-900">{(user as any).name || user.email}</div>
                               <div className="text-sm text-gray-500">{user.phone}</div>
                             </div>
                           </div>
