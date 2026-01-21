@@ -15,6 +15,7 @@ export default function Register() {
   const [phone, setPhone] = useState('')
   const [userType, setUserType] = useState<UserType>('passenger')
   const [error, setError] = useState('')
+  const [inviteCode, setInviteCode] = useState('')
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -31,6 +32,14 @@ export default function Register() {
     }
 
     try {
+      if (userType === 'passenger') {
+        const { supabase } = await import('../lib/supabase')
+        const { data: inviter } = await supabase.from('users').select('id').eq('phone', inviteCode).limit(1)
+        if (!inviter || inviter.length === 0) {
+          setError('無效的邀請碼，請聯繫您的推薦人。')
+          return
+        }
+      }
       await signUp(email, password, phone, userType)
       
       // Redirect to appropriate dashboard
@@ -47,10 +56,10 @@ export default function Register() {
 
   return (
     <div className="min-h-screen bg-transparent text-white flex items-center justify-center p-4">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
+      <div className="bg-transparent rounded-2xl shadow-2xl border border-[#D4AF37]/30 w-full max-w-md p-8">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">註冊</h1>
-          <p className="text-gray-600">創建您的新帳號</p>
+          <h1 className="text-3xl font-bold mb-2" style={{ color:'#FFD700' }}>註冊</h1>
+          <p className="text-gray-300">創建您的新帳號</p>
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -72,14 +81,14 @@ export default function Register() {
                     key={option.value}
                     type="button"
                     onClick={() => setUserType(option.value as UserType)}
-                    className={`p-3 rounded-lg border-2 transition-all ${
+                    className={`p-3 rounded-2xl border-2 transition-all ${
                       userType === option.value
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        ? 'border-[#D4AF37] bg-[#1a1a1a]'
+                        : 'border-[#D4AF37]/30 hover:border-[#D4AF37]/50'
                     }`}
                   >
-                    <Icon className={`w-6 h-6 mx-auto mb-1 ${option.color}`} />
-                    <span className="text-xs text-gray-700">{option.label}</span>
+                    <Icon className={`w-6 h-6 mx-auto mb-1`} />
+                    <span className="text-xs text-gray-200">{option.label}</span>
                   </button>
                 )
               })}
@@ -95,7 +104,7 @@ export default function Register() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="請輸入您的電子郵件"
               required
             />
@@ -110,11 +119,28 @@ export default function Register() {
               type="tel"
               value={phone}
               onChange={(e) => setPhone(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="請輸入您的手機號碼"
               required
             />
           </div>
+          
+          {userType === 'passenger' && (
+            <div>
+              <label htmlFor="invite" className="block text-sm font-medium text-gray-200 mb-2">
+                邀請碼
+              </label>
+              <input
+                id="invite"
+                type="text"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                placeholder="請輸入您的邀請碼（推薦人手機號碼）"
+                required
+              />
+            </div>
+          )}
 
           <div>
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-2">
@@ -125,7 +151,7 @@ export default function Register() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="請輸入您的密碼"
               required
             />
@@ -140,7 +166,7 @@ export default function Register() {
               type="password"
               value={confirmPassword}
               onChange={(e) => setConfirmPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="請再次輸入您的密碼"
               required
             />
@@ -149,7 +175,8 @@ export default function Register() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            className="w-full py-4 px-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-black text-lg"
+            style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
           >
             {isLoading ? '註冊中...' : '註冊'}
           </button>

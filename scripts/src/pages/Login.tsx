@@ -7,7 +7,7 @@ type UserType = 'passenger' | 'driver' | 'admin'
 
 export default function Login() {
   const navigate = useNavigate()
-  const { isLoading } = useAuthStore()
+  const { isLoading, signIn } = useAuthStore()
   
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -19,33 +19,10 @@ export default function Login() {
     setError('')
 
     try {
-      ;(useAuthStore as any).setState({
-        user: {
-          id: 'dev-' + userType,
-          email,
-          phone: '',
-          user_type: userType,
-          status: 'active',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
-        },
-        isAuthenticated: true,
-        userType,
-        isLoading: false
-      })
-      
-      // Redirect based on user type
-      switch (userType) {
-        case 'passenger':
-          navigate('/')
-          break
-        case 'driver':
-          navigate('/driver')
-          break
-        case 'admin':
-          navigate('/admin')
-          break
-      }
+      await signIn(email, password, userType)
+      if (userType === 'passenger') navigate('/')
+      else if (userType === 'driver') navigate('/driver')
+      else navigate('/admin')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     }
@@ -59,15 +36,11 @@ export default function Login() {
 
   return (
     <div className="min-h-screen w-full flex items-center justify-center bg-transparent">
-      <div className="bg-white rounded-lg shadow-xl w-full max-w-md p-8">
+      <div className="rounded-2xl shadow-2xl border border-[#D4AF37]/30 w-full max-w-md p-8 bg-[#1a1a1a] text-white">
         <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">登入</h1>
-          <p className="text-gray-600">歡迎回來！請選擇您的身份</p>
-          <div className="mt-4 grid grid-cols-1 gap-2">
-            <button onClick={() => navigate('/admin/home?dev=1&role=admin')} className="w-full py-3 rounded-lg" style={{ background:'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color:'#111', boxShadow:'0 0 10px rgba(255,215,0,0.6)' }}>進入管理端（跳過驗證）</button>
-            <button onClick={() => navigate('/driver/home?dev=1&role=driver')} className="w-full py-3 rounded-lg" style={{ background:'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color:'#111', boxShadow:'0 0 10px rgba(255,215,0,0.6)' }}>進入司機端（跳過驗證）</button>
-            <button onClick={() => navigate('/passenger/home?dev=1&role=passenger')} className="w-full py-3 rounded-lg" style={{ background:'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color:'#111', boxShadow:'0 0 10px rgba(255,215,0,0.6)' }}>進入乘客端（跳過驗證）</button>
-          </div>
+          <h1 className="text-3xl font-bold mb-2" style={{ color:'#FFD700' }}>登入</h1>
+          <p className="text-gray-300">歡迎回來！請選擇您的身份</p>
+          
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
@@ -89,14 +62,10 @@ export default function Login() {
                     key={option.value}
                     type="button"
                     onClick={() => setUserType(option.value as UserType)}
-                    className={`p-3 rounded-lg border-2 transition-all ${
-                      userType === option.value
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
+                    className="p-3 rounded-2xl border-2 transition-all border-[#D4AF37]/30 hover:border-[#D4AF37]/50"
                   >
-                    <Icon className={`w-6 h-6 mx-auto mb-1 ${option.color}`} />
-                    <span className="text-xs text-gray-700">{option.label}</span>
+                    <Icon className="w-6 h-6 mx-auto mb-1" />
+                    <span className="text-xs text-gray-200">{option.label}</span>
                   </button>
                 )
               })}
@@ -112,7 +81,7 @@ export default function Login() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="請輸入您的電子郵件"
               required
             />
@@ -127,7 +96,7 @@ export default function Login() {
               type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="請輸入您的密碼"
               required
             />
@@ -136,7 +105,8 @@ export default function Login() {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-medium"
+            className="w-full py-4 px-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-black text-lg"
+            style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
           >
             {isLoading ? '登入中...' : '登入'}
           </button>

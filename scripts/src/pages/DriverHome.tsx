@@ -491,6 +491,10 @@ export default function DriverHome() {
     navigate('/login')
   }
 
+  if (driverProfile && (driverProfile as any).status && (driverProfile as any).status !== 'approved') {
+    navigate('/driver/pending')
+    return null
+  }
   return (
     <div className="h-screen bg-transparent relative">
       {/* Header */}

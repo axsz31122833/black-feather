@@ -87,6 +87,7 @@ export default function AdminDashboard() {
   const [driverRatings, setDriverRatings] = useState<Record<string, number>>({})
   const [etaCache, setEtaCache] = useState<Record<string, number>>({})
   const [weights, setWeights] = useState<{ wDist: number; wEta: number; wRecency: number; wCar: number; wRating: number }>(() => ({ wDist: 0.4, wEta: 0.3, wRecency: 0.2, wCar: 0.05, wRating: 0.05 }))
+  const [pendingDrivers, setPendingDrivers] = useState<Array<{ id: string; name?: string; phone?: string }>>([])
   useEffect(() => {
     (async () => {
       try {
@@ -103,6 +104,20 @@ export default function AdminDashboard() {
           if (s) setWeights(JSON.parse(s))
         } catch {}
       }
+    })()
+  }, [])
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: profs } = await supabase.from('driver_profiles').select('user_id,status').eq('status','pending')
+        const ids = (profs || []).map(p => p.user_id)
+        if (ids.length > 0) {
+          const { data: us } = await supabase.from('users').select('id,name,phone').in('id', ids)
+          setPendingDrivers((us || []).map(u=>({ id:u.id, name: u.name as any, phone: u.phone as any })))
+        } else {
+          setPendingDrivers([])
+        }
+      } catch { setPendingDrivers([]) }
     })()
   }, [])
   const [autoDispatchEnabled, setAutoDispatchEnabled] = useState(false)
@@ -878,6 +893,35 @@ export default function AdminDashboard() {
         {/* Overview Tab */}
         {activeTab === 'overview' && (
           <div>
+            <div className="mb-6 rounded-2xl shadow-2xl border border-[#D4AF37]/30 bg-[#1a1a1a] p-4 text-white">
+              <div className="text-lg font-semibold mb-3">司機審核</div>
+              {pendingDrivers.length === 0 ? (
+                <div className="text-sm text-gray-300">目前沒有待審核的司機</div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {pendingDrivers.map(pd => (
+                    <div key={pd.id} className="rounded-2xl border border-[#D4AF37]/30 p-3 flex items-center justify-between">
+                      <div className="text-sm">
+                        <div className="font-medium">{pd.name || '未提供姓名'}</div>
+                        <div className="text-gray-300">{pd.phone || '未提供電話'}</div>
+                      </div>
+                      <button
+                        onClick={async () => {
+                          try {
+                            await supabase.from('driver_profiles').update({ status: 'approved' }).eq('user_id', pd.id)
+                            setPendingDrivers(list => list.filter(x => x.id !== pd.id))
+                          } catch {}
+                        }}
+                        className="px-3 py-2 rounded-2xl text-black"
+                        style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
+                      >
+                        同意加入
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
             <div className="mb-6">
               <button
                 onClick={() => setActiveTab('overview')}

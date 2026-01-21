@@ -114,6 +114,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
               license_number: '',
               car_model: '',
               car_plate: '',
+              status: 'pending',
             })
 
           if (driverError) throw driverError
