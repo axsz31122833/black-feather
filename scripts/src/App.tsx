@@ -96,10 +96,16 @@ function App() {
           {isAuthenticated && userType && (userType === 'admin' || userType === 'driver') && (
             <nav className="nav flex items-center gap-12" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
               <Link to="/passenger" className="hover:text-white">乘客</Link>
-              {userType === 'driver' && <Link to="/driver" className="hover:text-white">司機</Link>}
+              {userType === 'driver' && (
+                <>
+                  <Link to="/driver" className="hover:text-white">司機</Link>
+                  <Link to="/driver/scheduled" className="hover:text-white">預約大廳</Link>
+                </>
+              )}
               {userType === 'admin' && (
                 <>
                   <Link to="/driver" className="hover:text-white">司機</Link>
+                  <Link to="/driver/scheduled" className="hover:text白">預約大廳</Link>
                   <Link to="/admin" className="hover:text-white">管理端</Link>
                 </>
               )}
@@ -142,6 +148,11 @@ function App() {
               <Route path="/driver/ride" element={
                 <ProtectedRoute roles={['driver','admin']}>
                   <DriverRidePage />
+                </ProtectedRoute>
+              } />
+              <Route path="/driver/scheduled" element={
+                <ProtectedRoute roles={['driver','admin']}>
+                  {React.createElement(lazy(() => import('./pages/DriverScheduled')))}
                 </ProtectedRoute>
               } />
               <Route path="/driver/pending" element={

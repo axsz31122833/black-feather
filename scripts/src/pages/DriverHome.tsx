@@ -105,6 +105,10 @@ export default function DriverHome() {
               const n = new Notification('新訂單', { body: '有新的派單邀請，請回到黑羽車隊頁面處理', tag: 'bf-offer' })
               setTimeout(() => n.close(), 4000)
             }
+            try {
+              const u = new (window as any).SpeechSynthesisUtterance('新訂單，請儘速接單')
+              ;(window as any).speechSynthesis?.speak?.(u)
+            } catch {}
           } catch {}
         }
       })
@@ -776,17 +780,19 @@ export default function DriverHome() {
               )}
               {incomingOffer && offerCountdown > 0 && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
-                  <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundImage: 'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color: '#111' }}>
-                    <div className="text-xl font-bold mb-1">新訂單</div>
-                    <div className="text-xs mb-3">倒數 {offerCountdown} 秒</div>
-                    <div className="space-y-2 text-sm">
-                      <div>上車：{incomingOffer.pickup?.lat?.toFixed(4)}, {incomingOffer.pickup?.lng?.toFixed(4)}</div>
-                      <div>目的地：{incomingOffer.dropoff?.lat?.toFixed(4)}, {incomingOffer.dropoff?.lng?.toFixed(4)}</div>
-                      <div>預估車資：${incomingOffer.price}</div>
-                    </div>
-                    <div className="mt-4 flex justify-end space-x-2">
-                      <button
-                        onClick={async () => {
+              <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundImage: 'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color: '#111' }}>
+                <div className="text-xl font-bold mb-1">新訂單</div>
+                <div className="text-xs mb-3">倒數 {offerCountdown} 秒</div>
+                <div className="space-y-2 text-sm">
+                  <div>上車：{incomingOffer.pickup?.lat?.toFixed(4)}, {incomingOffer.pickup?.lng?.toFixed(4)}</div>
+                  {incomingOffer?.dist_km > 40
+                    ? <div>目的地：{incomingOffer.dropoff?.lat?.toFixed(4)}, {incomingOffer.dropoff?.lng?.toFixed(4)}</div>
+                    : <div>目的地：接單後解鎖</div>}
+                  <div>預估車資：${incomingOffer.price}</div>
+                </div>
+                <div className="mt-4 flex justify-end space-x-2">
+                  <button
+                    onClick={async () => {
                           setIncomingOffer(null)
                           try { await supabase.from('ops_events').insert({ event_type: 'dispatch_reject', payload: { driver_id: user?.id } }) } catch {}
                         }}

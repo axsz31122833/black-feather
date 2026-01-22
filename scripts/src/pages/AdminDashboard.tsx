@@ -218,13 +218,50 @@ export default function AdminDashboard() {
         const ev = payload.new
         if (ev?.ref_id) {
           setLongDist({ tripId: ev.ref_id, pickup: ev.payload?.pickup })
-          setLongDistCountdown(30)
+          setLongDistCountdown(90)
         }
       })
       .subscribe()
     const t = setInterval(() => setLongDistCountdown(v => v > 0 ? v - 1 : 0), 1000)
     return () => { ch.unsubscribe(); clearInterval(t) }
   }, [])
+  useEffect(() => {
+    const broadcast = async () => {
+      if (!longDist || longDistCountdown > 0) return
+      try {
+        const ride = trips.find(t => t.id === longDist.tripId) as any
+        const pick = longDist.pickup || ride?.pickup_location
+        if (!pick) { setLongDist(null); return }
+        const list = (driversList || [])
+          .filter(d => typeof d.current_lat === 'number' && typeof d.current_lng === 'number')
+          .map(d => ({ d, dist: haversine(d.current_lat!, d.current_lng!, pick.lat, pick.lng) }))
+          .sort((a,b) => a.dist - b.dist)
+          .slice(0, 12)
+        const price = ride?.estimated_price || 0
+        for (const x of list) {
+          try {
+            await supabase.from('ops_events').insert({
+              event_type: 'dispatch_offer',
+              ref_id: longDist.tripId,
+              payload: {
+                driver_id: x.d.id,
+                trip_id: longDist.tripId,
+                pickup: pick,
+                dropoff: ride?.dropoff_location || null,
+                dist_km: x.dist,
+                price,
+                expires_at: new Date(Date.now() + 90_000).toISOString()
+              }
+            })
+          } catch {}
+        }
+        try { await supabase.from('ops_events').insert({ event_type: 'long_distance_handle', ref_id: longDist.tripId, payload: { mode: 'auto_broadcast' } }) } catch {}
+      } finally {
+        setLongDist(null)
+      }
+    }
+    broadcast()
+  }, [longDistCountdown])
   const [pushUserId, setPushUserId] = useState('')
   const [pushTitle, setPushTitle] = useState('測試推播')
   const [pushBody, setPushBody] = useState('這是一則測試推播訊息')
@@ -841,6 +878,47 @@ export default function AdminDashboard() {
     }, 30000)
     return () => clearInterval(id)
   }, [autoDispatchEnabled, trips, driversList])
+  useEffect(() => {
+    const id = setInterval(async () => {
+      try {
+        const nowTs = Date.now()
+        const t15 = nowTs + 15 * 60 * 1000
+        const { data: sched } = await supabase
+          .from('scheduled_rides')
+          .select('id,scheduled_time,pickup_lat,pickup_lng,accepted_driver_id,processed')
+          .eq('processed', false)
+        for (const s of (sched || [])) {
+          const ts = new Date(s.scheduled_time).getTime()
+          if (ts <= t15 && !s.accepted_driver_id) {
+            const pick = { lat: s.pickup_lat, lng: s.pickup_lng }
+            const nearby = driversList
+              .filter(d => typeof d.current_lat === 'number' && typeof d.current_lng === 'number')
+              .map(d => ({ d, dist: haversine(d.current_lat!, d.current_lng!, pick.lat, pick.lng) }))
+              .sort((a,b) => a.dist - b.dist)
+              .slice(0, 12)
+            for (const x of nearby) {
+              try {
+                await supabase.from('ops_events').insert({
+                  event_type: 'dispatch_offer',
+                  ref_id: s.id,
+                  payload: {
+                    driver_id: x.d.id,
+                    trip_id: s.id,
+                    pickup: pick,
+                    dropoff: null,
+                    dist_km: x.dist,
+                    price: 0,
+                    expires_at: new Date(Date.now() + 60_000).toISOString()
+                  }
+                })
+              } catch {}
+            }
+          }
+        }
+      } catch {}
+    }, 60_000)
+    return () => clearInterval(id)
+  }, [driversList])
 
   const handleLogout = async () => {
     await signOut()

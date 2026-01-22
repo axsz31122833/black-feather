@@ -55,6 +55,8 @@ export default function PassengerHome() {
   const [surgeMultiplier, setSurgeMultiplier] = useState(1)
   const [rideMode, setRideMode] = useState<'immediate' | 'scheduled'>('immediate')
   const [scheduledTime, setScheduledTime] = useState('')
+  const [scheduledDate, setScheduledDate] = useState('')
+  const [scheduledClock, setScheduledClock] = useState('')
   const useGoogle = true
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 25.033, lng: 121.565 })
   const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
@@ -647,11 +649,11 @@ export default function PassengerHome() {
     
     try {
       if (rideMode === 'scheduled') {
-        if (!scheduledTime) {
-          alert('請選擇預約時間')
+        if (!scheduledDate || !scheduledClock) {
+          alert('請輸入預約日期與時間')
         } else {
-          const whenIso = new Date(scheduledTime).toISOString()
-          const whenTs = new Date(scheduledTime).getTime()
+          const whenIso = new Date(`${scheduledDate}T${scheduledClock}:00`).toISOString()
+          const whenTs = new Date(`${scheduledDate}T${scheduledClock}:00`).getTime()
           const nowTs = Date.now()
           if (isNaN(whenTs) || whenTs < nowTs + 10 * 60 * 1000) {
             alert('預約時間需至少晚於現在 10 分鐘')
@@ -665,7 +667,7 @@ export default function PassengerHome() {
             pickup_lng: pickupCoords.lng,
             dropoff_lat: dropoffCoords.lat,
             dropoff_lng: dropoffCoords.lng,
-            status: 'scheduled',
+            status: 'PENDING_PREORDER',
             processed: false
           } as any)
           if (error) throw error
@@ -1003,6 +1005,22 @@ export default function PassengerHome() {
         
         {/* Pickup Location */}
         <div className="mb-4">
+          <div className="mb-2 flex items-center gap-2">
+            <button
+              onClick={() => setRideMode('immediate')}
+              className={`px-3 py-2 rounded-2xl ${rideMode==='immediate' ? 'text-black' : 'text-gray-700'}`}
+              style={{ backgroundImage: rideMode==='immediate' ? 'linear-gradient(to right, #D4AF37, #B8860B)' : 'none', border: '1px solid rgba(212,175,55,0.3)' }}
+            >
+              即時行程
+            </button>
+            <button
+              onClick={() => setRideMode('scheduled')}
+              className={`px-3 py-2 rounded-2xl ${rideMode==='scheduled' ? 'text-black' : 'text-gray-700'}`}
+              style={{ backgroundImage: rideMode==='scheduled' ? 'linear-gradient(to right, #D4AF37, #B8860B)' : 'none', border: '1px solid rgba(212,175,55,0.3)' }}
+            >
+              預約行程
+            </button>
+          </div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <MapPin className="w-4 h-4 inline mr-1 text-green-600" />
             上車地點
@@ -1096,6 +1114,18 @@ export default function PassengerHome() {
             )}
           </div>
         </div>
+        {rideMode === 'scheduled' && (
+          <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">日期</label>
+              <input type="date" value={scheduledDate} onChange={e=>setScheduledDate(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">時間</label>
+              <input type="time" value={scheduledClock} onChange={e=>setScheduledClock(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
+            </div>
+          </div>
+        )}
 
         {/* Car Type Selection */}
         {distance > 0 && (
