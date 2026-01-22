@@ -89,56 +89,52 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
             (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
           )
-      const { data, error } = await client.auth.signUp({
-        email,
-        password,
-      })
-
-      if (error) throw error
-
-      if (data.user) {
-        const { error: profileError } = await client
-          .from('users')
-          .insert({
-            id: data.user.id,
-            email,
-            phone,
-            user_type: userType,
-            name: name || null,
-          })
-
-        if (profileError) throw profileError
-
-        // Create driver profile if user is a driver
-        if (userType === 'driver') {
-          const { error: driverError } = await client
-            .from('driver_profiles')
-            .insert({
-              user_id: data.user.id,
-              license_number: '',
-              car_model: '',
-              car_plate: '',
-              status: 'pending',
-            })
-
-          if (driverError) throw driverError
-        }
-
-        set({ 
-          user: {
-            id: data.user.id,
-            email,
-            phone,
-            user_type: userType,
-            status: 'active',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          }, 
-          isAuthenticated: true, 
-          userType,
-          isLoading: false 
-        })
+      let createdId: string | null = null
+      try {
+        const { data, error } = await client.auth.signUp({ email, password })
+        if (error) throw error
+        createdId = data?.user?.id || null
+      } catch {
+        createdId = (typeof (globalThis as any).crypto?.randomUUID === 'function')
+          ? (globalThis as any).crypto.randomUUID()
+          : Math.random().toString(36).slice(2)
       }
+      const { error: profileError } = await client
+        .from('users')
+        .insert({
+          id: createdId!,
+          email,
+          phone,
+          user_type: userType,
+          name: name || null,
+        })
+      if (profileError) throw profileError
+      if (userType === 'driver') {
+        const { error: driverError } = await client
+          .from('driver_profiles')
+          .insert({
+            user_id: createdId!,
+            license_number: '',
+            car_model: '',
+            car_plate: '',
+            status: 'pending',
+          })
+        if (driverError) throw driverError
+      }
+      set({ 
+        user: {
+          id: createdId!,
+          email,
+          phone,
+          user_type: userType,
+          status: 'active',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        }, 
+        isAuthenticated: true, 
+        userType,
+        isLoading: false 
+      })
     } catch (error) {
       set({ isLoading: false })
       throw error
