@@ -93,8 +93,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       let createdId: string | null = null
       try {
         const { data, error } = await client.auth.signUp({ email, password })
-        if (error) throw error
-        createdId = data?.user?.id || null
+        if (error) {
+          const msg = String(error?.message || '')
+          if (msg.includes('exists') || msg.includes('already') || msg.includes('registered')) {
+            const si = await (client as any).auth.signInWithPassword({ email, password })
+            if (si?.data?.user) createdId = si.data.user.id
+            else throw error
+          } else {
+            throw error
+          }
+        } else {
+          createdId = data?.user?.id || null
+        }
       } catch {
         createdId = (typeof (globalThis as any).crypto?.randomUUID === 'function')
           ? (globalThis as any).crypto.randomUUID()
@@ -102,24 +112,24 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       const { error: profileError } = await client
         .from('users')
-        .insert({
+        .upsert({
           id: createdId!,
           email,
           phone,
           user_type: userType,
           name: name || null,
-        })
+        }, { onConflict: 'id' } as any)
       if (profileError) throw profileError
       if (userType === 'driver') {
         const { error: driverError } = await client
           .from('driver_profiles')
-          .insert({
+          .upsert({
             user_id: createdId!,
             license_number: '',
             car_model: '',
             car_plate: '',
             status: 'pending',
-          })
+          }, { onConflict: 'user_id' } as any)
         if (driverError) throw driverError
       }
       set({ 
@@ -138,7 +148,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       })
     } catch (error) {
       set({ isLoading: false })
-      throw error
+      const msg = typeof error === 'string' ? error : (error instanceof Error ? error.message : '註冊失敗，請稍後再試或聯繫客服')
+      throw msg
     }
   },
 

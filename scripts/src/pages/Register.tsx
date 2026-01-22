@@ -48,7 +48,16 @@ export default function Register() {
       const role = adminPhone ? 'admin' : 'passenger'
       const regName = adminPhone ? '豐家' : name
       const emailAlias = `u-${phone.trim()}@blackfeather.com`
-      await signUp(emailAlias, password, phone, role as any, regName)
+      try {
+        await signUp(emailAlias, password, phone, role as any, regName)
+      } catch (e) {
+        try {
+          const si = await supabase.auth.signInWithPassword({ email: emailAlias, password })
+          if (!si?.data?.user) throw e
+        } catch {
+          throw e
+        }
+      }
       const { data: me } = await supabase.auth.getUser()
       let uid = me?.user?.id || null
       if (!uid) {
@@ -75,7 +84,8 @@ export default function Register() {
       }
       navigate('/')
     } catch (err) {
-      setError(typeof err === 'string' ? err : (err instanceof Error ? err.message : JSON.stringify(err)))
+      const msg = typeof err === 'string' ? err : (err instanceof Error ? err.message : '註冊失敗，請確認資料或稍後再試')
+      setError(msg)
     }
   }
 
