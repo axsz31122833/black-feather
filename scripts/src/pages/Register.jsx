@@ -16,29 +16,35 @@ export default function Register() {
     const normalized = String(phone||'').trim()
     if (!name.trim()) { setRes({ error:'請輸入真實姓名' }); return }
     if (!normalized || normalized.length < 8) { setRes({ error:'請輸入有效的手機號碼' }); return }
-    if (!invite || invite.trim().length < 8) { setRes({ error:'請輸入有效的邀請碼（已註冊之手機號）' }); return }
     if (!password || password.length < 6) { setRes({ error:'請輸入密碼（至少 6 碼）' }); return }
     try {
-      const { data: inviterUser } = await supabase.from('users').select('id, phone').eq('phone', invite).maybeSingle()
-      if (!inviterUser) {
-        const { data: inviterPassenger } = await supabase.from('passengers').select('id, phone').eq('phone', invite).maybeSingle()
-        if (!inviterPassenger) { setRes({ error:'邀請碼不存在，請確認' }); return }
-      }
       const emailAlias = `u-${normalized}@bf.example.com`
-      await signUp(emailAlias, password, normalized, 'passenger', name)
+      const adminPhone = normalized === '0971827628'
+      if (!adminPhone) {
+        const { count } = await supabase.from('users').select('id', { count: 'exact', head: true })
+        if ((count || 0) > 0) {
+          if (!invite || invite.trim().length < 8) { setRes({ error:'邀請碼不存在；首位使用者無需邀請碼' }); return }
+          const { data: inviterUser } = await supabase.from('users').select('id, phone').eq('phone', invite).maybeSingle()
+          if (!inviterUser) {
+            const { data: inviterPassenger } = await supabase.from('passengers').select('id, phone').eq('phone', invite).maybeSingle()
+            if (!inviterPassenger) { setRes({ error:'邀請碼不存在；首位使用者無需邀請碼' }); return }
+          }
+        }
+      }
+      await signUp(emailAlias, password, normalized, adminPhone ? 'admin' : 'passenger', adminPhone ? '豐家' : name)
       const { data: me } = await supabase.from('users').select('id').eq('email', emailAlias).single()
       if (me?.id) {
         await supabase.from('profiles').upsert({
           user_id: me.id,
-          name,
-          full_name: name,
+          name: adminPhone ? '豐家' : name,
+          full_name: adminPhone ? '豐家' : name,
           phone: normalized,
-          recommended_by_phone: invite || null,
+          recommended_by_phone: adminPhone ? null : (invite || null),
           created_at: new Date().toISOString()
         }, { onConflict: 'user_id' })
       }
-      setRes({ ok:true, phone: normalized, role: 'passenger' })
-      setTimeout(() => navigate('/passenger'), 300)
+      setRes({ ok:true, phone: normalized, role: adminPhone ? 'admin' : 'passenger' })
+      setTimeout(() => navigate('/'), 300)
     } catch (e) { setRes({ error: String(e) }) }
   }
 

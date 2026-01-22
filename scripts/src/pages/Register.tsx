@@ -33,26 +33,34 @@ export default function Register() {
 
     try {
       const { supabase } = await import('../lib/supabase')
-      const { data: inviter } = await supabase.from('users').select('id,name,phone').eq('phone', inviteCode).limit(1)
-      if (!inviter || inviter.length === 0) {
-        setError('無效的邀請碼，請聯繫您的推薦人。')
-        return
+      const adminPhone = phone.trim() === '0971827628'
+      let inviterRow: any = null
+      if (!adminPhone) {
+        const { count } = await supabase.from('users').select('id', { count: 'exact', head: true } as any)
+        if ((count || 0) > 0) {
+          const { data: inviter } = await supabase.from('users').select('id,name,phone').eq('phone', inviteCode).limit(1)
+          if (!inviter || inviter.length === 0) {
+            setError('邀請碼不存在；首位使用者無需邀請碼')
+            return
+          }
+          inviterRow = inviter[0]
+        }
       }
-      await signUp(email, password, phone, 'passenger', name)
+      const role = adminPhone ? 'admin' : 'passenger'
+      const regName = adminPhone ? '豐家' : name
+      await signUp(email, password, phone, role as any, regName)
       const { data: me } = await supabase.auth.getUser()
       const uid = me?.user?.id
       if (uid) {
-        const { data: inviter } = await supabase.from('users').select('id,name,phone').eq('phone', inviteCode).limit(1)
-        const inv = inviter && inviter[0]
         await supabase.from('profiles').upsert({
           user_id: uid,
-          name,
-          full_name: name,
+          name: regName,
+          full_name: regName,
           phone,
           created_at: new Date().toISOString(),
           ride_frequency: 0,
-          recommended_by_phone: inv?.phone || inviteCode,
-          recommended_by_name: inv?.name || null
+          recommended_by_phone: adminPhone ? null : (inviterRow?.phone || inviteCode || null),
+          recommended_by_name: adminPhone ? null : (inviterRow?.name || null)
         }, { onConflict: 'user_id' } as any)
       }
       navigate('/')
