@@ -10,6 +10,7 @@ import TripChat from '../components/TripChat'
 import { confirmPaymentRPC, recordPayment } from '../utils/payments'
 import { sendOpsEvent } from '../utils/ops'
 import { env } from '../config/env'
+import { sendPush } from '../lib/rideApi'
 
 export default function DriverHome() {
   const navigate = useNavigate()
@@ -118,6 +119,28 @@ export default function DriverHome() {
     }, 1000)
     return () => { ch.unsubscribe(); clearInterval(timer) }
   }, [user?.id])
+  useEffect(() => {
+    if (offerCountdown !== 0 || !incomingOffer || !user) return
+    ;(async () => {
+      try {
+        await supabase.from('ops_events').insert({ event_type: 'dispatch_timeout', payload: { driver_id: user.id, offer: incomingOffer } })
+      } catch {}
+      setIncomingOffer(null)
+      try {
+        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
+        const { data: evs } = await supabase
+          .from('ops_events')
+          .select('event_type,payload,created_at')
+          .gte('created_at', oneHourAgo)
+          .in('event_type', ['dispatch_timeout','dispatch_reject'])
+        const count = (evs || []).filter(ev => ev?.payload?.driver_id === user.id).length
+        if (count >= 2) {
+          await supabase.from('drivers').update({ is_online: false, status: 'offline' }).eq('id', user.id)
+          try { await sendPush({ user_id: user.id, title: '狀態變更', body: '因多次逾時未接單，已自動切換為離線' }) } catch {}
+        }
+      } catch {}
+    })()
+  }, [offerCountdown, incomingOffer, user?.id])
   useEffect(() => {
     if (currentTrip?.status === 'completed') setPostFlowStep(1)
     else setPostFlowStep(0)
@@ -530,6 +553,12 @@ export default function DriverHome() {
                   reason: 'first_ride_bonus',
                   created_at: new Date().toISOString()
                 } as any)
+              } else {
+                const { data: shopEv } = await supabase.from('ops_events').select('payload').eq('event_type','shop_order').eq('ref_id', currentTrip.id).limit(1)
+                const mid = shopEv && shopEv[0]?.payload?.merchant_id
+                if (mid) {
+                  await supabase.from('ops_events').insert({ event_type: 'merchant_reward', ref_id: currentTrip.id, payload: { merchant_id: mid, amount: 20 } })
+                }
               }
             }
           }

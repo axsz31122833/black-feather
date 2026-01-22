@@ -387,9 +387,25 @@ export default function AdminDashboard() {
             .select('user_id,rating')
             .in('user_id', userIds)
           const idToRating: Record<string, number> = {};
-          (profs || []).forEach((row: any) => {
+          ;(profs || []).forEach((row: any) => {
             if (row?.user_id) idToRating[row.user_id] = Number(row.rating ?? 4.0)
           })
+          try {
+            const { data: evRatings } = await supabase.from('ops_events').select('payload').eq('event_type','rating').limit(5000);
+            const agg = {} as any
+            (evRatings || []).forEach((ev: any) => {
+              const did = ev?.payload?.driver_id
+              const score = Number(ev?.payload?.score || 0)
+              if (!did || !score) return
+              if (!agg[did]) agg[did] = { sum: 0, cnt: 0 }
+              agg[did].sum += score
+              agg[did].cnt += 1
+            })
+            Object.keys(agg).forEach(did => {
+              const avg = Math.round((agg[did].sum / Math.max(1, agg[did].cnt)) * 10) / 10
+              idToRating[did] = avg
+            })
+          } catch {}
           const ratings: Record<string, number> = {};
           phones.forEach(p => {
             const uid = phoneToUserId[p]

@@ -46,6 +46,8 @@ export default function PassengerHome() {
   const [routePolyline, setRoutePolyline] = useState<google.maps.Polyline | null>(null)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
   const [showPaymentModal, setShowPaymentModal] = useState(false)
+  const [showRatingModal, setShowRatingModal] = useState(false)
+  const [ratingScore, setRatingScore] = useState(5)
   const [showSupportModal, setShowSupportModal] = useState(false)
   const [supportText, setSupportText] = useState('')
   const [arrivalSeconds, setArrivalSeconds] = useState<number | null>(null)
@@ -70,6 +72,8 @@ export default function PassengerHome() {
   const [placePredDrop, setPlacePredDrop] = useState<Array<{ description: string; place_id: string }>>([])
   const placesSvcRef = useRef<any>(null)
   const autoSvcRef = useRef<any>(null)
+  const [qrShopId, setQrShopId] = useState<string | null>(null)
+  const [lockPickup, setLockPickup] = useState(false)
   const formatMMSS = (sec: number) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')
     const s = Math.floor(sec % 60).toString().padStart(2, '0')
@@ -130,6 +134,30 @@ export default function PassengerHome() {
       if (!(window as any).google) return
       autoSvcRef.current = new (window as any).google.maps.places.AutocompleteService()
       placesSvcRef.current = new (window as any).google.maps.places.PlacesService(document.createElement('div'))
+    } catch {}
+  }, [])
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search)
+      const sid = params.get('shop_id')
+      if (sid) {
+        setQrShopId(sid)
+        ;(async () => {
+          try {
+            const { data: ms } = await supabase.from('partner_merchants').select('id,name,address,phone').eq('id', sid).limit(1)
+            const m = ms && ms[0]
+            if (m?.address) {
+              const result = await geocodeOSM(m.address)
+              setPickupCoords(result)
+              setPickupAddress(m.address)
+              setIsStoreOrder(true)
+              setLockPickup(true)
+              if (useGoogle && map) map.setCenter(result as any)
+              else setMapCenter(result)
+            }
+          } catch {}
+        })()
+      }
     } catch {}
   }, [])
 
@@ -697,6 +725,9 @@ export default function PassengerHome() {
           if (tripId && isLongTrip) {
             try { await supabase.from('ops_events').insert({ event_type: 'long_distance_request', ref_id: tripId, payload: { pickup: pickupCoords, threshold: 40 } }) } catch {}
           }
+          if (tripId && qrShopId) {
+            try { await supabase.from('ops_events').insert({ event_type: 'shop_order', ref_id: tripId, payload: { merchant_id: qrShopId } }) } catch {}
+          }
           const { data: drivers } = await supabase
             .from('drivers')
             .select('id,name,phone,is_online,current_lat,current_lng,status,last_seen_at')
@@ -843,9 +874,17 @@ export default function PassengerHome() {
             {currentTrip.status === 'completed' && (
               <button
                 onClick={() => setShowPaymentModal(true)}
-                className="w-full bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
+                className="w-full bg-green-600 text白 px-6 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center justify-center space-x-2"
               >
                 <span>現金付款</span>
+              </button>
+            )}
+            {currentTrip.status === 'completed' && (
+              <button
+                onClick={() => setShowRatingModal(true)}
+                className="w-full bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition-colors flex items-center justify-center space-x-2"
+              >
+                <span>評分（1-5）</span>
               </button>
             )}
           </div>
@@ -883,6 +922,32 @@ export default function PassengerHome() {
                   className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
                 >
                   {isLoading ? '處理中...' : '確認付款'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showRatingModal && currentTrip && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">本次行程評分</h3>
+              <div className="mb-4">
+                <input type="number" min={1} max={5} value={ratingScore} onChange={e=>setRatingScore(Math.max(1, Math.min(5, parseInt(e.target.value||'5')||5)))} className="w-full px-3 py-2 border border-gray-300 rounded" />
+                <div className="text-xs text-gray-600 mt-1">1-5 分</div>
+              </div>
+              <div className="flex space-x-3">
+                <button onClick={()=>setShowRatingModal(false)} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">取消</button>
+                <button
+                  onClick={async ()=>{
+                    try {
+                      await supabase.from('ops_events').insert({ event_type: 'rating', ref_id: currentTrip.id, payload: { driver_id: currentTrip.driver_id, score: ratingScore } })
+                      alert('已送出評分，感謝您的回饋')
+                      setShowRatingModal(false)
+                    } catch { alert('送出失敗') }
+                  }}
+                  className="flex-1 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+                >
+                  送出
                 </button>
               </div>
             </div>
@@ -948,15 +1013,16 @@ export default function PassengerHome() {
         <div className="rounded-2xl shadow-2xl border border-[#D4AF37]/50 bg-[#1a1a1a] p-4">
           <div className="mb-3">
             <label className="block text-sm text-gray-300 mb-2">🔍 您的位置（上車地點）</label>
-            <input
-              type="text"
-              value={pickupAddress}
-              onChange={(e) => setPickupAddress(e.target.value)}
-              onFocus={() => setActiveField('pickup')}
-              id="pickup-input-ux"
-              className="w-full px-3 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-              placeholder="例如：台中市西屯區..."
-            />
+              <input
+                type="text"
+                value={pickupAddress}
+                onChange={(e) => setPickupAddress(e.target.value)}
+                onFocus={() => setActiveField('pickup')}
+                id="pickup-input-ux"
+                className="w-full px-3 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+                disabled={lockPickup}
+                placeholder="例如：台中市西屯區..."
+              />
             {placePredPickup.length > 0 && activeField === 'pickup' && (
               <div className="mt-2 rounded-2xl border border-[#D4AF37]/30 bg-[#111] text-white shadow-2xl">
                 {placePredPickup.map(p => (
@@ -1032,6 +1098,7 @@ export default function PassengerHome() {
               onChange={(e) => setPickupAddress(e.target.value)}
               id="pickup-input"
               className="flex-1 px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              disabled={lockPickup}
               placeholder="輸入上車地址"
             />
             <button
