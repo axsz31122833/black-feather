@@ -4,23 +4,20 @@ import { useAuthStore } from '../stores/auth'
 import { useNavigate } from 'react-router-dom'
 
 export default function Register() {
+  const [name, setName] = useState('')
   const [phone, setPhone] = useState('')
-  const [role, setRole] = useState('passenger')
   const [password, setPassword] = useState('')
   const [invite, setInvite] = useState('')
-  const [plate, setPlate] = useState('')
-  const [carModel, setCarModel] = useState('')
-  const [carColor, setCarColor] = useState('')
   const [res, setRes] = useState(null)
   const navigate = useNavigate()
   const { signUp } = useAuthStore()
 
   async function submit() {
     const normalized = String(phone||'').trim()
+    if (!name.trim()) { setRes({ error:'請輸入真實姓名' }); return }
     if (!normalized || normalized.length < 8) { setRes({ error:'請輸入有效的手機號碼' }); return }
     if (!invite || invite.trim().length < 8) { setRes({ error:'請輸入有效的邀請碼（已註冊之手機號）' }); return }
     if (!password || password.length < 6) { setRes({ error:'請輸入密碼（至少 6 碼）' }); return }
-    if (role==='driver' && (!plate.trim() || !carModel.trim() || !carColor.trim())) { setRes({ error:'請完整填寫車牌、車型與顏色' }); return }
     try {
       const { data: inviterUser } = await supabase.from('users').select('id, phone').eq('phone', invite).maybeSingle()
       if (!inviterUser) {
@@ -28,60 +25,61 @@ export default function Register() {
         if (!inviterPassenger) { setRes({ error:'邀請碼不存在，請確認' }); return }
       }
       const emailAlias = `u-${normalized}@bf.example.com`
-      await signUp(emailAlias, password, normalized, role)
-      if (role === 'driver') {
-        const { data: me } = await supabase.from('users').select('id').eq('email', emailAlias).single()
-        if (me?.id) {
-          await supabase.from('driver_profiles').update({ car_model: carModel, car_plate: plate }).eq('user_id', me.id)
-        }
+      await signUp(emailAlias, password, normalized, 'passenger', name)
+      const { data: me } = await supabase.from('users').select('id').eq('email', emailAlias).single()
+      if (me?.id) {
+        await supabase.from('profiles').upsert({
+          user_id: me.id,
+          name,
+          full_name: name,
+          phone: normalized,
+          recommended_by_phone: invite || null,
+          created_at: new Date().toISOString()
+        }, { onConflict: 'user_id' })
       }
-      setRes({ ok:true, phone: normalized, role })
-      setTimeout(() => {
-        if (role === 'driver') navigate('/driver')
-        else if (role === 'admin') navigate('/admin')
-        else navigate('/passenger')
-      }, 300)
+      setRes({ ok:true, phone: normalized, role: 'passenger' })
+      setTimeout(() => navigate('/passenger'), 300)
     } catch (e) { setRes({ error: String(e) }) }
   }
 
   return (
-    <div className="grid">
-      <div className="card">
-        <div className="title">註冊</div>
-      <div className="form-group">
-        <div className="label">手機號碼</div>
-        <input className="input" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="例如 09xxxxxxxx" />
-      </div>
-      <div className="form-group">
-        <div className="label">密碼</div>
-        <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="至少 6 碼" />
-      </div>
-      <div className="form-group">
-        <div className="label">邀請碼（已註冊之手機號）</div>
-        <input className="input" value={invite} onChange={e=>setInvite(e.target.value)} placeholder="例如 09xxxxxxxx" />
-      </div>
-      <div className="form-group">
-        <div className="label">身份</div>
-        <div style={{ display:'flex', gap:8 }}>
-          <label><input type="radio" name="regrole" checked={role==='passenger'} onChange={()=>setRole('passenger')} /> 乘客</label>
-          <label><input type="radio" name="regrole" checked={role==='driver'} onChange={()=>setRole('driver')} /> 司機</label>
-          <label><input type="radio" name="regrole" checked={role==='admin'} onChange={()=>setRole('admin')} /> 管理員</label>
-        </div>
-      </div>
-      {role==='driver' && (
-        <div className="form-group">
-          <div className="label">車輛資訊</div>
-          <div style={{ display:'grid', gap:8, gridTemplateColumns:'1fr 1fr 1fr' }}>
-            <input className="input" value={plate} onChange={e=>setPlate(e.target.value)} placeholder="車牌號碼" />
-            <input className="input" value={carModel} onChange={e=>setCarModel(e.target.value)} placeholder="車型" />
-            <input className="input" value={carColor} onChange={e=>setCarColor(e.target.value)} placeholder="顏色" />
+    <div style={{ minHeight:'100vh', background:'#000000', display:'flex', alignItems:'center', justifyContent:'center', padding:16 }}>
+      <div style={{ width:'100%', maxWidth:420, border:'1px solid #D4AF37', borderRadius:16, padding:24, background:'linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%)', boxShadow:'0 0 24px rgba(212,175,55,0.25)' }}>
+        <div style={{ textAlign:'center', marginBottom:16, color:'#FFD700', fontWeight:700, fontSize:24 }}>註冊</div>
+        <div style={{ display:'grid', gap:16 }}>
+          <div className="form-group">
+            <div className="label" style={{ color:'#FFFFFF', marginBottom:6 }}>姓名</div>
+            <input
+              className="input"
+              value={name}
+              onChange={e=>setName(e.target.value)}
+              placeholder="請輸入真實姓名"
+              style={{ width:'100%', padding:'10px 12px', background:'#1a1a1a', color:'#fff', border:'1px solid #D4AF37', borderRadius:12 }}
+            />
           </div>
+          <div className="form-group">
+            <div className="label" style={{ color:'#FFFFFF', marginBottom:6 }}>手機號碼</div>
+            <input className="input" value={phone} onChange={e=>setPhone(e.target.value)} placeholder="例如 09xxxxxxxx" style={{ width:'100%', padding:'10px 12px', background:'#1a1a1a', color:'#fff', border:'1px solid #D4AF37', borderRadius:12 }} />
+          </div>
+          <div className="form-group">
+            <div className="label" style={{ color:'#FFFFFF', marginBottom:6 }}>密碼</div>
+            <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="至少 6 碼" style={{ width:'100%', padding:'10px 12px', background:'#1a1a1a', color:'#fff', border:'1px solid #D4AF37', borderRadius:12 }} />
+          </div>
+          <div className="form-group">
+            <div className="label" style={{ color:'#FFFFFF', marginBottom:6 }}>邀請碼（已註冊之手機號）</div>
+            <input className="input" value={invite} onChange={e=>setInvite(e.target.value)} placeholder="例如 09xxxxxxxx" style={{ width:'100%', padding:'10px 12px', background:'#1a1a1a', color:'#fff', border:'1px solid #D4AF37', borderRadius:12 }} />
+          </div>
+          <div style={{ display:'flex', gap:8 }}>
+            <button
+              className="btn btn-primary"
+              onClick={submit}
+              style={{ flex:1, padding:'12px 16px', borderRadius:14, color:'#000', fontWeight:700, background:'linear-gradient(90deg, #D4AF37 0%, #B8860B 100%)', boxShadow:'0 0 12px rgba(212,175,55,0.35)' }}
+            >
+              註冊
+            </button>
+          </div>
+          <pre className="muted" style={{ marginTop:12, color:'#999' }}>{res ? JSON.stringify(res, null, 2) : null}</pre>
         </div>
-      )}
-        <div style={{ display:'flex', gap:8 }}>
-          <button className="btn btn-primary" onClick={submit}>註冊</button>
-        </div>
-        <pre className="muted" style={{ marginTop:12 }}>{res ? JSON.stringify(res, null, 2) : null}</pre>
       </div>
     </div>
   )
