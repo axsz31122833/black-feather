@@ -50,7 +50,17 @@ export default function Register() {
       const regName = adminPhone ? '豐家' : name
       await signUp(email, password, phone, role as any, regName)
       const { data: me } = await supabase.auth.getUser()
-      const uid = me?.user?.id
+      let uid = me?.user?.id || null
+      if (!uid) {
+        try {
+          const { data: u1 } = await supabase.from('users').select('id').eq('email', email).limit(1)
+          uid = u1 && u1[0]?.id || null
+          if (!uid) {
+            const { data: u2 } = await supabase.from('users').select('id').eq('phone', phone).limit(1)
+            uid = u2 && u2[0]?.id || null
+          }
+        } catch {}
+      }
       if (uid) {
         await supabase.from('profiles').upsert({
           user_id: uid,
@@ -65,7 +75,7 @@ export default function Register() {
       }
       navigate('/')
     } catch (err) {
-      setError(err instanceof Error ? err.message : '註冊失敗')
+      setError(typeof err === 'string' ? err : (err instanceof Error ? err.message : JSON.stringify(err)))
     }
   }
 
