@@ -9,7 +9,6 @@ export default function Register() {
   const navigate = useNavigate()
   const { signUp, isLoading } = useAuthStore()
   
-  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [phone, setPhone] = useState('')
@@ -48,12 +47,13 @@ export default function Register() {
       }
       const role = adminPhone ? 'admin' : 'passenger'
       const regName = adminPhone ? '豐家' : name
-      await signUp(email, password, phone, role as any, regName)
+      const emailAlias = `u-${phone.trim()}@blackfeather.com`
+      await signUp(emailAlias, password, phone, role as any, regName)
       const { data: me } = await supabase.auth.getUser()
       let uid = me?.user?.id || null
       if (!uid) {
         try {
-          const { data: u1 } = await supabase.from('users').select('id').eq('email', email).limit(1)
+          const { data: u1 } = await supabase.from('users').select('id').eq('email', emailAlias).limit(1)
           uid = u1 && u1[0]?.id || null
           if (!uid) {
             const { data: u2 } = await supabase.from('users').select('id').eq('phone', phone).limit(1)
@@ -111,20 +111,7 @@ export default function Register() {
             />
           </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-medium text-white mb-2">
-              電子郵件
-            </label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-3 border border-[#D4AF37] bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
-              placeholder="請輸入您的電子郵件"
-              required
-            />
-          </div>
+          
 
           <div>
             <label htmlFor="phone" className="block text-sm font-medium text-white mb-2">
@@ -152,7 +139,7 @@ export default function Register() {
               onChange={(e) => setInviteCode(e.target.value)}
               className="w-full px-4 py-3 border border-[#D4AF37] bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="請輸入您的邀請碼（推薦人手機號碼）"
-              required
+              
             />
           </div>
 
