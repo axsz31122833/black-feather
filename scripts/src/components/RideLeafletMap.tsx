@@ -35,9 +35,28 @@ export default function RideLeafletMap({
     }, [map])
     return null
   }
+  const FitToRoute = () => {
+    const map = useMap()
+    React.useEffect(() => {
+      const pts: Array<[number, number]> = []
+      if (pickup) pts.push([pickup.lat, pickup.lng])
+      if (dropoff) pts.push([dropoff.lat, dropoff.lng])
+      if (polyPoints && polyPoints.length > 0) {
+        for (const p of polyPoints) pts.push([p[0], p[1]])
+      }
+      if (pts.length >= 2) {
+        try {
+          const bounds = L.latLngBounds(pts.map(p => L.latLng(p[0], p[1])))
+          map.fitBounds(bounds, { padding: [40, 40] })
+        } catch {}
+      }
+    }, [map, pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, polyPoints.length])
+    return null
+  }
   return (
     <M center={[center.lat, center.lng]} zoom={13} style={{ width: '100%', height: '100%' }}>
       <MapInvalidator />
+      <FitToRoute />
       <T url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
       {pickup && (
         <Mk position={[pickup.lat, pickup.lng]}>

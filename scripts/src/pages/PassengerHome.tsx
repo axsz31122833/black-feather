@@ -64,6 +64,10 @@ export default function PassengerHome() {
   const pickupMarkerRef = useRef<google.maps.Marker | null>(null)
   const dropoffMarkerRef = useRef<google.maps.Marker | null>(null)
   const [showHighwayAlert, setShowHighwayAlert] = useState(false)
+  const [placePredPickup, setPlacePredPickup] = useState<Array<{ description: string; place_id: string }>>([])
+  const [placePredDrop, setPlacePredDrop] = useState<Array<{ description: string; place_id: string }>>([])
+  const placesSvcRef = useRef<any>(null)
+  const autoSvcRef = useRef<any>(null)
   const formatMMSS = (sec: number) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')
     const s = Math.floor(sec % 60).toString().padStart(2, '0')
@@ -118,6 +122,71 @@ export default function PassengerHome() {
       icon: Car
     }
   ]
+
+  useEffect(() => {
+    try {
+      if (!(window as any).google) return
+      autoSvcRef.current = new (window as any).google.maps.places.AutocompleteService()
+      placesSvcRef.current = new (window as any).google.maps.places.PlacesService(document.createElement('div'))
+    } catch {}
+  }, [])
+
+  useEffect(() => {
+    const run = async () => {
+      if (!autoSvcRef.current || activeField !== 'pickup') return
+      const q = pickupAddress.trim()
+      if (!q) { setPlacePredPickup([]); return }
+      try {
+        autoSvcRef.current.getPlacePredictions({ input: q, componentRestrictions: { country: 'tw' } }, (preds: any[]) => {
+          setPlacePredPickup((preds || []).map(p => ({ description: p.description, place_id: p.place_id })))
+        })
+      } catch { setPlacePredPickup([]) }
+    }
+    const t = setTimeout(run, 200)
+    return () => clearTimeout(t)
+  }, [pickupAddress, activeField])
+
+  useEffect(() => {
+    const run = async () => {
+      if (!autoSvcRef.current || activeField !== 'dropoff') return
+      const q = dropoffAddress.trim()
+      if (!q) { setPlacePredDrop([]); return }
+      try {
+        autoSvcRef.current.getPlacePredictions({ input: q, componentRestrictions: { country: 'tw' } }, (preds: any[]) => {
+          setPlacePredDrop((preds || []).map(p => ({ description: p.description, place_id: p.place_id })))
+        })
+      } catch { setPlacePredDrop([]) }
+    }
+    const t = setTimeout(run, 200)
+    return () => clearTimeout(t)
+  }, [dropoffAddress, activeField])
+
+  const selectPlace = async (placeId: string, description: string, field: 'pickup' | 'dropoff') => {
+    try {
+      if (!placesSvcRef.current) return
+      placesSvcRef.current.getDetails({ placeId, fields: ['geometry','formatted_address','name'] }, async (res: any) => {
+        try {
+          const loc = res?.geometry?.location
+          if (loc) {
+            const coords = { lat: loc.lat(), lng: loc.lng() }
+            if (field === 'pickup') {
+              setPickupAddress(res.formatted_address || description)
+              setPickupCoords(coords)
+              setPlacePredPickup([])
+              if (dropoffCoords) calculateRoute(coords, dropoffCoords)
+            } else {
+              setDropoffAddress(res.formatted_address || description)
+              setDropoffCoords(coords)
+              setPlacePredDrop([])
+              if (pickupCoords) calculateRoute(pickupCoords, coords)
+            }
+            if (useGoogle && map) map.setCenter(coords as any)
+            else setMapCenter(coords)
+          }
+        } catch {}
+      })
+    } catch {}
+  }
 
   useEffect(() => {
     if (user) {
@@ -886,6 +955,19 @@ export default function PassengerHome() {
               className="w-full px-3 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="例如：台中市西屯區..."
             />
+            {placePredPickup.length > 0 && activeField === 'pickup' && (
+              <div className="mt-2 rounded-2xl border border-[#D4AF37]/30 bg-[#111] text-white shadow-2xl">
+                {placePredPickup.map(p => (
+                  <button
+                    key={p.place_id}
+                    onClick={() => selectPlace(p.place_id, p.description, 'pickup')}
+                    className="w-full text-left px-4 py-2 hover:bg-[#1a1a1a]"
+                  >
+                    {p.description}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-sm text-gray-300 mb-2">📍 您要去哪？（目的地點）</label>
@@ -898,6 +980,19 @@ export default function PassengerHome() {
               className="w-full px-3 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="例如：台中火車站..."
             />
+            {placePredDrop.length > 0 && activeField === 'dropoff' && (
+              <div className="mt-2 rounded-2xl border border-[#D4AF37]/30 bg-[#111] text-white shadow-2xl">
+                {placePredDrop.map(p => (
+                  <button
+                    key={p.place_id}
+                    onClick={() => selectPlace(p.place_id, p.description, 'dropoff')}
+                    className="w-full text-left px-4 py-2 hover:bg-[#1a1a1a]"
+                  >
+                    {p.description}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
         </div>
       </div>
