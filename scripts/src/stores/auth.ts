@@ -90,26 +90,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
           )
       const email = `u-${(phone || '').trim()}-${Date.now()}@blackfeather.com`
-      let createdId: string | null = null
-      try {
-        const { data, error } = await client.auth.signUp({ email, password })
-        if (error) {
-          const msg = String(error?.message || '')
-          if (msg.includes('exists') || msg.includes('already') || msg.includes('registered')) {
-            const si = await (client as any).auth.signInWithPassword({ email, password })
-            if (si?.data?.user) createdId = si.data.user.id
-            else throw error
-          } else {
-            throw error
-          }
-        } else {
-          createdId = data?.user?.id || null
-        }
-      } catch {
-        createdId = (typeof (globalThis as any).crypto?.randomUUID === 'function')
+      const createdId =
+        (typeof (globalThis as any).crypto?.randomUUID === 'function')
           ? (globalThis as any).crypto.randomUUID()
           : Math.random().toString(36).slice(2)
-      }
       const { error: profileError } = await client
         .from('users')
         .upsert({

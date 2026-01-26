@@ -21,14 +21,11 @@ export default function Register() {
       const emailAlias = `u-${normalized}-${Date.now()}@blackfeather.com`
       const adminPhone = normalized === '0971827628' || normalized === '0982214855'
       if (!adminPhone) {
-        const { count } = await supabase.from('users').select('id', { count: 'exact', head: true })
+        const { count } = await supabase.from('profiles').select('user_id', { count: 'exact', head: true })
         if ((count || 0) > 0) {
-          if (!invite || invite.trim().length < 8) { setRes({ error:'邀請碼不存在；首位使用者無需邀請碼' }); return }
-          const { data: inviterUser } = await supabase.from('users').select('id, phone').eq('phone', invite).maybeSingle()
-          if (!inviterUser) {
-            const { data: inviterPassenger } = await supabase.from('passengers').select('id, phone').eq('phone', invite).maybeSingle()
-            if (!inviterPassenger) { setRes({ error:'邀請碼不存在；首位使用者無需邀請碼' }); return }
-          }
+          if (!invite || invite.trim().length < 8) { setRes({ error:'查無此邀請人，請確認推薦人電話號碼' }); return }
+          const { data: inviter } = await supabase.from('profiles').select('user_id, phone').eq('phone', invite).maybeSingle()
+          if (!inviter) { setRes({ error:'查無此邀請人，請確認推薦人電話號碼' }); return }
         }
       }
       await signUp(emailAlias, password, normalized, adminPhone ? 'admin' : 'passenger', adminPhone ? '豐家' : name)

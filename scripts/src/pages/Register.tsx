@@ -36,11 +36,11 @@ export default function Register() {
       const adminPhone = p === '0971827628' || p === '0982214855'
       let inviterRow: any = null
       if (!adminPhone) {
-        const { count } = await supabase.from('users').select('id', { count: 'exact', head: true } as any)
+        const { count } = await supabase.from('profiles').select('user_id', { count: 'exact', head: true } as any)
         if ((count || 0) > 0) {
-          const { data: inviter } = await supabase.from('users').select('id,name,phone').eq('phone', inviteCode).limit(1)
+          const { data: inviter } = await supabase.from('profiles').select('user_id,name,phone').eq('phone', inviteCode).limit(1)
           if (!inviter || inviter.length === 0) {
-            setError('邀請碼不存在；首位使用者無需邀請碼')
+            setError('查無此邀請人，請確認推薦人電話號碼')
             return
           }
           inviterRow = inviter[0]
