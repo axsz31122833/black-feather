@@ -71,7 +71,7 @@ export default function AdminDashboard() {
   const [tripRowsLimit, setTripRowsLimit] = useState(50)
   const [driversList, setDriversList] = useState<Driver[]>([])
   const [loading, setLoading] = useState(true)
-  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'trips' | 'dispatch' | 'ops'>('overview')
+  const [activeTab, setActiveTab] = useState<'overview' | 'users' | 'trips' | 'dispatch' | 'ops' | 'addPassenger' | 'addDriver' | 'pricing'>('overview')
   const [dispatchRideId, setDispatchRideId] = useState('')
   const [dispatchRes, setDispatchRes] = useState<any>(null)
   const [radiusKm, setRadiusKm] = useState(5)
@@ -1056,7 +1056,8 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-transparent text-white">
+    <div className="min-h-screen bg-[#0a0a0a] text-white">
+      {/* 左側導覽暫不固定，使用上方導航 */}
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 py-4">
@@ -1755,6 +1756,52 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {activeTab === 'addPassenger' && (
+          <div className="grid grid-cols-1 gap-6">
+            <div className="bg-[#111] rounded-2xl p-6 border border-[#D4AF37]/40">
+              <div className="text-lg font-semibold mb-4" style={{ color:'#FFD700' }}>新增乘客</div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input placeholder="姓名" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+                <input placeholder="電話" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+              </div>
+              <div className="mt-4">
+                <button className="px-4 py-2 rounded-2xl" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>建立</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {activeTab === 'addDriver' && (
+          <div className="grid grid-cols-1 gap-6">
+            <div className="bg-[#111] rounded-2xl p-6 border border-[#D4AF37]/40">
+              <div className="text-lg font-semibold mb-4" style={{ color:'#FFD700' }}>新增司機</div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input placeholder="姓名" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+                <input placeholder="電話" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+                <input placeholder="車牌/車款" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+              </div>
+              <div className="mt-4">
+                <button className="px-4 py-2 rounded-2xl" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>建立</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {activeTab === 'pricing' && (
+          <div className="grid grid-cols-1 gap-6">
+            <div className="bg-[#111] rounded-2xl p-6 border border-[#D4AF37]/40">
+              <div className="text-lg font-semibold mb-4" style={{ color:'#FFD700' }}>計價規則</div>
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+                <input placeholder="基本費" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+                <input placeholder="每公里" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+                <input placeholder="每分鐘" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+                <input placeholder="服務費" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+              </div>
+              <div className="mt-4">
+                <button className="px-4 py-2 rounded-2xl" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>保存</button>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Dispatch Tab */}
         {activeTab === 'dispatch' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -1956,6 +2003,24 @@ export default function AdminDashboard() {
                         <div>
                           <label className="block text-xs text-gray-300 mb-1">📍 您要去哪？（目的地點）</label>
                           <input id="admin-dropoff-input" value={adminDropoffAddress} onChange={e=>setAdminDropoffAddress(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="例如：台中火車站" />
+                        </div>
+                      </div>
+                    </div>
+                    <div className="absolute top-3 right-3 w-80 z-20">
+                      <div className="rounded-2xl shadow-2xl border border-[#D4AF37]/50 bg-[#1a1a1a] p-3">
+                        <div className="text-sm font-semibold mb-2" style={{ color:'#FFD700' }}>待接單</div>
+                        <div className="space-y-2 max-h-[70vh] overflow-y-auto">
+                          {(trips || []).filter(t => t.status==='requested').slice(0,20).map((t)=>(
+                            <div key={t.id} className="p-2 rounded-2xl bg-[#111] border border-[#D4AF37]/20">
+                              <div className="text-xs text-gray-400 mb-1">{new Date(t.created_at).toLocaleString('zh-TW')}</div>
+                              <div className="text-sm text-gray-100">{t.pickup_address}</div>
+                              <div className="text-xs text-gray-400">→ {t.dropoff_address}</div>
+                              <div className="flex gap-2 mt-2">
+                                <button onClick={()=>{ copyTripAddress(t) }} className="px-2 py-1 text-xs border border-[#D4AF37]/40 rounded-2xl">複製地址</button>
+                                <button onClick={()=>{ const p: any = (t as any).pickup_location; if(p) setRadiusCenter({ lat: p.lat, lng: p.lng }); setDispatchRideId(t.id) }} className="px-2 py-1 text-xs rounded-2xl" style={{ backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>派單</button>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>

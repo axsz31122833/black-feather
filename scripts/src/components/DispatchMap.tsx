@@ -28,7 +28,7 @@ export default function DispatchMap({
   candidateIds: string[]
   onAssign: (driverId: string) => void
 }) {
-  const defaultCenter = pickup ? [pickup.lat, pickup.lng] : [25.033, 121.565]
+  const defaultCenter = pickup ? [pickup.lat, pickup.lng] : [24.147736, 120.673648]
   const colorFor = (d: Driver) => {
     const last = d.last_seen_at ? new Date(d.last_seen_at).getTime() : 0
     const ageSec = last ? Math.floor((Date.now() - last) / 1000) : Infinity
