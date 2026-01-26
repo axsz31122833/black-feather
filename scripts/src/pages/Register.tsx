@@ -71,18 +71,13 @@ export default function Register() {
           }
         } catch {}
       }
-      if (uid) {
-        await supabase.from('profiles').upsert({
-          user_id: uid,
-          name: regName,
-          full_name: regName,
-          phone,
-          created_at: new Date().toISOString(),
-          ride_frequency: 0,
-          recommended_by_phone: adminPhone ? null : (inviterRow?.phone || inviteCode || null),
-          recommended_by_name: adminPhone ? null : (inviterRow?.name || null)
-        }, { onConflict: 'user_id' } as any)
-      }
+      const profileId = uid || ((typeof (globalThis as any).crypto?.randomUUID === 'function') ? (globalThis as any).crypto.randomUUID() : Math.random().toString(36).slice(2))
+      await supabase.from('profiles').upsert({
+        id: profileId,
+        full_name: regName,
+        phone,
+        role: role
+      }, { onConflict: 'id' } as any)
       navigate('/')
     } catch (err) {
       const msg = typeof err === 'string' ? err : (err instanceof Error ? err.message : '註冊失敗，請確認資料或稍後再試')

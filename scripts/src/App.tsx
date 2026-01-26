@@ -1,7 +1,7 @@
 import React, { useEffect, Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom'
 const Login = lazy(() => import('./pages/Login'))
-const Register = lazy(() => import('./pages/Register.jsx'))
+const Register = lazy(() => import('./pages/Register.tsx'))
 const PassengerHome = lazy(() => import('./pages/PassengerHome'))
 const PassengerRidePage = lazy(() => import('./pages/PassengerRidePage'))
 const DriverHome = lazy(() => import('./pages/DriverHome'))

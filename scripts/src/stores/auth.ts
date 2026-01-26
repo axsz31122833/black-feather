@@ -31,12 +31,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signIn: async (phone: string, password: string, userType: 'passenger' | 'driver' | 'admin') => {
     try {
       set({ isLoading: true })
-      const client = (supabase as any)?.auth?.signInWithPassword
-        ? supabase
-        : createClient(
-            (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
-            (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
-          )
+      const client = supabase
       const { data: userByPhone, error: phoneErr } = await client
         .from('users')
         .select('id,email,user_type')
@@ -83,12 +78,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signUp: async (_email: string, password: string, phone: string, userType: 'passenger' | 'driver' | 'admin', name?: string) => {
     try {
       set({ isLoading: true })
-      const client = (supabase as any)?.auth?.signUp
-        ? supabase
-        : createClient(
-            (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
-            (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
-          )
+      const client = supabase
       const email = `u-${(phone || '').trim()}-${Date.now()}@blackfeather.com`
       const createdId =
         (typeof (globalThis as any).crypto?.randomUUID === 'function')
@@ -139,12 +129,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signOut: async () => {
     try {
-      const client = (supabase as any)?.auth?.signOut
-        ? supabase
-        : createClient(
-            (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
-            (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
-          )
+      const client = supabase
       const { error } = await client.auth.signOut()
       if (error) throw error
       
@@ -162,12 +147,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   checkAuth: async () => {
     try {
       set({ isLoading: true })
-      const client = (supabase as any)?.auth?.getUser
-        ? supabase
-        : createClient(
-            (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
-            (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
-          )
+      const client = supabase
       const { data: { user } } = await client.auth.getUser()
       
       if (user) {
@@ -203,10 +183,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { user } = get()
       if (!user || user.user_type !== 'driver') return
 
-      const client = (supabase as any)?.from ? supabase : createClient(
-        (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
-        (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
-      )
+      const client = supabase
       const { data, error } = await client
         .from('driver_profiles')
         .select('*')
