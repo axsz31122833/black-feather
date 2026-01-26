@@ -33,42 +33,39 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true })
       const client = supabase
-      const { data: userByPhone, error: phoneErr } = await client
-        .from('users')
-        .select('id,email,user_type')
+      let hash = ''
+      try {
+        const enc = new TextEncoder().encode(password)
+        const buf = await (crypto as any).subtle.digest('SHA-256', enc)
+        hash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+      } catch {
+        hash = password
+      }
+      const { data: prof } = await client
+        .from('profiles')
+        .select('id,full_name,phone,role')
         .eq('phone', phone)
-        .limit(1)
-      if (phoneErr) throw phoneErr
-      const targetEmail = userByPhone?.[0]?.email
-      if (!targetEmail) throw new Error('找不到此手機號碼的帳戶')
-      const { data, error } = await client.auth.signInWithPassword({
-        email: targetEmail,
-        password,
+        .eq('password_hash', hash)
+        .maybeSingle()
+      if (!prof) throw new Error('找不到帳戶或密碼錯誤')
+      const now = new Date().toISOString()
+      const tempUser: any = {
+        id: prof.id,
+        email: '',
+        phone: prof.phone,
+        user_type: (prof.role as any) || userType,
+        status: 'active',
+        created_at: now,
+        updated_at: now,
+      }
+      set({ 
+        user: tempUser, 
+        isAuthenticated: true, 
+        userType: tempUser.user_type,
+        isLoading: false 
       })
-
-      if (error) throw error
-
-      if (data.user) {
-        // Get user profile
-        const { data: userData, error: userError } = await client
-          .from('users')
-          .select('*')
-          .eq('id', data.user.id)
-          .single()
-
-        if (userError) throw userError
-
-        set({ 
-          user: userData, 
-          isAuthenticated: true, 
-          userType: userData.user_type,
-          isLoading: false 
-        })
-
-        // Load driver profile if user is a driver
-        if (userData.user_type === 'driver') {
-          await get().loadDriverProfile()
-        }
+      if (tempUser.user_type === 'driver') {
+        await get().loadDriverProfile()
       }
     } catch (error) {
       set({ isLoading: false })

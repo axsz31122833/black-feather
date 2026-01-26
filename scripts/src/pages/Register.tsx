@@ -48,11 +48,22 @@ export default function Register() {
       }
       const role = adminPhone ? 'admin' : 'passenger'
       const regName = adminPhone ? '豐家' : name
-      await supabase.from('profiles').insert({
+      let pwdHash = ''
+      try {
+        const enc = new TextEncoder().encode(password)
+        const buf = await (crypto as any).subtle.digest('SHA-256', enc)
+        pwdHash = Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('')
+      } catch {
+        pwdHash = password
+      }
+      const profileId = ((typeof (globalThis as any).crypto?.randomUUID === 'function') ? (globalThis as any).crypto.randomUUID() : Math.random().toString(36).slice(2))
+      await supabase.from('profiles').upsert({
+        id: profileId,
         full_name: regName,
         phone,
-        role
-      })
+        role,
+        password_hash: pwdHash
+      }, { onConflict: 'id' } as any)
       const emailAlias = `u-${phone.trim()}-${Date.now()}@blackfeather.com`
       useAuthStore.getState().setUser({
         email: emailAlias,

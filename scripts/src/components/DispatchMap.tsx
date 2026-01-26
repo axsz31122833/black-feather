@@ -46,9 +46,19 @@ export default function DispatchMap({
     }, [map])
     return null
   }
+  const CenterFlyer = ({ c }: { c?: { lat: number; lng: number } | null }) => {
+    const map = useMap()
+    React.useEffect(() => {
+      if (c && map) {
+        try { (map as any).flyTo([c.lat, c.lng], (map as any).getZoom?.() || 12, { duration: 0.8 }) } catch {}
+      }
+    }, [c, map])
+    return null
+  }
   return (
     <MapContainer {...({ center: defaultCenter as any, zoom: 12, style: { height: '100%', width: '100%' } } as any)}>
       <MapInvalidator />
+      <CenterFlyer c={center || null} />
       <TileLayer {...({ url: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', crossOrigin: 'anonymous' } as any)} />
       {pickup && (
         <Marker position={[pickup.lat, pickup.lng]}>

@@ -88,6 +88,10 @@ export default function AdminDashboard() {
   const [etaCache, setEtaCache] = useState<Record<string, number>>({})
   const [weights, setWeights] = useState<{ wDist: number; wEta: number; wRecency: number; wCar: number; wRating: number }>(() => ({ wDist: 0.4, wEta: 0.3, wRecency: 0.2, wCar: 0.05, wRating: 0.05 }))
   const [pendingDrivers, setPendingDrivers] = useState<Array<{ id: string; name?: string; phone?: string }>>([])
+  const [manualTripId, setManualTripId] = useState<string | null>(null)
+  const [manualPlate, setManualPlate] = useState('')
+  const [manualModel, setManualModel] = useState('')
+  const [manualEta, setManualEta] = useState<number>(0)
   useEffect(() => {
     (async () => {
       try {
@@ -354,8 +358,7 @@ export default function AdminDashboard() {
         .select('*')
         .order('created_at', { ascending: false })
 
-      if (usersError) throw usersError
-      setUsers(usersData || [])
+      setUsers(usersError ? [] : (usersData || []))
 
       // Load trips
       const { data: tripsData, error: tripsError } = await supabase
@@ -364,8 +367,7 @@ export default function AdminDashboard() {
         .order('created_at', { ascending: false })
         .limit(50)
 
-      if (tripsError) throw tripsError
-      const tripsArr = tripsData || []
+      const tripsArr = tripsError ? [] : (tripsData || [])
       setTrips(tripsArr)
 
       const { data: driversData } = await supabase
@@ -1026,6 +1028,21 @@ export default function AdminDashboard() {
       alert('已更新為已接單並通知乘客')
     } catch { alert('更新失敗') }
   }
+  const openManualModal = (tripId: string) => {
+    setManualTripId(tripId)
+    const cur = manualForm[tripId] || {}
+    setManualPlate(cur.plate || '')
+    setManualModel(cur.model || '')
+    setManualEta(Number(cur.etaMin || 0))
+  }
+  const submitManualModal = async () => {
+    if (!manualTripId) return
+    const trip = trips.find(t => t.id === manualTripId) as any
+    if (!trip) { setManualTripId(null); return }
+    setManualForm(prev => ({ ...prev, [manualTripId]: { plate: manualPlate, model: manualModel, etaMin: manualEta } }))
+    await confirmManualAssign(trip)
+    setManualTripId(null)
+  }
 
   if (loading) {
     return (
@@ -1462,6 +1479,23 @@ export default function AdminDashboard() {
           </div>
         )}
 
+        {/* Manual Dispatch Modal */}
+        {manualTripId && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+            <div className="w-full max-w-md bg-[#111] text-white rounded-2xl p-6 border border-[#D4AF37]/40">
+              <div className="text-xl font-bold mb-4" style={{ color:'#FFD700' }}>手動外調</div>
+              <div className="space-y-3">
+                <input value={manualPlate} onChange={e=>setManualPlate(e.target.value)} className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" placeholder="支援車牌號碼（含顏色）" />
+                <input value={manualModel} onChange={e=>setManualModel(e.target.value)} className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" placeholder="支援車款" />
+                <input type="number" value={manualEta} onChange={e=>setManualEta(parseInt(e.target.value||'0')||0)} className="w-full px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" placeholder="預計抵達時間（分鐘）" />
+              </div>
+              <div className="mt-4 flex justify-end gap-2">
+                <button onClick={()=>setManualTripId(null)} className="px-4 py-2 rounded-2xl border border-[#D4AF37]/40">取消</button>
+                <button onClick={submitManualModal} className="px-4 py-2 rounded-2xl" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>確認回報並接單</button>
+              </div>
+            </div>
+          </div>
+        )}
         {/* Users Tab */}
         {activeTab === 'users' && (
           <div>
@@ -1559,7 +1593,11 @@ export default function AdminDashboard() {
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {trips.slice(0, tripRowsLimit).map((trip) => (
-                      <tr key={trip.id}>
+                      <tr key={trip.id} className="cursor-pointer hover:bg-gray-50" onClick={()=>{
+                        const pick: any = (trip as any).pickup_location
+                        if (pick && typeof pick.lat==='number' && typeof pick.lng==='number') setRadiusCenter({ lat: pick.lat, lng: pick.lng })
+                        setDispatchRideId(trip.id)
+                      }}>
                         <td className="px-6 py-4">
                           <div className="space-y-2">
                             <div className="flex items-center space-x-2">
@@ -1576,7 +1614,7 @@ export default function AdminDashboard() {
                                 <input value={manualForm[trip.id]?.plate||''} onChange={e=>updateManualForm(trip.id,'plate',e.target.value)} placeholder="支援車牌號碼（含顏色）" className="px-2 py-1 border rounded text-xs" />
                                 <input value={manualForm[trip.id]?.model||''} onChange={e=>updateManualForm(trip.id,'model',e.target.value)} placeholder="支援車款" className="px-2 py-1 border rounded text-xs" />
                                 <input value={manualForm[trip.id]?.etaMin||''} onChange={e=>updateManualForm(trip.id,'etaMin',Number(e.target.value||0))} placeholder="預計抵達時間（分鐘）" className="px-2 py-1 border rounded text-xs" />
-                                <button onClick={()=>confirmManualAssign(trip)} className="col-span-3 px-2 py-1 rounded bg-blue-600 text-white text-xs">確認回報並接單</button>
+                                <button onClick={()=>openManualModal(trip.id)} className="col-span-3 px-2 py-1 rounded bg-blue-600 text-white text-xs">手動外調</button>
                               </div>
                             )}
                           </div>
