@@ -19,6 +19,7 @@ interface AuthState {
   signOut: () => Promise<void>
   checkAuth: () => Promise<void>
   loadDriverProfile: () => Promise<void>
+  setUser: (u: Partial<User> & { user_type: 'passenger' | 'driver' | 'admin' }) => void
 }
 
 export const useAuthStore = create<AuthState>((set, get) => ({
@@ -196,4 +197,23 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       console.error('Failed to load driver profile:', error)
     }
   },
+
+  setUser: (u) => {
+    const now = new Date().toISOString()
+    const user: User = {
+      id: (u.id as string) || ((typeof (globalThis as any).crypto?.randomUUID === 'function') ? (globalThis as any).crypto.randomUUID() : Math.random().toString(36).slice(2)),
+      email: (u as any).email || '',
+      phone: (u as any).phone || '',
+      user_type: u.user_type,
+      status: (u as any).status || 'active',
+      created_at: (u as any).created_at || now,
+      updated_at: (u as any).updated_at || now,
+    }
+    set({
+      user,
+      userType: user.user_type,
+      isAuthenticated: true,
+      isLoading: false,
+    })
+  }
 }))

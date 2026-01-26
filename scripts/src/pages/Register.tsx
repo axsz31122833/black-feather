@@ -48,36 +48,17 @@ export default function Register() {
       }
       const role = adminPhone ? 'admin' : 'passenger'
       const regName = adminPhone ? '豐家' : name
-      const emailAlias = `u-${phone.trim()}@blackfeather.com`
-      try {
-        await signUp(emailAlias, password, phone, role as any, regName)
-      } catch (e) {
-        try {
-          const si = await supabase.auth.signInWithPassword({ email: emailAlias, password })
-          if (!si?.data?.user) throw e
-        } catch {
-          throw e
-        }
-      }
-      const { data: me } = await supabase.auth.getUser()
-      let uid = me?.user?.id || null
-      if (!uid) {
-        try {
-          const { data: u1 } = await supabase.from('users').select('id').eq('email', emailAlias).limit(1)
-          uid = u1 && u1[0]?.id || null
-          if (!uid) {
-            const { data: u2 } = await supabase.from('users').select('id').eq('phone', phone).limit(1)
-            uid = u2 && u2[0]?.id || null
-          }
-        } catch {}
-      }
-      const profileId = uid || ((typeof (globalThis as any).crypto?.randomUUID === 'function') ? (globalThis as any).crypto.randomUUID() : Math.random().toString(36).slice(2))
-      await supabase.from('profiles').upsert({
-        id: profileId,
+      await supabase.from('profiles').insert({
         full_name: regName,
         phone,
-        role: role
-      }, { onConflict: 'id' } as any)
+        role
+      })
+      const emailAlias = `u-${phone.trim()}-${Date.now()}@blackfeather.com`
+      useAuthStore.getState().setUser({
+        email: emailAlias,
+        phone,
+        user_type: role as any
+      })
       navigate('/')
     } catch (err) {
       const msg = typeof err === 'string' ? err : (err instanceof Error ? err.message : '註冊失敗，請確認資料或稍後再試')
