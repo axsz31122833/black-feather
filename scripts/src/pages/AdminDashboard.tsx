@@ -837,16 +837,18 @@ export default function AdminDashboard() {
         for (const ride of pending) {
           const pickup: any = (ride as any).pickup_location
           if (!pickup) continue
+          const createdAt = new Date(ride.created_at).getTime()
+          const elapsedMin = Math.floor((Date.now() - createdAt) / 60000)
+          const radiusKm = elapsedMin < 3 ? 5 : elapsedMin < 7 ? 15 : 999
+          if (elapsedMin >= 10) continue
           try {
             const drop: any = (ride as any).dropoff_location
             if (drop) {
               const dist = haversine(pickup.lat, pickup.lng, drop.lat, drop.lng)
               if (dist > 30) {
-                const createdAt = new Date(ride.created_at).getTime()
-                const elapsed = Date.now() - createdAt
                 const { data: respEv } = await supabase.from('ops_events').select('created_at,payload').eq('ref_id', ride.id).eq('event_type', 'long_distance_handle').order('created_at', { ascending: false }).limit(1)
                 const allowAuto = respEv && respEv[0]?.payload?.mode === 'auto'
-                if (!allowAuto && elapsed < 60_000) continue
+                if (!allowAuto && elapsedMin < 1.5) continue
               }
             }
           } catch {}
@@ -858,6 +860,7 @@ export default function AdminDashboard() {
               return ageSec < 600
             })
             .map(d => ({ d, dist: haversine(d.current_lat!, d.current_lng!, pickup.lat, pickup.lng) }))
+            .filter(x => x.dist <= radiusKm || radiusKm >= 900)
             .sort((a, b) => a.dist - b.dist)
             .slice(0, 10)
           const candidates = await Promise.all(candidatesRaw.map(async x => {
@@ -889,6 +892,25 @@ export default function AdminDashboard() {
               }) as any)
             } catch {}
           }
+          // 疊單推薦
+          try {
+            const activeTrips = trips.filter(t => t.status === 'in_progress')
+            for (const at of activeTrips) {
+              const drvId = (at as any).driver_id
+              const drv = driversList.find(d => d.id === drvId)
+              const drop = (at as any).dropoff_location
+              if (!drv || !drop) continue
+              const remainMin = await getRealtimeEtaMinutes({ lat: drv.current_lat!, lng: drv.current_lng! }, drop)
+              const distToNewPickup = haversine(drop.lat, drop.lng, pickup.lat, pickup.lng)
+              if (remainMin <= 10 && distToNewPickup < 2) {
+                await supabase.from('ops_events').insert({
+                  event_type: 'overlay_offer',
+                  ref_id: ride.id,
+                  payload: { driver_id: drvId, trip_id: ride.id, remain_min: remainMin, distance_km: distToNewPickup, pickup, dropoff: (ride as any).dropoff_location || null, expires_at: new Date(Date.now()+60_000).toISOString() }
+                })
+              }
+            }
+          } catch {}
         }
       } catch {}
     }, 30000)
@@ -983,6 +1005,26 @@ export default function AdminDashboard() {
       hour: '2-digit',
       minute: '2-digit'
     })
+  }
+  const copyTripAddress = async (trip: any) => {
+    const text = `${trip.pickup_address || ''} ${trip.dropoff_address || ''}`.trim()
+    try { await navigator.clipboard.writeText(text); alert('已複製地址到剪貼簿') } catch { alert(text) }
+  }
+  const [manualForm, setManualForm] = useState<Record<string, { plate?: string; model?: string; etaMin?: number }>>({})
+  const updateManualForm = (id: string, k: 'plate' | 'model' | 'etaMin', v: any) => {
+    setManualForm(prev => ({ ...prev, [id]: { ...(prev[id]||{}), [k]: v } }))
+  }
+  const confirmManualAssign = async (trip: any) => {
+    try {
+      await supabase.from('trips').update({ status: 'accepted' }).eq('id', trip.id)
+      const info = manualForm[trip.id] || {}
+      await supabase.from('ops_events').insert({
+        event_type: 'manual_support',
+        ref_id: trip.id,
+        payload: { ...info, text: '管理員手動外調已接單' }
+      })
+      alert('已更新為已接單並通知乘客')
+    } catch { alert('更新失敗') }
   }
 
   if (loading) {
@@ -1523,11 +1565,20 @@ export default function AdminDashboard() {
                             <div className="flex items-center space-x-2">
                               <MapPin className="w-4 h-4 text-green-600" />
                               <span className="text-sm text-gray-900">{trip.pickup_address}</span>
+                              <button onClick={()=>copyTripAddress(trip)} className="ml-2 px-2 py-1 text-xs rounded bg-gray-200">複製</button>
                             </div>
                             <div className="flex items-center space-x-2">
                               <MapPin className="w-4 h-4 text-red-600" />
                               <span className="text-sm text-gray-900">{trip.dropoff_address}</span>
                             </div>
+                            {trip.status === 'requested' && (
+                              <div className="grid grid-cols-3 gap-2 pt-2">
+                                <input value={manualForm[trip.id]?.plate||''} onChange={e=>updateManualForm(trip.id,'plate',e.target.value)} placeholder="支援車牌號碼（含顏色）" className="px-2 py-1 border rounded text-xs" />
+                                <input value={manualForm[trip.id]?.model||''} onChange={e=>updateManualForm(trip.id,'model',e.target.value)} placeholder="支援車款" className="px-2 py-1 border rounded text-xs" />
+                                <input value={manualForm[trip.id]?.etaMin||''} onChange={e=>updateManualForm(trip.id,'etaMin',Number(e.target.value||0))} placeholder="預計抵達時間（分鐘）" className="px-2 py-1 border rounded text-xs" />
+                                <button onClick={()=>confirmManualAssign(trip)} className="col-span-3 px-2 py-1 rounded bg-blue-600 text-white text-xs">確認回報並接單</button>
+                              </div>
+                            )}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">

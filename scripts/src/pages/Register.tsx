@@ -32,7 +32,8 @@ export default function Register() {
 
     try {
       const { supabase } = await import('../lib/supabase')
-      const adminPhone = phone.trim() === '0971827628'
+      const p = phone.trim()
+      const adminPhone = p === '0971827628' || p === '0982214855'
       let inviterRow: any = null
       if (!adminPhone) {
         const { count } = await supabase.from('users').select('id', { count: 'exact', head: true } as any)

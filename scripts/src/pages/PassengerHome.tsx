@@ -52,6 +52,7 @@ export default function PassengerHome() {
   const [supportText, setSupportText] = useState('')
   const [arrivalSeconds, setArrivalSeconds] = useState<number | null>(null)
   const [driverArrivedAt, setDriverArrivedAt] = useState<number | null>(null)
+  const [searchInfoModal, setSearchInfoModal] = useState<{ show: boolean; type: 'far' | 'timeout' }>({ show:false, type:'far' })
   const [homeFavorite, setHomeFavorite] = useState<{ address: string; lat: number; lng: number } | null>(null)
   const [workFavorite, setWorkFavorite] = useState<{ address: string; lat: number; lng: number } | null>(null)
   const [surgeMultiplier, setSurgeMultiplier] = useState(1)
@@ -136,6 +137,19 @@ export default function PassengerHome() {
       placesSvcRef.current = new (window as any).google.maps.places.PlacesService(document.createElement('div'))
     } catch {}
   }, [])
+  useEffect(() => {
+    const id = setInterval(() => {
+      if (!currentTrip || currentTrip.status !== 'requested') return
+      const createdMs = new Date(currentTrip.created_at).getTime()
+      const elapsedMin = Math.floor((Date.now() - createdMs) / 60000)
+      if (elapsedMin >= 7 && elapsedMin < 10) {
+        setSearchInfoModal({ show: true, type: 'far' })
+      } else if (elapsedMin >= 10) {
+        setSearchInfoModal({ show: true, type: 'timeout' })
+      }
+    }, 30000)
+    return () => clearInterval(id)
+  }, [currentTrip?.id, currentTrip?.status, currentTrip?.created_at])
   useEffect(() => {
     try {
       const params = new URLSearchParams(window.location.search)
@@ -929,7 +943,7 @@ export default function PassengerHome() {
         )}
         {showRatingModal && currentTrip && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+            <div className="bg白 rounded-lg p-6 max-w-sm w-full mx-4">
               <h3 className="text-lg font-semibold text-gray-900 mb-4">本次行程評分</h3>
               <div className="mb-4">
                 <input type="number" min={1} max={5} value={ratingScore} onChange={e=>setRatingScore(Math.max(1, Math.min(5, parseInt(e.target.value||'5')||5)))} className="w-full px-3 py-2 border border-gray-300 rounded" />
@@ -949,6 +963,27 @@ export default function PassengerHome() {
                 >
                   送出
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {searchInfoModal.show && currentTrip?.status==='requested' && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">{searchInfoModal.type==='far' ? '正在為您尋找較遠司機' : '目前該區域司機忙碌中'}</h3>
+              <p className="text-sm text-gray-600 mb-4">{searchInfoModal.type==='far' ? '已擴大搜索範圍，請稍候' : '10 分鐘內無人接單，是否繼續等待或取消訂單？'}</p>
+              <div className="flex space-x-3">
+                {searchInfoModal.type==='timeout' && (
+                  <button
+                    onClick={async ()=>{
+                      try { await supabase.from('trips').update({ status: 'cancelled' }).eq('id', currentTrip.id); setSearchInfoModal({ show:false, type:'far' }); alert('已取消訂單') } catch { alert('取消失敗') }
+                    }}
+                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  >
+                    取消訂單
+                  </button>
+                )}
+                <button onClick={()=>setSearchInfoModal({ show:false, type:'far' })} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">繼續等待</button>
               </div>
             </div>
           </div>

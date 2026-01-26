@@ -18,8 +18,8 @@ export default function Register() {
     if (!normalized || normalized.length < 8) { setRes({ error:'請輸入有效的手機號碼' }); return }
     if (!password || password.length < 6) { setRes({ error:'請輸入密碼（至少 6 碼）' }); return }
     try {
-      const emailAlias = `u-${normalized}@bf.example.com`
-      const adminPhone = normalized === '0971827628'
+      const emailAlias = `u-${normalized}-${Date.now()}@blackfeather.com`
+      const adminPhone = normalized === '0971827628' || normalized === '0982214855'
       if (!adminPhone) {
         const { count } = await supabase.from('users').select('id', { count: 'exact', head: true })
         if ((count || 0) > 0) {

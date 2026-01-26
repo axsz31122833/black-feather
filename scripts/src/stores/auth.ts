@@ -89,7 +89,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
             (import.meta as any)?.env?.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co',
             (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j'
           )
-      const email = `u-${(phone || '').trim()}@blackfeather.com`
+      const email = `u-${(phone || '').trim()}-${Date.now()}@blackfeather.com`
       let createdId: string | null = null
       try {
         const { data, error } = await client.auth.signUp({ email, password })
