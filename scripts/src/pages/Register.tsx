@@ -56,27 +56,22 @@ export default function Register() {
       } catch {
         pwdHash = password
       }
-      const profileId = ((typeof (globalThis as any).crypto?.randomUUID === 'function') ? (globalThis as any).crypto.randomUUID() : Math.random().toString(36).slice(2))
-      const nowIso = new Date().toISOString()
-      const { data: profData, error: profErr } = await supabase.from('profiles').upsert({
-        id: profileId,
-        user_id: null,
+      try { await supabase.auth.signOut() } catch {}
+      const { data: profData, error: profErr } = await supabase.from('profiles').insert({
         full_name: regName,
         phone,
         role,
-        created_at: nowIso,
-        updated_at: nowIso,
         password_hash: pwdHash
-      }, { onConflict: 'id' } as any)
-      console.log('profiles upsert result:', { data: profData, error: profErr })
-      if (profErr) { throw profErr }
+      } as any)
+      console.log('profiles insert result:', { data: profData, error: profErr })
+      if (profErr) throw profErr
       const emailAlias = `u-${phone.trim()}-${Date.now()}@blackfeather.com`
       useAuthStore.getState().setUser({
         email: emailAlias,
         phone,
         user_type: role as any
       })
-      navigate('/')
+      navigate('/admin')
     } catch (err) {
       const msg = typeof err === 'string' ? err : (err instanceof Error ? err.message : '註冊失敗，請確認資料或稍後再試')
       setError(msg)
