@@ -57,13 +57,19 @@ export default function Register() {
         pwdHash = password
       }
       const profileId = ((typeof (globalThis as any).crypto?.randomUUID === 'function') ? (globalThis as any).crypto.randomUUID() : Math.random().toString(36).slice(2))
-      await supabase.from('profiles').upsert({
+      const nowIso = new Date().toISOString()
+      const { data: profData, error: profErr } = await supabase.from('profiles').upsert({
         id: profileId,
+        user_id: null,
         full_name: regName,
         phone,
         role,
+        created_at: nowIso,
+        updated_at: nowIso,
         password_hash: pwdHash
       }, { onConflict: 'id' } as any)
+      console.log('profiles upsert result:', { data: profData, error: profErr })
+      if (profErr) { throw profErr }
       const emailAlias = `u-${phone.trim()}-${Date.now()}@blackfeather.com`
       useAuthStore.getState().setUser({
         email: emailAlias,

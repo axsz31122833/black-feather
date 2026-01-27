@@ -75,6 +75,8 @@ export default function PassengerHome() {
   const autoSvcRef = useRef<any>(null)
   const [qrShopId, setQrShopId] = useState<string | null>(null)
   const [lockPickup, setLockPickup] = useState(false)
+  const [noteNoSmoking, setNoteNoSmoking] = useState(false)
+  const [notePets, setNotePets] = useState(false)
   const formatMMSS = (sec: number) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')
     const s = Math.floor(sec % 60).toString().padStart(2, '0')
@@ -736,6 +738,12 @@ export default function PassengerHome() {
             .order('created_at', { ascending: false })
             .limit(1)
           const tripId = (latest && latest[0]?.id) || currentTrip?.id || null
+          if (tripId) {
+            try {
+              const noteText = `禁菸:${noteNoSmoking?'是':'否'}; 攜帶寵物:${notePets?'是':'否'}`
+              await supabase.from('trip_status').insert({ trip_id: tripId, status: 'requested', location: pickupCoords as any, notes: noteText })
+            } catch {}
+          }
           if (tripId && isLongTrip) {
             try { await supabase.from('ops_events').insert({ event_type: 'long_distance_request', ref_id: tripId, payload: { pickup: pickupCoords, threshold: 40 } }) } catch {}
           }
@@ -1084,7 +1092,7 @@ export default function PassengerHome() {
               placeholder="例如：台中火車站..."
             />
             {placePredDrop.length > 0 && activeField === 'dropoff' && (
-              <div className="mt-2 rounded-2xl border border-[#D4AF37]/30 bg-[#111] text-white shadow-2xl">
+              <div className="mt-2 rounded-2xl border border-[#D4AF37]/30 bg-[#111] text白 shadow-2xl">
                 {placePredDrop.map(p => (
                   <button
                     key={p.place_id}
@@ -1096,6 +1104,16 @@ export default function PassengerHome() {
                 ))}
               </div>
             )}
+          </div>
+          <div className="mt-3 grid grid-cols-2 gap-3">
+            <label className="inline-flex items-center text-sm text-gray-200">
+              <input type="checkbox" checked={noteNoSmoking} onChange={e=>setNoteNoSmoking(e.target.checked)} className="mr-2" />
+              🚭 禁菸
+            </label>
+            <label className="inline-flex items-center text-sm text-gray-200">
+              <input type="checkbox" checked={notePets} onChange={e=>setNotePets(e.target.checked)} className="mr-2" />
+              🐾 攜帶寵物
+            </label>
           </div>
         </div>
       </div>
