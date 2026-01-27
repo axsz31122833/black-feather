@@ -57,12 +57,7 @@ export default function Register() {
         pwdHash = password
       }
       try { await supabase.auth.signOut() } catch {}
-      const { createClient } = await import('@supabase/supabase-js')
-      const url = (import.meta as any)?.env?.VITE_SUPABASE_URL
-      const srKey = (import.meta as any)?.env?.VITE_SUPABASE_SERVICE_ROLE_KEY
-      const anonKey = (import.meta as any)?.env?.VITE_SUPABASE_ANON_KEY
-      const client = createClient(url, srKey || anonKey)
-      const { data: profData, error: profErr } = await client.from('profiles').insert({
+      const { data: profData, error: profErr } = await supabase.from('profiles').insert({
         full_name: regName,
         phone,
         role,
@@ -79,6 +74,7 @@ export default function Register() {
         phone,
         user_type: role as any
       })
+      try { localStorage.setItem('bf_phone', phone) } catch {}
       navigate('/admin')
     } catch (err) {
       const msg = typeof err === 'string' ? err : (err instanceof Error ? err.message : '註冊失敗，請確認資料或稍後再試')
