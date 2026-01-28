@@ -93,6 +93,23 @@ export default function AdminDashboard() {
   const [manualModel, setManualModel] = useState('')
   const [manualEta, setManualEta] = useState<number>(0)
   useEffect(() => {
+    try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          setRadiusCenter(loc)
+        },
+        () => {
+          const fallback = { lat: 24.147736, lng: 120.673648 }
+          setRadiusCenter(fallback)
+        },
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 8000 }
+      )
+    } catch {
+      setRadiusCenter({ lat: 24.147736, lng: 120.673648 })
+    }
+  }, [])
+  useEffect(() => {
     (async () => {
       try {
         const { data } = await supabase.from('dispatch_settings').select('weights').eq('id', 'global').single()
@@ -110,6 +127,16 @@ export default function AdminDashboard() {
       }
     })()
   }, [])
+  const geocodeOSM = async (address: string): Promise<{ lat: number; lng: number } | null> => {
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(address)}`
+    try {
+      const resp = await fetch(url, { headers: { 'Accept': 'application/json' } })
+      const json = await resp.json()
+      const first = json && json[0]
+      if (!first) return null
+      return { lat: parseFloat(first.lat), lng: parseFloat(first.lon) }
+    } catch { return null }
+  }
   const [promoteCandidates, setPromoteCandidates] = useState<Array<{ id: string; email: string; phone: string }>>([])
   useEffect(() => {
     (async () => {
@@ -1764,6 +1791,16 @@ export default function AdminDashboard() {
                 <input placeholder="姓名" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
                 <input placeholder="電話" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
               </div>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input id="addPassengerAddress" placeholder="地址" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+                <button onClick={async ()=>{
+                  const el = document.getElementById('addPassengerAddress') as HTMLInputElement
+                  const addr = el?.value?.trim()
+                  if (!addr) return
+                  const loc = await geocodeOSM(addr)
+                  if (loc) setRadiusCenter(loc)
+                }} className="px-3 py-2 rounded-2xl border border-[#D4AF37]/40 text-white">定位地址</button>
+              </div>
               <div className="mt-4">
                 <button className="px-4 py-2 rounded-2xl" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>建立</button>
               </div>
@@ -1778,6 +1815,16 @@ export default function AdminDashboard() {
                 <input placeholder="姓名" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
                 <input placeholder="電話" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
                 <input placeholder="車牌/車款" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+              </div>
+              <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3">
+                <input id="addDriverAddress" placeholder="地址" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+                <button onClick={async ()=>{
+                  const el = document.getElementById('addDriverAddress') as HTMLInputElement
+                  const addr = el?.value?.trim()
+                  if (!addr) return
+                  const loc = await geocodeOSM(addr)
+                  if (loc) setRadiusCenter(loc)
+                }} className="px-3 py-2 rounded-2xl border border-[#D4AF37]/40 text白">定位地址</button>
               </div>
               <div className="mt-4">
                 <button className="px-4 py-2 rounded-2xl" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>建立</button>
