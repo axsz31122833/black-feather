@@ -77,9 +77,10 @@ export default function Register() {
       try { localStorage.setItem('bf_phone', phone) } catch {}
       navigate('/admin')
     } catch (err) {
+      const code = (err as any)?.code ?? (err as any)?.status ?? null
       const msg = typeof err === 'string' ? err : (err instanceof Error ? err.message : '註冊失敗，請確認資料或稍後再試')
-      setError(msg)
-      try { alert(msg) } catch {}
+      setError(code ? `[${code}] ${msg}` : msg)
+      try { alert(code ? `[${code}] ${msg}` : msg) } catch {}
     }
   }
 

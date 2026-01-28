@@ -15,6 +15,7 @@ import { useAuthStore } from './stores/auth'
 import GlobalMonitor from './components/GlobalMonitor'
 import PushInit from './components/PushInit'
 import { supabase } from './lib/supabase'
+import ConnectionChecker from './components/ConnectionChecker'
 
 function AuthRouter() {
   const navigate = useNavigate()
@@ -113,6 +114,7 @@ function App() {
           )}
         </header>
         <main className="container">
+          <ConnectionChecker />
           <PushInit />
           <AuthRouter />
           <Suspense fallback={<div style={{ padding: 24 }}>載入中...</div>}>
