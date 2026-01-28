@@ -1,33 +1,19 @@
 import { createClient } from '@supabase/supabase-js'
-const url = import.meta.env.VITE_SUPABASE_URL || ''
-const anon = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-const service = import.meta.env.VITE_SUPABASE_SERVICE_ROLE_KEY || ''
-const key = service || anon
-function makeSafeClient() {
-  const safe = {
-    auth: {
-      async signOut() { return { error: null } },
-      async getUser() { return { data: { user: null } } },
-    },
-    from(_table: string) {
-      return {
-        select: async () => ({ data: [], error: url && key ? null : { message: 'Supabase 未初始化（缺少 URL/KEY）' } }),
-        insert: async (_v: any) => ({ data: null, error: url && key ? null : { message: 'Supabase 未初始化（缺少 URL/KEY）' } }),
-        upsert: async (_v: any) => ({ data: null, error: url && key ? null : { message: 'Supabase 未初始化（缺少 URL/KEY）' } }),
-        update: async (_v: any) => ({ data: null, error: url && key ? null : { message: 'Supabase 未初始化（缺少 URL/KEY）' } }),
-        eq: (_c: string, _v: any) => ({ select: async () => ({ data: [], error: null }) } as any),
-        single: async () => ({ data: null, error: null }),
-        maybeSingle: async () => ({ data: null, error: null }),
-        order: (_c: string, _opt: any) => ({ select: async () => ({ data: [], error: null }) } as any),
-        limit: (_n: number) => ({ select: async () => ({ data: [], error: null }) } as any),
-        in: (_c: string, _arr: any[]) => ({ select: async () => ({ data: [], error: null }) } as any),
-      }
-    },
-    channel() { return { on() { return this }, subscribe() { return this }, unsubscribe() {} } },
-  } as any
-  return safe
+const urlRaw = (import.meta as any).env?.VITE_SUPABASE_URL ?? ''
+const keyRaw = (import.meta as any).env?.VITE_SUPABASE_ANON_KEY ?? ''
+const url = String(urlRaw).trim()
+const key = String(keyRaw).trim()
+
+if (!url || !key) {
+  throw new Error('Supabase 初始化錯誤：請設定 VITE_SUPABASE_URL 與 VITE_SUPABASE_ANON_KEY')
 }
-export const supabase = (url && key) ? createClient(url, key) : makeSafeClient()
+if (!/^https:\/\/.+/i.test(url)) {
+  throw new Error('Supabase 初始化錯誤：VITE_SUPABASE_URL 必須以 https:// 開頭')
+}
+if (url.endsWith('/')) {
+  throw new Error('Supabase 初始化錯誤：VITE_SUPABASE_URL 不可以斜線結尾')
+}
+export const supabase = createClient(url, key)
 
 export type Database = {
   public: {
