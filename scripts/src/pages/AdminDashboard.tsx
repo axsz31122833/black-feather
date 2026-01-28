@@ -88,6 +88,7 @@ export default function AdminDashboard() {
   const [etaCache, setEtaCache] = useState<Record<string, number>>({})
   const [weights, setWeights] = useState<{ wDist: number; wEta: number; wRecency: number; wCar: number; wRating: number }>(() => ({ wDist: 0.4, wEta: 0.3, wRecency: 0.2, wCar: 0.05, wRating: 0.05 }))
   const [pendingDrivers, setPendingDrivers] = useState<Array<{ id: string; name?: string; phone?: string }>>([])
+  const [requestedTags, setRequestedTags] = useState<Record<string, { noSmoking: boolean; pets: boolean }>>({})
   const [manualTripId, setManualTripId] = useState<string | null>(null)
   const [manualPlate, setManualPlate] = useState('')
   const [manualModel, setManualModel] = useState('')
@@ -396,6 +397,22 @@ export default function AdminDashboard() {
 
       const tripsArr = tripsError ? [] : (tripsData || [])
       setTrips(tripsArr)
+      try {
+        const reqIds = tripsArr.filter(t => t.status === 'requested').map(t => t.id)
+        if (reqIds.length) {
+          const { data: statuses } = await supabase.from('trip_status').select('trip_id,notes,created_at').in('trip_id', reqIds).order('created_at', { ascending: false })
+          const tags: Record<string, { noSmoking: boolean; pets: boolean }> = {};
+          (statuses || []).forEach((s: any) => {
+            const notes = String(s?.notes || '')
+            const ns = /禁菸[:：]\s*是/.test(notes)
+            const ps = /攜帶寵物[:：]\s*是/.test(notes)
+            if (tags[s.trip_id] == null) tags[s.trip_id] = { noSmoking: ns, pets: ps }
+          })
+          setRequestedTags(tags)
+        } else {
+          setRequestedTags({})
+        }
+      } catch { setRequestedTags({}) }
 
       const { data: driversData } = await supabase
         .from('drivers')
@@ -1473,6 +1490,27 @@ export default function AdminDashboard() {
               </div>
             </div>
 
+            {/* Pricing Config */}
+            <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl border border-[#D4AF37]/30 p-6 text-white mb-8">
+              <h3 className="text-lg font-semibold mb-4">計費規則</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                <input id="pricingBase" type="number" placeholder="Base ($)" className="px-3 py-2 bg-[#111] border border-[#D4AF37]/30 rounded-2xl" />
+                <input id="pricingKm" type="number" placeholder="Per KM ($)" className="px-3 py-2 bg-[#111] border border-[#D4AF37]/30 rounded-2xl" />
+                <input id="pricingMin" type="number" placeholder="Per Min ($)" className="px-3 py-2 bg-[#111] border border-[#D4AF37]/30 rounded-2xl" />
+              </div>
+              <div className="mt-3">
+                <button onClick={async ()=>{
+                  const base = parseFloat((document.getElementById('pricingBase') as HTMLInputElement)?.value || '0') || 0
+                  const perKm = parseFloat((document.getElementById('pricingKm') as HTMLInputElement)?.value || '0') || 0
+                  const perMin = parseFloat((document.getElementById('pricingMin') as HTMLInputElement)?.value || '0') || 0
+                  try {
+                    await supabase.from('dispatch_settings').upsert({ id:'global', base_price: base, price_per_km: perKm, price_per_min: perMin, updated_at: new Date().toISOString() })
+                    alert('已保存計費規則')
+                  } catch { alert('保存失敗') }
+                }} className="px-3 py-2 rounded-2xl" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>保存</button>
+              </div>
+            </div>
+
             {/* Recent Activity */}
             <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl border border-[#D4AF37]/30 p-6 text-white">
               <h3 className="text-lg font-semibold mb-4">最近活動</h3>
@@ -2059,9 +2097,18 @@ export default function AdminDashboard() {
                         <div className="space-y-2 max-h-[70vh] overflow-y-auto">
                           {(trips || []).filter(t => t.status==='requested').slice(0,20).map((t)=>(
                             <div key={t.id} className="p-2 rounded-2xl bg-[#111] border border-[#D4AF37]/20">
-                              <div className="text-xs text-gray-400 mb-1">{new Date(t.created_at).toLocaleString('zh-TW')}</div>
-                              <div className="text-sm text-gray-100">{t.pickup_address}</div>
-                              <div className="text-xs text-gray-400">→ {t.dropoff_address}</div>
+                          <div className="text-xs text-gray-400 mb-1">{new Date(t.created_at).toLocaleString('zh-TW')}</div>
+                          <div className="text-sm text-gray-100">{t.pickup_address}</div>
+                          <div className="text-xs text-gray-400">→ {t.dropoff_address}</div>
+                              {(() => {
+                                const tag = requestedTags[t.id]
+                                return (
+                                  <div className="mt-1 text-xs">
+                                    {tag?.noSmoking && <span className="inline-flex items-center bg-[#111] text-white border border-[#D4AF37]/30 px-2 py-0.5 rounded mr-2">🚭 禁菸</span>}
+                                    {tag?.pets && <span className="inline-flex items-center bg-[#111] text-white border border-[#D4AF37]/30 px-2 py-0.5 rounded">🐾 攜帶寵物</span>}
+                                  </div>
+                                )
+                              })()}
                               <div className="flex gap-2 mt-2">
                                 <button onClick={()=>{ copyTripAddress(t) }} className="px-2 py-1 text-xs border border-[#D4AF37]/40 rounded-2xl">複製地址</button>
                                 <button onClick={()=>{ const p: any = (t as any).pickup_location; if(p) setRadiusCenter({ lat: p.lat, lng: p.lng }); setDispatchRideId(t.id) }} className="px-2 py-1 text-xs rounded-2xl" style={{ backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>派單</button>

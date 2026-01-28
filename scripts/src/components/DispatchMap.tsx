@@ -8,6 +8,8 @@ type Driver = {
   plate_number?: string
   car_model?: string
   car_color?: string
+  is_online?: boolean
+  status?: string
   current_lat?: number
   current_lng?: number
   last_seen_at?: string
@@ -30,9 +32,9 @@ export default function DispatchMap({
 }) {
   const defaultCenter = pickup ? [pickup.lat, pickup.lng] : [24.147736, 120.673648]
   const colorFor = (d: Driver) => {
-    const last = d.last_seen_at ? new Date(d.last_seen_at).getTime() : 0
-    const ageSec = last ? Math.floor((Date.now() - last) / 1000) : Infinity
-    return ageSec < 120 ? '#22c55e' : ageSec < 600 ? '#f59e0b' : '#9ca3af'
+    if (d.is_online && d.status !== 'on_trip') return '#22c55e' // 綠色：空車
+    if (d.status === 'on_trip') return '#ef4444' // 紅色：載客中
+    return '#9ca3af' // 灰色：離線
   }
   const isCand = (id: string) => candidateIds.includes(id)
   const MapInvalidator = () => {
@@ -74,7 +76,7 @@ export default function DispatchMap({
         .map(d => {
           const label = (d.plate_number || d.name || d.phone || '').toString()
           const badge = isCand(d.id) ? '<span style="background:#ede9fe;color:#6d28d9;border:1px solid #c4b5fd;padding:0 6px;border-radius:8px;font-weight:700;margin-left:6px">候補</span>' : ''
-          const html = `<div style="display:inline-flex;align-items:center;gap:6px;background:${isCand(d.id) ? '#faf5ff' : '#fff'};border:1px solid ${isCand(d.id) ? '#c4b5fd' : '#e5e7eb'};border-radius:12px;padding:2px 8px;box-shadow:0 2px 6px rgba(0,0,0,.15);font-size:12px;color:#111"><span style="display:inline-block;width:10px;height:10px;border-radius:9999px;background:${isCand(d.id) ? '#7c3aed' : colorFor(d)}"></span><span>${label}</span>${badge}</div>`
+          const html = `<div style="display:inline-flex;align-items:center;gap:6px;background:${isCand(d.id) ? '#0f0f0f' : '#111'};border:1px solid ${isCand(d.id) ? '#c4b5fd' : '#222'};border-radius:12px;padding:2px 8px;box-shadow:0 2px 6px rgba(0,0,0,.15);font-size:12px;color:#fff"><span style="display:inline-block;width:10px;height:10px;border-radius:9999px;background:${isCand(d.id) ? '#7c3aed' : colorFor(d)}"></span><span>${label}</span>${badge}</div>`
           const icon = (window as any).L?.divIcon ? (window as any).L.divIcon({ html, className: '', iconSize: [1, 1] }) : undefined
           return (
             <Marker key={d.id} position={[d.current_lat as number, d.current_lng as number]} {...({ icon } as any)}>
