@@ -93,6 +93,7 @@ function App() {
     <ErrorBoundary>
       <BrowserRouter>
         <header className="app-header">
+          {/* deploy trigger: 2026-01-29 */}
           <div className="brand" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>Black Feather 車隊</div>
           {isAuthenticated && userType && (userType === 'admin' || userType === 'driver') && (
             <nav className="nav flex items-center gap-12" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
