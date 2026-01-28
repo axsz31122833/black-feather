@@ -22,11 +22,11 @@ export default function Login() {
 
     try {
       await signIn(phone, password, userType)
-      if (userType === 'passenger') navigate('/')
-      else if (userType === 'driver') navigate('/driver')
-      else navigate('/admin')
+      navigate('/admin')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      const msg = err instanceof Error ? err.message : String(err || 'Login failed')
+      setError(msg)
+      try { alert(msg) } catch {}
     }
   }
 

@@ -65,7 +65,13 @@ export default function Register() {
       } as any)
       console.log('profiles insert result:', { data: profData, error: profErr })
       if (profErr) {
-        alert(typeof profErr === 'string' ? profErr : (profErr?.message || '註冊失敗，資料庫拒絕寫入'))
+        const code = (profErr as any)?.code ?? (profErr as any)?.status ?? null
+        const msg = (profErr as any)?.message || '註冊失敗，資料庫拒絕寫入'
+        if (String(code) === '23505' || /duplicate/i.test(msg)) {
+          navigate('/login')
+          return
+        }
+        alert(msg)
         throw profErr
       }
       const emailAlias = `u-${phone.trim()}-${Date.now()}@blackfeather.com`
@@ -79,6 +85,7 @@ export default function Register() {
     } catch (err) {
       const code = (err as any)?.code ?? (err as any)?.status ?? null
       const msg = typeof err === 'string' ? err : (err instanceof Error ? err.message : '註冊失敗，請確認資料或稍後再試')
+      if (String(code) === '23505' || /duplicate/i.test(msg)) { navigate('/login'); return }
       setError(code ? `[${code}] ${msg}` : msg)
       try { alert(code ? `[${code}] ${msg}` : msg) } catch {}
     }
