@@ -401,6 +401,9 @@ export default function DriverHome() {
     }
     try {
       await supabase.from('ops_events').insert({ event_type: newOnlineStatus ? 'driver_online' : 'driver_offline', payload: {} })
+      if (user?.id) {
+        await supabase.from('drivers').update({ is_online: newOnlineStatus, status: newOnlineStatus ? 'idle' : 'offline' }).eq('id', user.id)
+      }
     } catch {}
   }
 

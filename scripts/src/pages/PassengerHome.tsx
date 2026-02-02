@@ -134,6 +134,19 @@ export default function PassengerHome() {
 
   useEffect(() => {
     try {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => {
+          const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+          setCurrentLocation(loc)
+          setMapCenter(loc)
+        },
+        () => {},
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 8000 }
+      )
+    } catch {}
+  }, [])
+  useEffect(() => {
+    try {
       if (!(window as any).google) return
       autoSvcRef.current = new (window as any).google.maps.places.AutocompleteService()
       placesSvcRef.current = new (window as any).google.maps.places.PlacesService(document.createElement('div'))
