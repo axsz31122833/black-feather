@@ -150,33 +150,42 @@ export async function sendPush({ user_id, title, body }) {
 }
 
 export function subscribeDriverRides(driverId, handler) {
-  const channel = supabase
-    .channel('driver-channel-' + driverId)
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'rides', filter: `driver_id=eq.${driverId}` }, (payload) => {
-      try { handler(payload); } catch (e) { console.error('handler error', e); }
-    })
-    .subscribe();
-  return channel;
+  try {
+    return supabase
+      .channel('driver-channel-' + driverId)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rides', filter: `driver_id=eq.${driverId}` }, (payload) => {
+        try { handler(payload); } catch (e) {}
+      })
+      .subscribe();
+  } catch {
+    return { unsubscribe(){}, on(){ return this }, subscribe(){ return this } }
+  }
 }
 
 export function subscribeDriverLocations(handler) {
-  const channel = supabase
-    .channel('locations')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_locations' }, (payload) => {
-      try { handler(payload); } catch (e) { console.error('handler error', e); }
-    })
-    .subscribe();
-  return channel;
+  try {
+    return supabase
+      .channel('locations')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_locations' }, (payload) => {
+        try { handler(payload); } catch (e) {}
+      })
+      .subscribe();
+  } catch {
+    return { unsubscribe(){}, on(){ return this }, subscribe(){ return this } }
+  }
 }
 
 export function subscribeRides(handler) {
-  const channel = supabase
-    .channel('rides-all')
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'rides' }, (payload) => {
-      try { handler(payload); } catch (e) { console.error('handler error', e); }
-    })
-    .subscribe();
-  return channel;
+  try {
+    return supabase
+      .channel('rides-all')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'rides' }, (payload) => {
+        try { handler(payload); } catch (e) {}
+      })
+      .subscribe();
+  } catch {
+    return { unsubscribe(){}, on(){ return this }, subscribe(){ return this } }
+  }
 }
 
 export function startDriverLocationUploader(driverId, getCoordsFn) {
