@@ -89,6 +89,8 @@ export default function AdminDashboard() {
   const [weights, setWeights] = useState<{ wDist: number; wEta: number; wRecency: number; wCar: number; wRating: number }>(() => ({ wDist: 0.4, wEta: 0.3, wRecency: 0.2, wCar: 0.05, wRating: 0.05 }))
   const [pendingDrivers, setPendingDrivers] = useState<Array<{ id: string; name?: string; phone?: string }>>([])
   const [requestedTags, setRequestedTags] = useState<Record<string, { noSmoking: boolean; pets: boolean }>>({})
+  const [chatLog, setChatLog] = useState<Array<{ id: string; text: string; from: string; time: string; ref?: string }>>([])
+  const [broadcastText, setBroadcastText] = useState('')
   const [manualTripId, setManualTripId] = useState<string | null>(null)
   const [manualPlate, setManualPlate] = useState('')
   const [manualModel, setManualModel] = useState('')
@@ -109,6 +111,39 @@ export default function AdminDashboard() {
     } catch {
       setRadiusCenter({ lat: 24.147736, lng: 120.673648 })
     }
+  }, [])
+  useEffect(() => {
+    const ch = supabase
+      .channel('admin-chat-monitor')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'ops_events', filter: `event_type=eq.chat` }, (payload: any) => {
+        const ev = payload.new
+        if (!ev) return
+        const txt = (ev.payload?.text || '').toString()
+        const from = (ev.payload?.from_role || 'system').toString()
+        const time = ev.created_at
+        const ref = (ev.ref_id || '')
+        setChatLog(prev => [{ id: ev.id, text: txt, from, time, ref }, ...prev].slice(0, 100))
+      })
+      .subscribe()
+    ;(async () => {
+      try {
+        const { data } = await supabase
+          .from('ops_events')
+          .select('id,event_type,payload,created_at,ref_id')
+          .eq('event_type','chat')
+          .order('created_at', { ascending: false })
+          .limit(50)
+        const rows = (data || []).map((ev: any) => ({
+          id: ev.id,
+          text: (ev.payload?.text || '').toString(),
+          from: (ev.payload?.from_role || 'system').toString(),
+          time: ev.created_at,
+          ref: (ev.ref_id || ''),
+        }))
+        setChatLog(rows)
+      } catch {}
+    })()
+    return () => { try { ch.unsubscribe() } catch {} }
   }, [])
   useEffect(() => {
     (async () => {
@@ -1540,6 +1575,39 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+            {/* Chat Monitor & Broadcast */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+              <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl border border-[#D4AF37]/30 p-6 text-white">
+                <div className="text-lg font-semibold mb-2">全域聊天監控</div>
+                <div className="space-y-2 max-h-[40vh] overflow-y-auto">
+                  {chatLog.map(m => (
+                    <div key={m.id} className="p-2 rounded-2xl bg-[#111] border border-[#D4AF37]/20">
+                      <div className="text-xs text-gray-400">{new Date(m.time).toLocaleString('zh-TW')}</div>
+                      <div className="text-sm"><span className="text-gray-300">[{m.from}]</span> {m.text}</div>
+                      {m.ref && <div className="text-xs text-gray-500">ref: {m.ref}</div>}
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="bg-[#1a1a1a] rounded-2xl shadow-2xl border border-[#D4AF37]/30 p-6 text-white">
+                <div className="text-lg font-semibold mb-2">廣播訊息給所有在線司機</div>
+                <div className="flex items-center gap-3">
+                  <input value={broadcastText} onChange={e=>setBroadcastText(e.target.value)} placeholder="輸入廣播內容" className="flex-1 px-3 py-2 bg-[#111] border border-[#D4AF37]/30 rounded-2xl" />
+                  <button onClick={async ()=>{
+                    const onlineDrivers = driversList.filter(d=> (d as any).is_online && (d as any).status!=='on_trip')
+                    if (!broadcastText.trim() || onlineDrivers.length === 0) { alert('無在線司機或內容為空'); return }
+                    let ok = 0, failed = 0
+                    for (const d of onlineDrivers) {
+                      try { 
+                        await sendPush({ user_id: d.id, title: '系統廣播', body: broadcastText.trim() }) 
+                        ok++
+                      } catch { failed++ }
+                    }
+                    alert(`已發送：${ok}；失敗：${failed}`)
+                  }} className="px-3 py-2 rounded-2xl" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>發送</button>
+                </div>
               </div>
             </div>
           </div>
