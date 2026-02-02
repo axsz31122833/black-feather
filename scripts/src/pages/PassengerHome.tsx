@@ -145,6 +145,20 @@ export default function PassengerHome() {
       )
     } catch {}
   }, [])
+  const handleLeafletClick = async (lat: number, lng: number) => {
+    try {
+      const addr = await reverseOSM(lat, lng).catch(()=> '位置')
+      if (activeField === 'pickup') {
+        setPickupCoords({ lat, lng })
+        setPickupAddress(addr)
+        if (dropoffCoords) calculateRoute({ lat, lng }, dropoffCoords)
+      } else {
+        setDropoffCoords({ lat, lng })
+        setDropoffAddress(addr)
+        if (pickupCoords) calculateRoute(pickupCoords, { lat, lng })
+      }
+    } catch {}
+  }
   useEffect(() => {
     try {
       if (!(window as any).google) return
@@ -924,7 +938,7 @@ export default function PassengerHome() {
             )}
           </div>
           <div className="mt-6 text-left">
-            {user && currentTrip && <TripChat tripId={currentTrip.id} userId={user.id} role="passenger" />}
+            {user && currentTrip && <div id="chat-panel"><TripChat tripId={currentTrip.id} userId={user.id} role="passenger" /></div>}
           </div>
         </div>
 
@@ -1062,6 +1076,7 @@ export default function PassengerHome() {
             driver={driverLocation || undefined}
             path={routePath}
             suggestions={mapSuggestions}
+            onMapClick={handleLeafletClick}
           />
         </div>
       )}
@@ -1138,15 +1153,15 @@ export default function PassengerHome() {
         {/* Pickup Location */}
         <div className="mb-4">
           <div className="mb-2 flex items-center gap-2">
-            <button
-              onClick={() => setRideMode('immediate')}
+          <button
+            onClick={() => setRideMode('immediate')}
               className={`px-3 py-2 rounded-2xl ${rideMode==='immediate' ? 'text-black' : 'text-gray-700'}`}
               style={{ backgroundImage: rideMode==='immediate' ? 'linear-gradient(to right, #D4AF37, #B8860B)' : 'none', border: '1px solid rgba(212,175,55,0.3)' }}
             >
               即時行程
             </button>
-            <button
-              onClick={() => setRideMode('scheduled')}
+          <button
+            onClick={() => setRideMode('scheduled')}
               className={`px-3 py-2 rounded-2xl ${rideMode==='scheduled' ? 'text-black' : 'text-gray-700'}`}
               style={{ backgroundImage: rideMode==='scheduled' ? 'linear-gradient(to right, #D4AF37, #B8860B)' : 'none', border: '1px solid rgba(212,175,55,0.3)' }}
             >
@@ -1391,6 +1406,21 @@ export default function PassengerHome() {
           </button>
         )}
       </div>
+      {user && currentTrip && (
+        <button
+          onClick={() => {
+            try {
+              const el = document.getElementById('chat-panel')
+              el?.scrollIntoView({ behavior: 'smooth' })
+            } catch {}
+          }}
+          className="fixed bottom-24 right-6 z-30 px-4 py-3 rounded-full text-black"
+          style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
+          aria-label="即時聊天"
+        >
+          💬 即時聊天
+        </button>
+      )}
     </div>
     {showSupportModal && (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">

@@ -1,5 +1,5 @@
 import React from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap, useMapEvents } from 'react-leaflet'
 import L from 'leaflet'
 
 export default function RideLeafletMap({
@@ -8,7 +8,8 @@ export default function RideLeafletMap({
   dropoff,
   driver,
   path,
-  suggestions
+  suggestions,
+  onMapClick
 }: {
   center: { lat: number; lng: number }
   pickup?: { lat: number; lng: number }
@@ -16,6 +17,7 @@ export default function RideLeafletMap({
   driver?: { lat: number; lng: number }
   path?: Array<{ lat: number; lng: number }>
   suggestions?: Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>
+  onMapClick?: (lat: number, lng: number) => void
 }) {
   const polyPoints = (path || []).map(p => [p.lat, p.lng]) as any
   const M: any = MapContainer
@@ -53,11 +55,28 @@ export default function RideLeafletMap({
     }, [map, pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, polyPoints.length])
     return null
   }
+  const ClickCatcher = () => {
+    useMapEvents({
+      click(e) {
+        try { onMapClick && onMapClick(e.latlng.lat, e.latlng.lng) } catch {}
+      }
+    })
+    return null
+  }
+  const CenterSetter = ({ c }: { c: { lat: number; lng: number } }) => {
+    const map = useMap()
+    React.useEffect(() => {
+      try { map.flyTo([c.lat, c.lng], map.getZoom?.() || 13, { duration: 0.6 }) } catch {}
+    }, [c.lat, c.lng])
+    return null
+  }
   return (
     <M center={[center.lat, center.lng]} zoom={13} style={{ width: '100%', height: '100%' }}>
       <MapInvalidator />
       <FitToRoute />
-      <T url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+      <CenterSetter c={center} />
+      <ClickCatcher />
+      <T url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution={'&copy; CARTO &copy; OpenStreetMap contributors'} />
       {pickup && (
         <Mk position={[pickup.lat, pickup.lng]}>
           <Pp>上車地點</Pp>
