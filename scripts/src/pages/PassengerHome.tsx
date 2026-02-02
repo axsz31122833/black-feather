@@ -769,6 +769,17 @@ export default function PassengerHome() {
             try {
               const noteText = `禁菸:${noteNoSmoking?'是':'否'}; 攜帶寵物:${notePets?'是':'否'}`
               await supabase.from('trip_status').insert({ trip_id: tripId, status: 'requested', location: pickupCoords as any, notes: noteText })
+              try {
+                await supabase.from('rides').insert({
+                  passenger_id: user.id,
+                  pickup_lat: pickupCoords?.lat,
+                  pickup_lng: pickupCoords?.lng,
+                  dropoff_lat: dropoffCoords?.lat ?? null,
+                  dropoff_lng: dropoffCoords?.lng ?? null,
+                  status: 'requested',
+                  notes: noteText
+                } as any)
+              } catch {}
             } catch {}
           }
           if (tripId && isLongTrip) {
