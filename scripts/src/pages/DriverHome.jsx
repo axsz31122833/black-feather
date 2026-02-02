@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react'
-import { updateDriverLocation, supabase } from '../lib/rideApi'
+import { updateDriverLocation } from '../lib/rideApi'
+import { supabase } from '../lib/supabaseClient'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 

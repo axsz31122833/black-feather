@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
-import { startRide, finishRide, cancelRide, supabase } from '../lib/rideApi'
+import { startRide, finishRide, cancelRide } from '../lib/rideApi'
+import { supabase } from '../lib/supabaseClient'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 
 export default function PassengerRidePage() {

@@ -1,17 +1,14 @@
-import { createClient } from '@supabase/supabase-js';
+import { supabase, ensureAuth } from './supabaseClient';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://hmlyfcpicjpjxayilyhk.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || 'sb_publishable_MSRGbeXWokHV5p0wsZm-uA_71ry5z2j';
 const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL || 'https://hmlyfcpicjpjxayilyhk.functions.supabase.co';
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
-
 async function withHeaders() {
+  await ensureAuth()
   const { data: sessionData } = await supabase.auth.getSession();
   const token = sessionData?.session?.access_token;
   const headers = {
     'Content-Type': 'application/json',
-    apikey: SUPABASE_ANON_KEY,
+    apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
   };
   if (token) headers['Authorization'] = `Bearer ${token}`;
   return headers;
