@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabaseClient'
 import { MessageCircle, Send, Bell } from 'lucide-react'
 
 interface Msg {

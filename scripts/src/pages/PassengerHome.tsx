@@ -7,7 +7,7 @@ import { calculateFare, fareBreakdown } from '../utils/fare'
 import RideLeafletMap from '../components/RideLeafletMap'
 import { env } from '../config/env'
 import { recordPayment } from '../utils/payments'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabaseClient'
 import { MapPin, Search, Car, Clock, DollarSign, Navigation, Menu, User } from 'lucide-react'
 import TripChat from '../components/TripChat'
 

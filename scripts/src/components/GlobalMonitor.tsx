@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabaseClient'
 import { sendOpsEvent } from '../utils/ops'
 import { useAuthStore } from '../stores/auth'
 

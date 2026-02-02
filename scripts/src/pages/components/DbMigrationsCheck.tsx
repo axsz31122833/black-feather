@@ -1,5 +1,5 @@
 import React from 'react'
-import { supabase } from '../../lib/supabase'
+import { supabase } from '../../lib/supabaseClient'
 
 export default function DbMigrationsCheck() {
   const [status, setStatus] = React.useState<{ dispatch_settings: string; scheduled_driver_id: string }>({ dispatch_settings: '檢查中', scheduled_driver_id: '檢查中' })
@@ -32,4 +32,3 @@ export default function DbMigrationsCheck() {
     </div>
   )
 }
-

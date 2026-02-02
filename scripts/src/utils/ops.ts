@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabaseClient'
 
 export async function sendOpsEvent(event_type: string, ref_id?: string, payload?: any) {
   try {
@@ -15,4 +15,3 @@ export async function sendOpsEvent(event_type: string, ref_id?: string, payload?
     } catch {}
   }
 }
-

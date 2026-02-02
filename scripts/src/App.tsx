@@ -14,7 +14,7 @@ import ProtectedRoute from './components/ProtectedRoute'
 import { useAuthStore } from './stores/auth'
 import GlobalMonitor from './components/GlobalMonitor'
 import PushInit from './components/PushInit'
-import { supabase } from './lib/supabase'
+import { supabase } from './lib/supabaseClient'
 import ConnectionChecker from './components/ConnectionChecker'
 
 function AuthRouter() {

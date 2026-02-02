@@ -1,3 +1,3 @@
-import { supabase as tsSupabase } from './supabase'
-export const supabase = tsSupabase
-export default tsSupabase
+import { supabase as client } from './supabaseClient'
+export const supabase = client
+export default client

@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useAuthStore } from '../stores/auth'
 import { useTripStore } from '../stores/trips'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabaseClient'
 import { Bell } from 'lucide-react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { sendOpsEvent } from '../utils/ops'

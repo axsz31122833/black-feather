@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabaseClient'
 import type { Database } from '../lib/supabase'
 import { processPayment, PaymentMethod, PaymentResult } from '../utils/payments'
 

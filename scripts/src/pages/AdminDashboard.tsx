@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabaseClient'
 import { assignDriver, runScheduleChecker, sendPush } from '../lib/rideApi'
 import { retry } from '../utils/retry'
 import { Users, Car, DollarSign, TrendingUp, User, MapPin, Clock, Shield, ArrowLeft, LogOut } from 'lucide-react'

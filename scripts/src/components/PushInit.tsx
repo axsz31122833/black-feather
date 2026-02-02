@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react'
 import { env } from '../config/env'
-import { supabase } from '../lib/supabase'
+import { supabase } from '../lib/supabaseClient'
 
 function urlBase64ToUint8Array(base64String: string) {
   const padding = '='.repeat((4 - (base64String.length % 4)) % 4)

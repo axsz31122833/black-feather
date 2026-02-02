@@ -31,7 +31,7 @@ export default function Register() {
     }
 
     try {
-      const { supabase } = await import('../lib/supabase')
+      const { supabase } = await import('../lib/supabaseClient')
       const p = phone.trim()
       const adminPhone = p === '0971827628' || p === '0982214855'
       let inviterRow: any = null
