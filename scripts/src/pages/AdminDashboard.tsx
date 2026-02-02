@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuthStore } from '../stores/auth'
-import { supabase } from '../lib/supabaseClient'
+import { supabase, ensureAuth } from '../lib/supabaseClient'
 import { assignDriver, runScheduleChecker, sendPush } from '../lib/rideApi'
 import { retry } from '../utils/retry'
 import { Users, Car, DollarSign, TrendingUp, User, MapPin, Clock, Shield, ArrowLeft, LogOut } from 'lucide-react'
@@ -148,6 +148,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
+        await ensureAuth()
         const { data } = await supabase.from('dispatch_settings').select('weights').eq('id', 'global').single()
         if (data?.weights) {
           setWeights(data.weights)
@@ -177,6 +178,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
+        await ensureAuth()
         const { data: us } = await supabase.from('users').select('id,email,phone,user_type').eq('user_type','passenger').limit(50)
         setPromoteCandidates((us || []).map(u => ({ id: u.id, email: u.email, phone: (u as any).phone || '' })))
       } catch { setPromoteCandidates([]) }
@@ -185,6 +187,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
+        await ensureAuth()
         const { data: profs } = await supabase.from('driver_profiles').select('user_id,status').eq('status','pending')
         const ids = (profs || []).map(p => p.user_id)
         if (ids.length > 0) {

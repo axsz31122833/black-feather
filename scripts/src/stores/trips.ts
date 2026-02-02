@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { supabase } from '../lib/supabaseClient'
+import { supabase, ensureAuth } from '../lib/supabaseClient'
 import type { Database } from '../lib/supabase'
 import { processPayment, PaymentMethod, PaymentResult } from '../utils/payments'
 
@@ -34,6 +34,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   createTrip: async (tripData: Partial<Trip>) => {
     try {
       set({ isLoading: true, error: null })
+      await ensureAuth()
       
       const { data, error } = await supabase
         .from('trips')
@@ -59,6 +60,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   getTrips: async (userId: string, userType: 'passenger' | 'driver') => {
     try {
       set({ isLoading: true, error: null })
+      await ensureAuth()
       
       const column = userType === 'passenger' ? 'passenger_id' : 'driver_id'
       const { data, error } = await supabase
@@ -84,6 +86,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   updateTripStatus: async (tripId: string, status: Trip['status'], driverId?: string) => {
     try {
       set({ isLoading: true, error: null })
+      await ensureAuth()
       
       const updateData: Partial<Trip> = { status }
       if (driverId) {
@@ -118,6 +121,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   getCurrentTrip: async (userId: string, userType: 'passenger' | 'driver') => {
     try {
       set({ isLoading: true, error: null })
+      await ensureAuth()
       
       const column = userType === 'passenger' ? 'passenger_id' : 'driver_id'
       const { data, error } = await supabase
@@ -144,6 +148,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   },
 
   subscribeToTrips: (userId: string, userType: 'passenger' | 'driver') => {
+    ensureAuth()
     const column = userType === 'passenger' ? 'passenger_id' : 'driver_id'
     
     const subscription = supabase
@@ -181,6 +186,7 @@ export const useTripStore = create<TripState>((set, get) => ({
   updateDriverLocation: async (tripId: string, lat: number, lng: number) => {
     try {
       set({ isLoading: true, error: null })
+      await ensureAuth()
       
       const { error } = await supabase
         .from('trip_status')
