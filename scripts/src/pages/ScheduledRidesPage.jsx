@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { supabase } from '../lib/rideApi';
+import { supabase } from '../lib/supabaseClient';
 
 export default function ScheduledRidesPage() {
   const [passengerId, setPassengerId] = useState('');

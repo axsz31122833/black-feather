@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import { supabase } from '../lib/rideApi'
+import { supabase } from '../lib/supabaseClient'
 import { isAdmin } from '../lib/auth'
 import { useNavigate } from 'react-router-dom'
 
