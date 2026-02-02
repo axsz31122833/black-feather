@@ -1,9 +1,29 @@
 import { create } from 'zustand'
-import { supabase } from '../lib/supabase'
-import type { Database } from '../lib/supabase'
+import { supabase } from '../lib/supabaseClient'
+type User = {
+  id: string
+  email: string
+  phone: string
+  user_type: 'passenger' | 'driver' | 'admin'
+  status: string
+  created_at: string
+  updated_at: string
+}
+type DriverProfile = {
+  id: string
+  user_id: string
+  status?: string
+  license_number?: string
+  car_model?: string
+  car_plate?: string
+  rating?: number
+  is_online?: boolean
+  current_lat?: number
+  current_lng?: number
+  created_at?: string
+  updated_at?: string
+}
 
-type User = Database['public']['Tables']['users']['Row']
-type DriverProfile = Database['public']['Tables']['driver_profiles']['Row']
 
 interface AuthState {
   user: User | null
