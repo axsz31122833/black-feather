@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react'
-import { supabase, subscribeDriverLocations, subscribeRides, runScheduleChecker } from '../lib/rideApi'
+import { subscribeDriverLocations, subscribeRides, runScheduleChecker } from '../lib/rideApi'
+import { supabase } from '../lib/supabaseClient'
 import { MapContainer, TileLayer, Marker } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
 
