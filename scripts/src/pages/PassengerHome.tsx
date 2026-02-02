@@ -60,7 +60,7 @@ export default function PassengerHome() {
   const [scheduledTime, setScheduledTime] = useState('')
   const [scheduledDate, setScheduledDate] = useState('')
   const [scheduledClock, setScheduledClock] = useState('')
-  const useGoogle = true
+  const useGoogle = false
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 25.033, lng: 121.565 })
   const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
   const [mapSuggestions, setMapSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>>([])
