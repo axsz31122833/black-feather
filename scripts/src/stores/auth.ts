@@ -1,6 +1,5 @@
 import { create } from 'zustand'
 import { supabase } from '../lib/supabase'
-import { createClient } from '@supabase/supabase-js'
 import type { Database } from '../lib/supabase'
 
 type User = Database['public']['Tables']['users']['Row']
