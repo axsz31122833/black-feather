@@ -30,6 +30,9 @@ export default function DispatchMap({
   candidateIds: string[]
   onAssign: (driverId: string) => void
 }) {
+  console.log('Map Initialization Start')
+  const [clientReady, setClientReady] = React.useState(false)
+  React.useEffect(() => { setClientReady(true) }, [])
   const defaultCenter = pickup ? [pickup.lat, pickup.lng] : [24.147736, 120.673648]
   const colorFor = (d: Driver) => {
     if (d.is_online && d.status !== 'on_trip') return '#22c55e' // 綠色：空車
@@ -38,25 +41,26 @@ export default function DispatchMap({
   }
   const isCand = (id: string) => candidateIds.includes(id)
   const MapInvalidator = () => {
-    const map = useMap()
+    const leafletMap = useMap()
     React.useEffect(() => {
-      try { map.invalidateSize() } catch {}
-      const t = setTimeout(() => { try { map.invalidateSize() } catch {} }, 300)
-      const onResize = () => { try { map.invalidateSize() } catch {} }
+      try { leafletMap.invalidateSize() } catch {}
+      const t = setTimeout(() => { try { leafletMap.invalidateSize() } catch {} }, 300)
+      const onResize = () => { try { leafletMap.invalidateSize() } catch {} }
       window.addEventListener('resize', onResize)
       return () => { clearTimeout(t); window.removeEventListener('resize', onResize) }
-    }, [map])
+    }, [leafletMap])
     return null
   }
   const CenterFlyer = ({ c }: { c?: { lat: number; lng: number } | null }) => {
-    const map = useMap()
+    const leafletMap = useMap()
     React.useEffect(() => {
-      if (c && map) {
-        try { (map as any).flyTo([c.lat, c.lng], (map as any).getZoom?.() || 12, { duration: 0.8 }) } catch {}
+      if (c && leafletMap) {
+        try { (leafletMap as any).flyTo([c.lat, c.lng], (leafletMap as any).getZoom?.() || 13, { duration: 0.8 }) } catch {}
       }
-    }, [c, map])
+    }, [c, leafletMap])
     return null
   }
+  if (!clientReady) return null
   return (
     <MapContainer {...({ center: defaultCenter as any, zoom: 13, style: { height: '100%', width: '100%' } } as any)}>
       <MapInvalidator />
@@ -77,7 +81,7 @@ export default function DispatchMap({
           const label = (d.plate_number || d.name || d.phone || '').toString()
           const badge = isCand(d.id) ? '<span style="background:#ede9fe;color:#6d28d9;border:1px solid #c4b5fd;padding:0 6px;border-radius:8px;font-weight:700;margin-left:6px">候補</span>' : ''
           const html = `<div style="display:inline-flex;align-items:center;gap:6px;background:${isCand(d.id) ? '#0f0f0f' : '#111'};border:1px solid ${isCand(d.id) ? '#c4b5fd' : '#222'};border-radius:12px;padding:2px 8px;box-shadow:0 2px 6px rgba(0,0,0,.15);font-size:12px;color:#fff"><span style="display:inline-block;width:10px;height:10px;border-radius:9999px;background:${isCand(d.id) ? '#7c3aed' : colorFor(d)}"></span><span>${label}</span>${badge}</div>`
-          const icon = (window as any).L?.divIcon ? (window as any).L.divIcon({ html, className: '', iconSize: [1, 1] }) : undefined
+          const icon = (typeof window !== 'undefined' && (window as any).L?.divIcon) ? (window as any).L.divIcon({ html, className: '', iconSize: [1, 1] }) : undefined
           return (
             <Marker key={d.id} position={[d.current_lat as number, d.current_lng as number]} {...({ icon } as any)}>
               <Popup>
