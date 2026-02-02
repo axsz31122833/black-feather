@@ -1,5 +1,6 @@
 import React, { useState } from 'react'
 import { requestRide, assignDriver } from '../lib/rideApi'
+import { supabase } from '../lib/supabaseClient'
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet'
 
 function ClickToSet({ setPoint }) {
@@ -12,19 +13,27 @@ function ClickToSet({ setPoint }) {
 }
 
 export default function PassengerHome() {
-  const [passengerId, setPassengerId] = useState('')
   const [origin, setOrigin] = useState({ lat: 25.033, lng: 121.565 })
   const [destination, setDestination] = useState({ lat: 25.047, lng: 121.517 })
   const [rideId, setRideId] = useState('')
   const [res, setRes] = useState(null)
   const [selecting, setSelecting] = useState('origin')
+  const [noSmoking, setNoSmoking] = useState(false)
+  const [pets, setPets] = useState(false)
   const assigned = res && (res.assigned_driver || res.nearest || res.driver)
 
   async function callRide() {
-    const r = await requestRide({ passenger_id: passengerId, origin, destination })
+    const { data: u } = await supabase.auth.getUser()
+    const pid = u?.user?.id
+    if (!pid) { alert('請先登入'); return }
+    const r = await requestRide({ passenger_id: pid, origin, destination })
     setRes(r.data)
     const id = r?.data?.ride_id || ''
     setRideId(id)
+    try {
+      const notes = `禁菸:${noSmoking ? '是' : '否'}; 攜帶寵物:${pets ? '是' : '否'}`
+      if (id) await supabase.from('rides').update({ notes }).eq('id', id)
+    } catch {}
   }
 
   async function doAssign() {
@@ -37,10 +46,8 @@ export default function PassengerHome() {
     <div style={{ position: 'relative', height: '70vh' }}>
       <MapContainer center={[origin.lat, origin.lng]} zoom={13} style={{ height: '100%', borderRadius: 12, overflow: 'hidden' }}>
         <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          errorTileUrl="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9YFJxWcAAAAASUVORK5CYII="
-          crossOrigin="anonymous"
-          eventHandlers={{ tileerror: (e) => console.warn('tile error', e?.tile?.src) }}
+          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+          attribution="&copy; CARTO &copy; OpenStreetMap contributors"
         />
         <ClickToSet setPoint={selecting === 'origin' ? setOrigin : setDestination} />
         <Marker position={[origin.lat, origin.lng]} />
@@ -50,10 +57,6 @@ export default function PassengerHome() {
         <div className="title">設定行程</div>
         <div className="grid">
           <div className="form-group">
-            <div className="label">乘客 ID</div>
-            <input className="input" value={passengerId} onChange={e => setPassengerId(e.target.value)} placeholder="輸入乘客 ID" />
-          </div>
-          <div className="form-group">
             <div className="label">選擇點</div>
             <div style={{ display:'flex', gap:8 }}>
               <button className="btn" onClick={() => setSelecting('origin')}>選擇上車</button>
@@ -61,21 +64,9 @@ export default function PassengerHome() {
             </div>
           </div>
         </div>
-        <div className="grid">
-          <div className="form-group">
-            <div className="label">上車座標</div>
-            <div style={{ display:'flex', gap:8 }}>
-              <input className="input" type="number" step="0.000001" value={origin.lat} onChange={e => setOrigin({ ...origin, lat: parseFloat(e.target.value) })} />
-              <input className="input" type="number" step="0.000001" value={origin.lng} onChange={e => setOrigin({ ...origin, lng: parseFloat(e.target.value) })} />
-            </div>
-          </div>
-          <div className="form-group">
-            <div className="label">下車座標</div>
-            <div style={{ display:'flex', gap:8 }}>
-              <input className="input" type="number" step="0.000001" value={destination.lat} onChange={e => setDestination({ ...destination, lat: parseFloat(e.target.value) })} />
-              <input className="input" type="number" step="0.000001" value={destination.lng} onChange={e => setDestination({ ...destination, lng: parseFloat(e.target.value) })} />
-            </div>
-          </div>
+        <div className="grid" style={{ marginTop: 8 }}>
+          <label><input type="checkbox" checked={noSmoking} onChange={e=>setNoSmoking(e.target.checked)} /> 🚭 禁菸</label>
+          <label><input type="checkbox" checked={pets} onChange={e=>setPets(e.target.checked)} /> 🐾 攜帶寵物</label>
         </div>
         <div style={{ display:'flex', gap:8 }}>
           <button className="btn btn-primary" onClick={callRide}>叫車</button>
