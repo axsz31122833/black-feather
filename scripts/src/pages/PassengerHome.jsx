@@ -1,8 +1,9 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { requestRide, assignDriver } from '../lib/rideApi'
 import { supabase } from '../lib/supabaseClient'
-import { MapContainer, TileLayer, Marker, useMapEvents, Popup } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMapEvents, Popup, useMap } from 'react-leaflet'
 import L from 'leaflet'
+import ChatPanel from '../components/ChatPanel'
 
 function ClickToSet({ setPoint }) {
   useMapEvents({
@@ -28,6 +29,7 @@ export default function PassengerHome() {
   const originTimer = useRef(null)
   const destTimer = useRef(null)
   const assigned = res && (res.assigned_driver || res.nearest || res.driver)
+  const [senderId, setSenderId] = useState('')
 
   useEffect(() => {
     try {
@@ -37,6 +39,21 @@ export default function PassengerHome() {
         shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png'
       })
     } catch {}
+  }, [])
+
+  useEffect(() => {
+    ;(async ()=>{
+      try {
+        const { data: u } = await supabase.auth.getUser()
+        const uid = u?.user?.id || (typeof localStorage!=='undefined' ? localStorage.getItem('bf_guest_id') : '') || ''
+        setSenderId(uid || '')
+      } catch {
+        try {
+          const gid = (typeof localStorage!=='undefined' ? localStorage.getItem('bf_guest_id') : '') || ''
+          setSenderId(gid || '')
+        } catch {}
+      }
+    })()
   }, [])
 
   useEffect(() => {
@@ -63,7 +80,13 @@ export default function PassengerHome() {
     const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
     const resp = await fetch(url, { headers: { 'Accept': 'application/json' } })
     const json = await resp.json()
-    return json?.display_name || ''
+    const a = json?.address || {}
+    const city = a.city || a.town || a.village || a.county || ''
+    const district = a.city_district || a.district || a.suburb || a.neighbourhood || ''
+    const road = a.road || a.footway || a.cycleway || a.neighbourhood || ''
+    const num = a.house_number || ''
+    const parts = [city, district, road + (num ? num : '')].filter(x => x && String(x).trim().length > 0)
+    return parts.join('')
   }
 
   async function searchOSM(q) {
@@ -77,6 +100,7 @@ export default function PassengerHome() {
   }
 
   async function callRide() {
+    setRes({ loading: true })
     const { data: u } = await supabase.auth.getUser()
     let pid = u?.user?.id
     if (!pid) {
@@ -198,14 +222,19 @@ export default function PassengerHome() {
                   <label style={{ color:'#e5e7eb' }}><input type="checkbox" checked={noSmoking} onChange={e=>setNoSmoking(e.target.checked)} /> 🚭 禁菸</label>
                   <label style={{ color:'#e5e7eb' }}><input type="checkbox" checked={pets} onChange={e=>setPets(e.target.checked)} /> 🐾 攜帶寵物</label>
                 </div>
-                <div style={{ display:'flex', gap:8 }}>
-                  <button onClick={callRide} style={{ padding:'10px 14px', borderRadius:12, backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:600 }}>立即叫車</button>
+              <div style={{ display:'flex', gap:8 }}>
+                <button onClick={callRide} style={{ padding:'10px 14px', borderRadius:12, backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:600 }}>
+                  {res?.loading ? '尋找司機中...' : '立即叫車'}
+                </button>
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
+      {rideId && senderId && (
+        <ChatPanel rideId={rideId} senderId={senderId} role="passenger" />
+      )}
     </div>
   )
 }
