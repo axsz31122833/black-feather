@@ -30,6 +30,8 @@ export default function PassengerHome() {
   const destTimer = useRef(null)
   const assigned = res && (res.assigned_driver || res.nearest || res.driver)
   const [senderId, setSenderId] = useState('')
+  const [showChat, setShowChat] = useState(false)
+  const mapRef = useRef(null)
 
   useEffect(() => {
     try {
@@ -62,14 +64,16 @@ export default function PassengerHome() {
         async (pos) => {
           const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
           setOrigin(c)
-          const addr = await reverseOSM(c.lat, c.lng).catch(()=>'')
+          const addr = await reverseOSM(c.lat, c.lng).catch(()=> '')
           setOriginAddress(addr || '')
+          try { mapRef.current?.setView([c.lat, c.lng], 16) } catch {}
         },
         async () => {
           const c = { lat: 25.033, lng: 121.565 }
           setOrigin(c)
-          const addr = await reverseOSM(c.lat, c.lng).catch(()=>'')
+          const addr = await reverseOSM(c.lat, c.lng).catch(()=> '')
           setOriginAddress(addr || '')
+          try { mapRef.current?.setView([c.lat, c.lng], 13) } catch {}
         },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 8000 }
       )
@@ -140,6 +144,7 @@ export default function PassengerHome() {
         dragging={true}
         whenCreated={(m)=>{ 
           try { 
+            mapRef.current = m
             m.dragging.enable(); 
             m.touchZoom.enable(); 
             m.scrollWheelZoom.enable(); 
@@ -174,23 +179,36 @@ export default function PassengerHome() {
                     setOriginAddress(v)
                     if (originTimer.current) clearTimeout(originTimer.current)
                     originTimer.current = setTimeout(async ()=>{
-                      const list = await searchOSM(v)
-                      setOriginPred(list.slice(0,6))
-                    }, 250)
-                  }}
-                  placeholder="輸入地址或地標"
-                  style={{ width:'100%', padding:'10px 12px', borderRadius:12, border:'1px solid rgba(212,175,55,0.3)', background:'#0b0b0b', color:'#fff' }}
-                />
-                {originPred.length > 0 && (
-                  <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
-                    {originPred.map((p,i)=>(
-                      <button key={i} onClick={async ()=>{
-                        setOrigin({ lat:p.lat, lng:p.lng }); setOriginAddress(p.name); setOriginPred([])
-                      }} style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px', color:'#e5e7eb' }}>{p.name}</button>
-                    ))}
-                  </div>
-                )}
+                    const list = await searchOSM(v)
+                    setOriginPred(list.slice(0,6))
+                  }, 250)
+                }}
+                placeholder="輸入地址或地標"
+                style={{ width:'100%', padding:'10px 12px', borderRadius:12, border:'1px solid rgba(212,175,55,0.3)', background:'#0b0b0b', color:'#fff' }}
+              />
+              <div style={{ marginTop:6 }}>
+                <button onClick={()=>{
+                  try {
+                    navigator.geolocation.getCurrentPosition(async (pos)=>{
+                      const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+                      setOrigin(c)
+                      const addr = await reverseOSM(c.lat, c.lng).catch(()=> '')
+                      setOriginAddress(addr || '')
+                      mapRef.current?.setView([c.lat, c.lng], 16)
+                    })
+                  } catch {}
+                }} style={{ padding:'6px 10px', borderRadius:8, border:'1px solid rgba(212,175,55,0.25)', color:'#e5e7eb' }}>📍 精準定位</button>
               </div>
+              {originPred.length > 0 && (
+                <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
+                  {originPred.map((p,i)=>(
+                    <button key={i} onClick={async ()=>{
+                      setOrigin({ lat:p.lat, lng:p.lng }); setOriginAddress(p.name); setOriginPred([]); try { mapRef.current?.setView([p.lat, p.lng], 16) } catch {}
+                    }} style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px', color:'#e5e7eb' }}>{p.name}</button>
+                  ))}
+                </div>
+              )}
+            </div>
               <div>
                 <div style={{ color:'#e5e7eb', fontSize:13, marginBottom:4 }}>🏁 終點</div>
                 <input
@@ -200,30 +218,30 @@ export default function PassengerHome() {
                     setDestAddress(v)
                     if (destTimer.current) clearTimeout(destTimer.current)
                     destTimer.current = setTimeout(async ()=>{
-                      const list = await searchOSM(v)
-                      setDestPred(list.slice(0,6))
-                    }, 250)
-                  }}
-                  placeholder="輸入目的地地址或地標"
-                  style={{ width:'100%', padding:'10px 12px', borderRadius:12, border:'1px solid rgba(212,175,55,0.3)', background:'#0b0b0b', color:'#fff' }}
-                />
-                {destPred.length > 0 && (
-                  <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
-                    {destPred.map((p,i)=>(
-                      <button key={i} onClick={async ()=>{
-                        setDestination({ lat:p.lat, lng:p.lng }); setDestAddress(p.name); setDestPred([])
-                      }} style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px', color:'#e5e7eb' }}>{p.name}</button>
-                    ))}
-                  </div>
-                )}
-              </div>
+                    const list = await searchOSM(v)
+                    setDestPred(list.slice(0,6))
+                  }, 250)
+                }}
+                placeholder="輸入目的地地址或地標"
+                style={{ width:'100%', padding:'10px 12px', borderRadius:12, border:'1px solid rgba(212,175,55,0.3)', background:'#0b0b0b', color:'#fff' }}
+              />
+              {destPred.length > 0 && (
+                <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
+                  {destPred.map((p,i)=>(
+                    <button key={i} onClick={async ()=>{
+                      setDestination({ lat:p.lat, lng:p.lng }); setDestAddress(p.name); setDestPred([]); try { mapRef.current?.setView([p.lat, p.lng], 16) } catch {}
+                    }} style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px', color:'#e5e7eb' }}>{p.name}</button>
+                  ))}
+                </div>
+              )}
+            </div>
               <div style={{ display:'flex', alignItems:'center', justifyContent:'space-between', gap:12 }}>
                 <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                   <label style={{ color:'#e5e7eb' }}><input type="checkbox" checked={noSmoking} onChange={e=>setNoSmoking(e.target.checked)} /> 🚭 禁菸</label>
                   <label style={{ color:'#e5e7eb' }}><input type="checkbox" checked={pets} onChange={e=>setPets(e.target.checked)} /> 🐾 攜帶寵物</label>
                 </div>
               <div style={{ display:'flex', gap:8 }}>
-                <button onClick={callRide} style={{ padding:'10px 14px', borderRadius:12, backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:600 }}>
+                <button onClick={callRide} disabled={!!res?.loading} style={{ padding:'10px 14px', borderRadius:12, backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:600, opacity: res?.loading ? 0.8 : 1 }}>
                   {res?.loading ? '尋找司機中...' : '立即叫車'}
                 </button>
                 </div>
@@ -232,8 +250,15 @@ export default function PassengerHome() {
           </div>
         </div>
       </div>
-      {rideId && senderId && (
-        <ChatPanel rideId={rideId} senderId={senderId} role="passenger" />
+      <button onClick={()=>{
+        try {
+          setShowChat(v => !v)
+        } catch {}
+      }} style={{ position:'fixed', right:12, bottom:24, zIndex:10001, padding:'12px', borderRadius:'50%', backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:700 }}>
+        💬
+      </button>
+      {showChat && (
+        <ChatPanel rideId={rideId || 'admin'} senderId={senderId} role="passenger" />
       )}
     </div>
   )
