@@ -68,16 +68,30 @@ export default function PassengerHome() {
 
   async function searchOSM(q) {
     if (!q || q.trim().length < 2) return []
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&q=${encodeURIComponent(q)}`
-    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } })
+    const delta = 0.25
+    const viewbox = `${origin.lng - delta},${origin.lat - delta},${origin.lng + delta},${origin.lat + delta}`
+    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=tw&bounded=1&viewbox=${viewbox}&q=${encodeURIComponent(q)}`
+    const resp = await fetch(url, { headers: { 'Accept': 'application/json', 'Accept-Language': 'zh-TW' } })
     const json = await resp.json()
     return (json || []).map(r => ({ name: r.display_name, lat: parseFloat(r.lat), lng: parseFloat(r.lon) }))
   }
 
   async function callRide() {
     const { data: u } = await supabase.auth.getUser()
-    const pid = u?.user?.id
-    if (!pid) { alert('請先登入'); return }
+    let pid = u?.user?.id
+    if (!pid) {
+      try {
+        pid = localStorage.getItem('bf_guest_id')
+        if (!pid && window.crypto?.randomUUID) {
+          pid = window.crypto.randomUUID()
+          localStorage.setItem('bf_guest_id', pid)
+        }
+      } catch {}
+      if (!pid) {
+        window.location.href = '/login'
+        return
+      }
+    }
     const r = await requestRide({ passenger_id: pid, origin, destination })
     setRes(r.data)
     const id = r?.data?.ride_id || ''
@@ -96,7 +110,12 @@ export default function PassengerHome() {
 
   return (
     <div style={{ position: 'relative', height: '100vh', background:'#000' }}>
-      <MapContainer center={[origin.lat, origin.lng]} zoom={13} style={{ height: '100%', width:'100%', zIndex:0, pointerEvents:'none' }}>
+      <MapContainer
+        center={[origin.lat, origin.lng]}
+        zoom={13}
+        whenCreated={(m)=>{ try { m.dragging.enable(); m.touchZoom.enable(); m.scrollWheelZoom.enable(); } catch {} }}
+        style={{ height: '100%', width:'100%', zIndex:0 }}
+      >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
           attribution="&copy; CARTO &copy; OpenStreetMap contributors"
