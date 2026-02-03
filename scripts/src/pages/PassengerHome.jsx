@@ -103,6 +103,49 @@ export default function PassengerHome() {
     return (json || []).map(r => ({ name: r.display_name, lat: parseFloat(r.lat), lng: parseFloat(r.lon) }))
   }
 
+  async function searchPhoton(q) {
+    if (!q || q.trim().length < 2) return []
+    let query = q.trim()
+    if (/\\d+$/.test(query) && !/號$/.test(query)) query = query + '號'
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lang=zh&limit=8&lat=${origin.lat}&lon=${origin.lng}`
+    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } }).catch(()=>null)
+    if (!resp) return []
+    const json = await resp.json().catch(()=>({}))
+    const feats = json?.features || []
+    return feats
+      .filter(f => (f?.properties?.country || '').includes('台灣') || (f?.properties?.country || '').includes('Taiwan') || !f?.properties?.country)
+      .map(f => {
+        const p = f.properties || {}
+        const nameParts = [p.city || p.town || p.village || '', p.district || '', (p.street || p.name || '') + (p.housenumber ? p.housenumber : '')].filter(x=>x&&String(x).trim().length>0)
+        const display = nameParts.join('')
+        return { name: display || p.name || '', lat: f.geometry?.coordinates?.[1], lng: f.geometry?.coordinates?.[0], housenumber: p.housenumber || '' }
+      })
+      .filter(e => typeof e.lat === 'number' && typeof e.lng === 'number')
+  }
+
+  async function searchPlaces(q) {
+    const [photon, osm] = await Promise.all([searchPhoton(q), searchOSM(q)])
+    const all = [...photon, ...osm]
+    const seen = new Set()
+    const merged = []
+    for (const e of all) {
+      const key = `${e.lat.toFixed(6)},${e.lng.toFixed(6)}:${e.name}`
+      if (!seen.has(key)) {
+        seen.add(key)
+        merged.push(e)
+      }
+    }
+    merged.sort((a,b)=>{
+      const da = Math.hypot((a.lat-origin.lat),(a.lng-origin.lng))
+      const db = Math.hypot((b.lat-origin.lat),(b.lng-origin.lng))
+      const ha = a.housenumber ? 0 : 1
+      const hb = b.housenumber ? 0 : 1
+      if (ha !== hb) return ha - hb
+      return da - db
+    })
+    return merged.slice(0,8)
+  }
+
   async function callRide() {
     setRes({ loading: true })
     const { data: u } = await supabase.auth.getUser()
@@ -179,7 +222,7 @@ export default function PassengerHome() {
                     setOriginAddress(v)
                     if (originTimer.current) clearTimeout(originTimer.current)
                     originTimer.current = setTimeout(async ()=>{
-                    const list = await searchOSM(v)
+                    const list = await searchPlaces(v)
                     setOriginPred(list.slice(0,6))
                   }, 250)
                 }}
@@ -218,7 +261,7 @@ export default function PassengerHome() {
                     setDestAddress(v)
                     if (destTimer.current) clearTimeout(destTimer.current)
                     destTimer.current = setTimeout(async ()=>{
-                    const list = await searchOSM(v)
+                    const list = await searchPlaces(v)
                     setDestPred(list.slice(0,6))
                   }, 250)
                 }}
