@@ -113,6 +113,7 @@ export default function PassengerHome() {
       <MapContainer
         center={[origin.lat, origin.lng]}
         zoom={13}
+        dragging={true}
         whenCreated={(m)=>{ try { m.dragging.enable(); m.touchZoom.enable(); m.scrollWheelZoom.enable(); } catch {} }}
         style={{ height: '100%', width:'100%', zIndex:0 }}
       >
