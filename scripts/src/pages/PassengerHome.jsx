@@ -109,17 +109,26 @@ export default function PassengerHome() {
   }
 
   return (
-    <div style={{ position: 'relative', height: '100vh', background:'#000' }}>
+    <div style={{ position: 'relative', height: '100vh' }}>
       <MapContainer
         center={[origin.lat, origin.lng]}
         zoom={13}
         dragging={true}
-        whenCreated={(m)=>{ try { m.dragging.enable(); m.touchZoom.enable(); m.scrollWheelZoom.enable(); } catch {} }}
+        whenCreated={(m)=>{ 
+          try { 
+            m.dragging.enable(); 
+            m.touchZoom.enable(); 
+            m.scrollWheelZoom.enable(); 
+            setTimeout(()=>{ try { m.invalidateSize(); } catch {} }, 50)
+            setTimeout(()=>{ try { m.invalidateSize(); } catch {} }, 300)
+            window.addEventListener('resize', ()=>{ try { m.invalidateSize(); } catch {} })
+          } catch {} 
+        }}
         style={{ height: '100%', width:'100%', zIndex:0 }}
       >
         <TileLayer
-          url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
-          attribution="&copy; CARTO &copy; OpenStreetMap contributors"
+          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+          attribution="&copy; OpenStreetMap contributors"
         />
         <Marker position={[origin.lat, origin.lng]}>
           <Popup>上車地點</Popup>
