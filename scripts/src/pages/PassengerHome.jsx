@@ -128,7 +128,7 @@ export default function PassengerHome() {
           <Popup>目的地</Popup>
         </Marker>
       </MapContainer>
-      <div style={{ position:'fixed', left:0, right:0, bottom:0, zIndex:10000 }}>
+      <div style={{ position:'fixed', left:0, right:0, bottom:0, zIndex:9999 }}>
         <div style={{ width:'100%', maxWidth:820, margin:'0 auto', padding:'12px' }}>
           <div style={{ background:'#111', border:'1px solid rgba(212,175,55,0.35)', borderRadius:16, padding:12 }}>
             <div style={{ display:'grid', gap:10 }}>

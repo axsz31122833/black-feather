@@ -8,6 +8,7 @@ export default defineConfig({
   base: '/',
   build: {
     sourcemap: 'hidden',
+    outDir: 'dist',
   },
   plugins: [
     react({
