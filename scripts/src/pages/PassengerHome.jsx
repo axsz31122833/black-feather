@@ -86,7 +86,7 @@ export default function PassengerHome() {
 
   async function reversePhoton(lat, lng) {
     try {
-      const url = `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=zh`
+      const url = `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}`
       const resp = await fetch(url)
       const json = await resp.json()
       const f = json?.features?.[0]
@@ -108,7 +108,7 @@ export default function PassengerHome() {
     if (/\\d+$/.test(query) && !/號$/.test(query)) query = query + '號'
     const useLat = 24.15
     const useLon = 120.68
-    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${useLat}&lon=${useLon}&lang=zh&limit=10`
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${useLat}&lon=${useLon}&limit=10`
     const resp = await fetch(url, { headers: { 'Accept': 'application/json' } }).catch(()=>null)
     if (!resp) return []
     const json = await resp.json().catch(()=>({}))
