@@ -173,7 +173,7 @@ export default function PassengerHome() {
     try {
       const extra = otherEnabled && otherText ? `; 其他:${otherText}` : ''
       const notes = `禁菸:${noSmoking ? '是' : '否'}; 攜帶寵物:${pets ? '是' : '否'}${extra}`
-      if (id) await supabase.from('rides').update({ notes }).eq('id', id)
+      if (id) await supabase.from('rides').update({ notes, ride_remarks: otherEnabled ? otherText : null }).eq('id', id)
     } catch {}
   }
 
