@@ -119,9 +119,9 @@ export default function PassengerHome() {
         const p = f.properties || {}
         const nameParts = [p.city || p.town || p.village || '', p.district || '', (p.street || p.name || '') + (p.housenumber ? p.housenumber : '')].filter(x=>x&&String(x).trim().length>0)
         const display = nameParts.join('')
-        return { name: display || p.name || '', lat: f.geometry?.coordinates?.[1], lng: f.geometry?.coordinates?.[0], housenumber: p.housenumber || '' }
+        return { name: display || p.name || '', lat: f.geometry?.coordinates?.[1], lon: f.geometry?.coordinates?.[0], housenumber: p.housenumber || '' }
       })
-      .filter(e => typeof e.lat === 'number' && typeof e.lng === 'number')
+      .filter(e => typeof e.lat === 'number' && typeof e.lon === 'number')
   }
 
   async function searchPlaces(q) {
@@ -258,7 +258,7 @@ export default function PassengerHome() {
                 <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
                   {originPred.map((p,i)=>(
                     <button key={i} onClick={async ()=>{
-                      setOrigin({ lat:p.lat, lng:p.lng }); setOriginAddress(p.name); setOriginPred([]); try { mapRef.current?.flyTo([p.lat, p.lng], 16, { duration: 0.8 }) } catch {}
+                      setOrigin({ lat:p.lat, lng:p.lon }); setOriginAddress(p.name); setOriginPred([]); try { mapRef.current?.flyTo([p.lat, p.lon], 16, { duration: 0.8 }) } catch {}
                     }} style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px', color:'#e5e7eb' }}>{p.name}</button>
                   ))}
                 </div>
@@ -284,7 +284,7 @@ export default function PassengerHome() {
                 <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
                   {destPred.map((p,i)=>(
                     <button key={i} onClick={async ()=>{
-                      setDestination({ lat:p.lat, lng:p.lng }); setDestAddress(p.name); setDestPred([]); try { mapRef.current?.flyTo([p.lat, p.lng], 16, { duration: 0.8 }) } catch {}
+                      setDestination({ lat:p.lat, lng:p.lon }); setDestAddress(p.name); setDestPred([]); try { mapRef.current?.flyTo([p.lat, p.lon], 16, { duration: 0.8 }) } catch {}
                     }} style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px', color:'#e5e7eb' }}>{p.name}</button>
                   ))}
                 </div>
