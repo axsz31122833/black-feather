@@ -108,7 +108,7 @@ export default function PassengerHome() {
     if (/\\d+$/.test(query) && !/號$/.test(query)) query = query + '號'
     const useLat = 24.15
     const useLon = 120.68
-    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lang=zh&limit=5&lat=${useLat}&lon=${useLon}`
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${useLat}&lon=${useLon}&lang=zh&limit=10`
     const resp = await fetch(url, { headers: { 'Accept': 'application/json' } }).catch(()=>null)
     if (!resp) return []
     const json = await resp.json().catch(()=>({}))
