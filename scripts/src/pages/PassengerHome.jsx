@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { requestRide, assignDriver } from '../lib/rideApi'
 import { supabase } from '../lib/supabaseClient'
-import { MapContainer, TileLayer, Marker, useMapEvents, Popup, useMap } from 'react-leaflet'
+import { MapContainer, TileLayer, Marker, useMapEvents, Popup, useMap, Polyline } from 'react-leaflet'
 import L from 'leaflet'
 import ChatPanel from '../components/ChatPanel'
 
@@ -36,6 +36,7 @@ export default function PassengerHome() {
   const [favorites, setFavorites] = useState([])
   const [otherEnabled, setOtherEnabled] = useState(false)
   const [otherText, setOtherText] = useState('')
+  const [showEstimate, setShowEstimate] = useState(false)
 
   useEffect(() => {
     try {
@@ -91,7 +92,7 @@ export default function PassengerHome() {
       const json = await resp.json()
       const f = json?.features?.[0]
       const p = f?.properties || {}
-      const city = p.city || p.town || p.village || ''
+      const city = p.city || p.town || p.village || '台中市'
       const district = p.district || ''
       const street = p.street || p.name || ''
       const num = p.housenumber || ''
@@ -117,14 +118,12 @@ export default function PassengerHome() {
       .filter(f => (f?.properties?.country || '').includes('台灣') || (f?.properties?.country || '').includes('Taiwan') || !f?.properties?.country)
       .map(f => {
         const p = f.properties || {}
-        const cn = /[\u4e00-\u9fff]/
-        const city = p.city || p.town || p.village || ''
+        const city = p.city || p.town || p.village || '台中市'
         const district = p.district || ''
         const street = p.street || p.name || ''
         const num = p.housenumber || ''
-        const formatted = [city, district, street + (num ? num : '')].filter(x=>x&&String(x).trim().length>0).join('')
-        const display = cn.test(p.name || '') ? p.name : cn.test(street || '') ? (city + district + street + (num ? num : '')) : formatted
-        return { name: display || p.name || street || '', lat: f.geometry?.coordinates?.[1], lon: f.geometry?.coordinates?.[0], housenumber: p.housenumber || '' }
+        const fullAddress = [city, district, street + (num ? num + '號' : '')].filter(x=>x&&String(x).trim().length>0).join('')
+        return { name: fullAddress, lat: f.geometry?.coordinates?.[1], lon: f.geometry?.coordinates?.[0], housenumber: p.housenumber || '' }
       })
       .filter(e => typeof e.lat === 'number' && typeof e.lon === 'number')
   }
@@ -150,6 +149,24 @@ export default function PassengerHome() {
       return da - db
     })
     return merged.slice(0,8)
+  }
+
+  function distanceKm(a, b) {
+    const toRad = (v)=> (v * Math.PI) / 180
+    const R = 6371
+    const dLat = toRad((b.lat||0) - (a.lat||0))
+    const dLon = toRad((b.lng||0) - (a.lng||0))
+    const lat1 = toRad(a.lat||0)
+    const lat2 = toRad(b.lat||0)
+    const h = Math.sin(dLat/2)**2 + Math.cos(lat1)*Math.cos(lat2)*Math.sin(dLon/2)**2
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(h)))
+  }
+
+  function estimateFare() {
+    const base = 85
+    const perKm = 25
+    const km = distanceKm(origin, destination)
+    return Math.max(base, Math.round(base + km * perKm))
   }
 
   async function callRide() {
@@ -211,6 +228,9 @@ export default function PassengerHome() {
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
           attribution="&copy; OpenStreetMap contributors"
         />
+        {showEstimate && (
+          <Polyline positions={[[origin.lat, origin.lng],[destination.lat, destination.lng]]} pathOptions={{ color: 'blue', weight: 4 }} />
+        )}
         <Marker position={[origin.lat, origin.lng]}>
           <Popup>上車地點</Popup>
         </Marker>
@@ -260,7 +280,7 @@ export default function PassengerHome() {
                 }} style={{ marginLeft:8, padding:'6px 10px', borderRadius:8, border:'1px solid rgba(212,175,55,0.25)', color:'#111', backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)' }}>⭐</button>
               </div>
               {originPred.length > 0 && (
-                <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
+                <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12, position:'relative', zIndex:10000 }}>
                   {originPred.map((p,i)=>(
                     <button key={i} onClick={async ()=>{
                       setOrigin({ lat:p.lat, lng:p.lon }); setOriginAddress(p.name); setOriginPred([]); try { mapRef.current?.flyTo([p.lat, p.lon], 16, { duration: 0.8 }) } catch {}
@@ -286,12 +306,21 @@ export default function PassengerHome() {
                 style={{ width:'100%', padding:'10px 12px', borderRadius:12, border:'1px solid rgba(212,175,55,0.3)', background:'#0b0b0b', color:'#fff' }}
               />
               {destPred.length > 0 && (
-                <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
+                <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12, position:'relative', zIndex:10000 }}>
                   {destPred.map((p,i)=>(
                     <button key={i} onClick={async ()=>{
-                      setDestination({ lat:p.lat, lng:p.lon }); setDestAddress(p.name); setDestPred([]); try { mapRef.current?.flyTo([p.lat, p.lon], 16, { duration: 0.8 }) } catch {}
+                      setDestination({ lat:p.lat, lng:p.lon }); setDestAddress(p.name); setDestPred([]); setShowEstimate(true); try { mapRef.current?.flyTo([p.lat, p.lon], 16, { duration: 0.8 }) } catch {}
                     }} style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px', color:'#e5e7eb' }}>{p.name}</button>
                   ))}
+                </div>
+              )}
+              {showEstimate && (
+                <div style={{ marginTop:8, background:'#0b0b0b', border:'1px solid rgba(66,133,244,0.5)', borderRadius:12, padding:12 }}>
+                  <div style={{ color:'#e5e7eb', marginBottom:6 }}>預估金額：<span style={{ fontWeight:700, color:'#D4AF37' }}>約 {estimateFare()} 元</span></div>
+                  <div style={{ color:'#9ca3af', marginBottom:8 }}>建議路線已在地圖以藍線顯示（直線估算）</div>
+                  <button onClick={callRide} disabled={isBooking} style={{ padding:'10px 14px', borderRadius:12, backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:700, width:'100%', opacity: isBooking ? 0.6 : 1 }}>
+                    {isBooking ? '尋找司機中...' : '確認叫車'}
+                  </button>
                 </div>
               )}
               <div style={{ marginTop:6, display:'flex', gap:8 }}>
