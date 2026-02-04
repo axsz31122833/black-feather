@@ -117,9 +117,14 @@ export default function PassengerHome() {
       .filter(f => (f?.properties?.country || '').includes('台灣') || (f?.properties?.country || '').includes('Taiwan') || !f?.properties?.country)
       .map(f => {
         const p = f.properties || {}
-        const nameParts = [p.city || p.town || p.village || '', p.district || '', (p.street || p.name || '') + (p.housenumber ? p.housenumber : '')].filter(x=>x&&String(x).trim().length>0)
-        const display = nameParts.join('')
-        return { name: display || p.name || '', lat: f.geometry?.coordinates?.[1], lon: f.geometry?.coordinates?.[0], housenumber: p.housenumber || '' }
+        const cn = /[\u4e00-\u9fff]/
+        const city = p.city || p.town || p.village || ''
+        const district = p.district || ''
+        const street = p.street || p.name || ''
+        const num = p.housenumber || ''
+        const formatted = [city, district, street + (num ? num : '')].filter(x=>x&&String(x).trim().length>0).join('')
+        const display = cn.test(p.name || '') ? p.name : cn.test(street || '') ? (city + district + street + (num ? num : '')) : formatted
+        return { name: display || p.name || street || '', lat: f.geometry?.coordinates?.[1], lon: f.geometry?.coordinates?.[0], housenumber: p.housenumber || '' }
       })
       .filter(e => typeof e.lat === 'number' && typeof e.lon === 'number')
   }
@@ -130,7 +135,7 @@ export default function PassengerHome() {
     const seen = new Set()
     const merged = []
     for (const e of all) {
-      const key = `${e.lat.toFixed(6)},${e.lng.toFixed(6)}:${e.name}`
+      const key = `${(e.lat||0).toFixed(6)},${(e.lon||0).toFixed(6)}:${e.name}`
       if (!seen.has(key)) {
         seen.add(key)
         merged.push(e)
