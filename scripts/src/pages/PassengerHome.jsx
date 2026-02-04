@@ -107,6 +107,7 @@ export default function PassengerHome() {
     if (!q || q.trim().length < 2) return []
     let query = q.trim()
     if (/\\d+$/.test(query) && !/號$/.test(query)) query = query + '號'
+    if (!/台中|臺中/.test(query)) query = query + ' 台中'
     const useLat = 24.15
     const useLon = 120.68
     const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lat=${useLat}&lon=${useLon}&limit=10`
@@ -114,8 +115,13 @@ export default function PassengerHome() {
     if (!resp) return []
     const json = await resp.json().catch(()=>({}))
     const feats = json?.features || []
-    return feats
-      .filter(f => (f?.properties?.country || '').includes('台灣') || (f?.properties?.country || '').includes('Taiwan') || !f?.properties?.country)
+    const mapped = feats
+      .filter(f => {
+        const p = f?.properties || {}
+        const c = (p.city || p.town || p.village || '')
+        return ((p?.country || '').includes('台灣') || (p?.country || '').includes('Taiwan') || !p?.country)
+          && (/(台中|臺中)/.test(c) || /(台中|臺中)/.test(p?.name || '') || /(台中|臺中)/.test(p?.street || ''))
+      })
       .map(f => {
         const p = f.properties || {}
         const city = p.city || p.town || p.village || '台中市'
@@ -123,9 +129,20 @@ export default function PassengerHome() {
         const street = p.street || p.name || ''
         const num = p.housenumber || ''
         const fullAddress = [city, district, street + (num ? num + '號' : '')].filter(x=>x&&String(x).trim().length>0).join('')
-        return { name: fullAddress, lat: f.geometry?.coordinates?.[1], lon: f.geometry?.coordinates?.[0], housenumber: p.housenumber || '' }
+        const poi = p.name && p.name.trim().length > 0 ? p.name : ''
+        const display = poi ? `【${poi}】${fullAddress}` : fullAddress
+        return { name: display, lat: f.geometry?.coordinates?.[1], lon: f.geometry?.coordinates?.[0], housenumber: p.housenumber || '', poi }
       })
       .filter(e => typeof e.lat === 'number' && typeof e.lon === 'number')
+    mapped.sort((a, b) => {
+      const ap = a.poi ? 0 : 1
+      const bp = b.poi ? 0 : 1
+      if (ap !== bp) return ap - bp
+      const da = Math.hypot((a.lat - origin.lat), (a.lon - origin.lng))
+      const db = Math.hypot((b.lat - origin.lat), (b.lon - origin.lng))
+      return da - db
+    })
+    return mapped
   }
 
   async function searchPlaces(q) {
@@ -163,10 +180,17 @@ export default function PassengerHome() {
   }
 
   function estimateFare() {
-    const base = 85
-    const perKm = 25
+    const base = 70
     const km = distanceKm(origin, destination)
-    return Math.max(base, Math.round(base + km * perKm))
+    const perKm = km > 20 ? (15 * 20 + 25 * (km - 20)) : (15 * km)
+    const mins = estimateMins(km)
+    const timeCost = 3 * mins
+    return Math.max(base, Math.round(base + perKm + timeCost))
+  }
+
+  function estimateMins(km) {
+    const speedKmH = 40
+    return Math.round((km / speedKmH) * 60)
   }
 
   async function callRide() {
@@ -316,7 +340,11 @@ export default function PassengerHome() {
               )}
               {showEstimate && (
                 <div style={{ marginTop:8, background:'#0b0b0b', border:'1px solid rgba(66,133,244,0.5)', borderRadius:12, padding:12 }}>
-                  <div style={{ color:'#e5e7eb', marginBottom:6 }}>預估金額：<span style={{ fontWeight:700, color:'#D4AF37' }}>約 {estimateFare()} 元</span></div>
+                  <div style={{ color:'#e5e7eb', marginBottom:6 }}>起點：{originAddress || `${(origin.lat||0).toFixed(5)}, ${(origin.lng||0).toFixed(5)}`}</div>
+                  <div style={{ color:'#e5e7eb', marginBottom:6 }}>終點：{destAddress || `${(destination.lat||0).toFixed(5)}, ${(destination.lng||0).toFixed(5)}`}</div>
+                  <div style={{ color:'#e5e7eb', marginBottom:6 }}>預估金額：<span style={{ fontWeight:700, color:'#D4AF37' }}>NT$ {estimateFare()}</span></div>
+                  <div style={{ color:'#e5e7eb', marginBottom:6 }}>預估里程：{distanceKm(origin, destination).toFixed(1)} km</div>
+                  <div style={{ color:'#e5e7eb', marginBottom:8 }}>預估時間：{estimateMins(distanceKm(origin, destination))} 分鐘（時速 40km/h）</div>
                   <div style={{ color:'#9ca3af', marginBottom:8 }}>建議路線已在地圖以藍線顯示（直線估算）</div>
                   <button onClick={callRide} disabled={isBooking} style={{ padding:'10px 14px', borderRadius:12, backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:700, width:'100%', opacity: isBooking ? 0.6 : 1 }}>
                     {isBooking ? '尋找司機中...' : '確認叫車'}
