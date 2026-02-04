@@ -32,6 +32,10 @@ export default function PassengerHome() {
   const [senderId, setSenderId] = useState('')
   const [showChat, setShowChat] = useState(false)
   const mapRef = useRef(null)
+  const [isBooking, setIsBooking] = useState(false)
+  const [favorites, setFavorites] = useState([])
+  const [otherEnabled, setOtherEnabled] = useState(false)
+  const [otherText, setOtherText] = useState('')
 
   useEffect(() => {
     try {
@@ -66,14 +70,14 @@ export default function PassengerHome() {
           setOrigin(c)
           const addr = await reversePhoton(c.lat, c.lng).catch(()=> '')
           setOriginAddress(addr || '')
-          try { mapRef.current?.setView([c.lat, c.lng], 16) } catch {}
+          try { mapRef.current?.flyTo([c.lat, c.lng], 16, { duration: 0.8 }) } catch {}
         },
         async () => {
           const c = { lat: 25.033, lng: 121.565 }
           setOrigin(c)
           const addr = await reversePhoton(c.lat, c.lng).catch(()=> '')
           setOriginAddress(addr || '')
-          try { mapRef.current?.setView([c.lat, c.lng], 13) } catch {}
+          try { mapRef.current?.flyTo([c.lat, c.lng], 13, { duration: 0.8 }) } catch {}
         },
         { enableHighAccuracy: true, maximumAge: 5000, timeout: 8000 }
       )
@@ -102,7 +106,9 @@ export default function PassengerHome() {
     if (!q || q.trim().length < 2) return []
     let query = q.trim()
     if (/\\d+$/.test(query) && !/號$/.test(query)) query = query + '號'
-    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lang=zh&limit=8&lat=${origin.lat}&lon=${origin.lng}`
+    const useLat = origin?.lat ?? 24.15
+    const useLon = origin?.lng ?? 120.68
+    const url = `https://photon.komoot.io/api/?q=${encodeURIComponent(query)}&lang=zh&limit=5&lat=${useLat}&lon=${useLon}`
     const resp = await fetch(url, { headers: { 'Accept': 'application/json' } }).catch(()=>null)
     if (!resp) return []
     const json = await resp.json().catch(()=>({}))
@@ -142,6 +148,7 @@ export default function PassengerHome() {
   }
 
   async function callRide() {
+    setIsBooking(true)
     setRes({ loading: true })
     const { data: u } = await supabase.auth.getUser()
     let pid = u?.user?.id
@@ -162,8 +169,10 @@ export default function PassengerHome() {
     setRes(r.data)
     const id = r?.data?.ride_id || ''
     setRideId(id)
+    try { setShowChat(true) } catch {}
     try {
-      const notes = `禁菸:${noSmoking ? '是' : '否'}; 攜帶寵物:${pets ? '是' : '否'}`
+      const extra = otherEnabled && otherText ? `; 其他:${otherText}` : ''
+      const notes = `禁菸:${noSmoking ? '是' : '否'}; 攜帶寵物:${pets ? '是' : '否'}${extra}`
       if (id) await supabase.from('rides').update({ notes }).eq('id', id)
     } catch {}
   }
@@ -230,18 +239,26 @@ export default function PassengerHome() {
                     navigator.geolocation.getCurrentPosition(async (pos)=>{
                       const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
                       setOrigin(c)
-                      const addr = await reverseOSM(c.lat, c.lng).catch(()=> '')
+                      const addr = await reversePhoton(c.lat, c.lng).catch(()=> '')
                       setOriginAddress(addr || '')
-                      mapRef.current?.setView([c.lat, c.lng], 16)
+                      mapRef.current?.flyTo([c.lat, c.lng], 16, { duration: 0.8 })
                     })
                   } catch {}
                 }} style={{ padding:'6px 10px', borderRadius:8, border:'1px solid rgba(212,175,55,0.25)', color:'#e5e7eb' }}>📍 精準定位</button>
+                <button onClick={async ()=>{
+                  try {
+                    const label = (originAddress || '常用地址').slice(0,50)
+                    await supabase.from('favorite_addresses').insert({ user_id: senderId || null, label, address: originAddress || '', lat: origin.lat, lng: origin.lng })
+                    const { data } = await supabase.from('favorite_addresses').select('*').eq('user_id', senderId).order('created_at', { ascending:false }).limit(10)
+                    setFavorites(data || [])
+                  } catch {}
+                }} style={{ marginLeft:8, padding:'6px 10px', borderRadius:8, border:'1px solid rgba(212,175,55,0.25)', color:'#111', backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)' }}>⭐</button>
               </div>
               {originPred.length > 0 && (
                 <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
                   {originPred.map((p,i)=>(
                     <button key={i} onClick={async ()=>{
-                      setOrigin({ lat:p.lat, lng:p.lng }); setOriginAddress(p.name); setOriginPred([]); try { mapRef.current?.setView([p.lat, p.lng], 16) } catch {}
+                      setOrigin({ lat:p.lat, lng:p.lng }); setOriginAddress(p.name); setOriginPred([]); try { mapRef.current?.flyTo([p.lat, p.lng], 16, { duration: 0.8 }) } catch {}
                     }} style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px', color:'#e5e7eb' }}>{p.name}</button>
                   ))}
                 </div>
@@ -267,8 +284,31 @@ export default function PassengerHome() {
                 <div style={{ marginTop:6, background:'#0b0b0b', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>
                   {destPred.map((p,i)=>(
                     <button key={i} onClick={async ()=>{
-                      setDestination({ lat:p.lat, lng:p.lng }); setDestAddress(p.name); setDestPred([]); try { mapRef.current?.setView([p.lat, p.lng], 16) } catch {}
+                      setDestination({ lat:p.lat, lng:p.lng }); setDestAddress(p.name); setDestPred([]); try { mapRef.current?.flyTo([p.lat, p.lng], 16, { duration: 0.8 }) } catch {}
                     }} style={{ display:'block', width:'100%', textAlign:'left', padding:'8px 12px', color:'#e5e7eb' }}>{p.name}</button>
+                  ))}
+                </div>
+              )}
+              <div style={{ marginTop:6, display:'flex', gap:8 }}>
+                <button onClick={async ()=>{
+                  try {
+                    const label = (destAddress || '常用地址').slice(0,50)
+                    await supabase.from('favorite_addresses').insert({ user_id: senderId || null, label, address: destAddress || '', lat: destination.lat, lng: destination.lng })
+                    const { data } = await supabase.from('favorite_addresses').select('*').eq('user_id', senderId).order('created_at', { ascending:false }).limit(10)
+                    setFavorites(data || [])
+                  } catch {}
+                }} style={{ padding:'6px 10px', borderRadius:8, border:'1px solid rgba(212,175,55,0.25)', color:'#111', backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)' }}>⭐</button>
+              </div>
+              {favorites.length > 0 && (
+                <div style={{ marginTop:6, display:'flex', flexWrap:'wrap', gap:8 }}>
+                  {favorites.map((f)=>(
+                    <button key={f.id} onClick={()=>{
+                      try {
+                        setDestination({ lat:f.lat, lng:f.lng })
+                        setDestAddress(f.address || f.label || '')
+                        mapRef.current?.flyTo([f.lat, f.lng], 16, { duration: 0.8 })
+                      } catch {}
+                    }} style={{ padding:'6px 10px', borderRadius:9999, border:'1px solid rgba(212,175,55,0.25)', color:'#e5e7eb' }}>{f.label || f.address || '常用地址'}</button>
                   ))}
                 </div>
               )}
@@ -277,10 +317,16 @@ export default function PassengerHome() {
                 <div style={{ display:'flex', alignItems:'center', gap:12 }}>
                   <label style={{ color:'#e5e7eb' }}><input type="checkbox" checked={noSmoking} onChange={e=>setNoSmoking(e.target.checked)} /> 🚭 禁菸</label>
                   <label style={{ color:'#e5e7eb' }}><input type="checkbox" checked={pets} onChange={e=>setPets(e.target.checked)} /> 🐾 攜帶寵物</label>
+                  <label style={{ color:'#e5e7eb' }}>
+                    <input type="checkbox" checked={otherEnabled} onChange={e=>setOtherEnabled(e.target.checked)} /> 其他
+                  </label>
+                  {otherEnabled && (
+                    <input value={otherText} onChange={e=>setOtherText(e.target.value)} placeholder="請輸入備註..." style={{ padding:'8px 10px', borderRadius:8, border:'1px solid rgba(212,175,55,0.25)', background:'#0b0b0b', color:'#fff', minWidth:180 }} />
+                  )}
                 </div>
               <div style={{ display:'flex', gap:8 }}>
-                <button onClick={callRide} disabled={!!res?.loading} style={{ padding:'10px 14px', borderRadius:12, backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:600, opacity: res?.loading ? 0.8 : 1 }}>
-                  {res?.loading ? '尋找司機中...' : '立即叫車'}
+                <button onClick={callRide} disabled={isBooking} style={{ padding:'10px 14px', borderRadius:12, backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:600, opacity: isBooking ? 0.6 : 1 }}>
+                  {isBooking ? '尋找司機中...' : '立即叫車'}
                 </button>
                 </div>
               </div>
@@ -292,7 +338,7 @@ export default function PassengerHome() {
         try {
           setShowChat(v => !v)
         } catch {}
-      }} style={{ position:'fixed', right:12, bottom:24, zIndex:10001, padding:'12px', borderRadius:'50%', backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:700 }}>
+      }} style={{ position:'fixed', right:12, bottom:96, zIndex:10000, width:44, height:44, display:'flex', alignItems:'center', justifyContent:'center', borderRadius:'50%', backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111', fontWeight:700 }}>
         💬
       </button>
       {showChat && (
