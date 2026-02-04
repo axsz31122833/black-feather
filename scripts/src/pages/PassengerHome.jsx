@@ -64,14 +64,14 @@ export default function PassengerHome() {
         async (pos) => {
           const c = { lat: pos.coords.latitude, lng: pos.coords.longitude }
           setOrigin(c)
-          const addr = await reverseOSM(c.lat, c.lng).catch(()=> '')
+          const addr = await reversePhoton(c.lat, c.lng).catch(()=> '')
           setOriginAddress(addr || '')
           try { mapRef.current?.setView([c.lat, c.lng], 16) } catch {}
         },
         async () => {
           const c = { lat: 25.033, lng: 121.565 }
           setOrigin(c)
-          const addr = await reverseOSM(c.lat, c.lng).catch(()=> '')
+          const addr = await reversePhoton(c.lat, c.lng).catch(()=> '')
           setOriginAddress(addr || '')
           try { mapRef.current?.setView([c.lat, c.lng], 13) } catch {}
         },
@@ -80,28 +80,23 @@ export default function PassengerHome() {
     } catch {}
   }, [])
 
-  async function reverseOSM(lat, lng) {
-    const url = `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lng}`
-    const resp = await fetch(url, { headers: { 'Accept': 'application/json' } })
-    const json = await resp.json()
-    const a = json?.address || {}
-    const city = a.city || a.town || a.village || a.county || ''
-    const district = a.city_district || a.district || a.suburb || a.neighbourhood || ''
-    const road = a.road || a.footway || a.cycleway || a.neighbourhood || ''
-    const num = a.house_number || ''
-    const parts = [city, district, road + (num ? num : '')].filter(x => x && String(x).trim().length > 0)
-    return parts.join('')
+  async function reversePhoton(lat, lng) {
+    try {
+      const url = `https://photon.komoot.io/reverse?lat=${lat}&lon=${lng}&lang=zh`
+      const resp = await fetch(url)
+      const json = await resp.json()
+      const f = json?.features?.[0]
+      const p = f?.properties || {}
+      const city = p.city || p.town || p.village || ''
+      const district = p.district || ''
+      const street = p.street || p.name || ''
+      const num = p.housenumber || ''
+      const parts = [city, district, street + (num ? num : '')].filter(x => x && String(x).trim().length > 0)
+      return parts.join('')
+    } catch { return '' }
   }
 
-  async function searchOSM(q) {
-    if (!q || q.trim().length < 2) return []
-    const delta = 0.25
-    const viewbox = `${origin.lng - delta},${origin.lat - delta},${origin.lng + delta},${origin.lat + delta}`
-    const url = `https://nominatim.openstreetmap.org/search?format=jsonv2&countrycodes=tw&bounded=1&viewbox=${viewbox}&q=${encodeURIComponent(q)}`
-    const resp = await fetch(url, { headers: { 'Accept': 'application/json', 'Accept-Language': 'zh-TW' } })
-    const json = await resp.json()
-    return (json || []).map(r => ({ name: r.display_name, lat: parseFloat(r.lat), lng: parseFloat(r.lon) }))
-  }
+  // use Photon-only search (no Nominatim)
 
   async function searchPhoton(q) {
     if (!q || q.trim().length < 2) return []
@@ -124,8 +119,8 @@ export default function PassengerHome() {
   }
 
   async function searchPlaces(q) {
-    const [photon, osm] = await Promise.all([searchPhoton(q), searchOSM(q)])
-    const all = [...photon, ...osm]
+    const photon = await searchPhoton(q)
+    const all = [...photon]
     const seen = new Set()
     const merged = []
     for (const e of all) {
