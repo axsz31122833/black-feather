@@ -9,6 +9,9 @@ const DriverRidePage = lazy(() => import('./pages/DriverRidePage'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const DevBypass = lazy(() => import('./pages/DevBypass'))
 import AppSelector from './AppSelector.jsx'
+import PassengerApp from './PassengerApp/index.jsx'
+import DriverApp from './DriverApp/index.jsx'
+import AdminApp from './AdminApp/index.jsx'
 const DriverPending = lazy(() => import('./pages/DriverPending'))
 import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -28,10 +31,8 @@ function AuthRouter() {
     return () => { try { (sub as any).data?.subscription?.unsubscribe?.() } catch {} }
   }, [])
   useEffect(() => {
-    if (isAuthenticated && userType) {
-      if (userType === 'passenger') navigate('/passenger')
-      else if (userType === 'driver') navigate('/driver')
-      else navigate('/admin')
+    if (isAuthenticated) {
+      navigate('/apps')
     } else {
       try { localStorage.clear(); sessionStorage.clear() } catch {}
       navigate('/login')
@@ -118,13 +119,23 @@ function App() {
         <main className="container">
           <ConnectionChecker />
           <PushInit />
-          <AuthRouter />
+          
           <Suspense fallback={<div style={{ padding: 24 }}>載入中...</div>}>
             <Routes>
-              <Route path="/" element={<Login />} />
+              <Route path="/" element={<PassengerApp />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
-              <Route path="/apps" element={<AppSelector />} />
+              <Route path="/passenger/*" element={<PassengerApp />} />
+              <Route path="/driver/*" element={
+                <ProtectedRoute roles={['driver','admin']}>
+                  <DriverApp />
+                </ProtectedRoute>
+              } />
+              <Route path="/admin/*" element={
+                <ProtectedRoute roles={['admin']}>
+                  <AdminApp />
+                </ProtectedRoute>
+              } />
               <Route path="/passenger" element={
                 <ProtectedRoute roles={['passenger','driver','admin']}>
                   <PassengerHome />
