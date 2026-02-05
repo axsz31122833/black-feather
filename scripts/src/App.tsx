@@ -8,6 +8,7 @@ const DriverHome = lazy(() => import('./pages/DriverHome'))
 const DriverRidePage = lazy(() => import('./pages/DriverRidePage'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const DevBypass = lazy(() => import('./pages/DevBypass'))
+import AppSelector from './AppSelector.jsx'
 const DriverPending = lazy(() => import('./pages/DriverPending'))
 import ErrorBoundary from './components/ErrorBoundary'
 import ProtectedRoute from './components/ProtectedRoute'
@@ -123,6 +124,7 @@ function App() {
               <Route path="/" element={<Login />} />
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/apps" element={<AppSelector />} />
               <Route path="/passenger" element={
                 <ProtectedRoute roles={['passenger','driver','admin']}>
                   <PassengerHome />
