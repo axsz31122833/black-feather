@@ -7,6 +7,7 @@ export default function AdminApp() {
   const [alerts, setAlerts] = useState([])
   const [history, setHistory] = useState([])
   const [manual, setManual] = useState({ driver_name:'', pickup_text:'', dropoff_text:'', distance_km:'', duration_min:'', fare_final:'' })
+  const [carModal, setCarModal] = useState({ open:false, userId:'', car_model:'Altis', car_plate:'BYF-9767', car_color:'銀色' })
 
   async function load() {
     setLoading(true)
@@ -49,8 +50,14 @@ export default function AdminApp() {
   useEffect(() => { load() }, [])
 
   async function setDriver(id) {
+    setCarModal({ open:true, userId:id, car_model:'Altis', car_plate:'BYF-9767', car_color:'銀色' })
+  }
+  async function confirmSetDriver() {
     try {
-      await supabase.from('profiles').update({ role: 'driver' }).eq('id', id)
+      const { userId, car_model, car_plate, car_color } = carModal
+      if (!userId || !car_model || !car_plate || !car_color) return
+      await supabase.from('profiles').update({ role: 'driver', car_model, car_plate, car_color }).eq('id', userId)
+      setCarModal({ open:false, userId:'', car_model:'Altis', car_plate:'BYF-9767', car_color:'銀色' })
       await load()
     } catch {}
   }
@@ -146,6 +153,22 @@ export default function AdminApp() {
         {alerts.length===0 && <div style={{ color:'#9ca3af' }}>目前無長途警報</div>}
       </div>
     </div>
+    {carModal.open && (
+      <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+        <div style={{ background:'#111', border:'1px solid rgba(212,175,55,0.35)', borderRadius:12, padding:16, width:'92%', maxWidth:520 }}>
+          <div style={{ fontSize:20, fontWeight:900, color:'#D4AF37', marginBottom:8 }}>司機資料審核</div>
+          <div style={{ display:'grid', gap:8 }}>
+            <input value={carModal.car_model} onChange={e=>setCarModal(v=>({ ...v, car_model:e.target.value }))} placeholder="車型" style={{ padding:8, borderRadius:8, background:'#0b0b0b', color:'#fff', border:'1px solid rgba(212,175,55,0.25)' }} />
+            <input value={carModal.car_plate} onChange={e=>setCarModal(v=>({ ...v, car_plate:e.target.value }))} placeholder="車牌號碼" style={{ padding:8, borderRadius:8, background:'#0b0b0b', color:'#fff', border:'1px solid rgba(212,175,55,0.25)' }} />
+            <input value={carModal.car_color} onChange={e=>setCarModal(v=>({ ...v, car_color:e.target.value }))} placeholder="車身顏色" style={{ padding:8, borderRadius:8, background:'#0b0b0b', color:'#fff', border:'1px solid rgba(212,175,55,0.25)' }} />
+          </div>
+          <div style={{ display:'flex', gap:8, marginTop:12 }}>
+            <button onClick={confirmSetDriver} style={{ padding:'8px 12px', borderRadius:8, background:'linear-gradient(to right,#D4AF37,#B8860B)', color:'#111', fontWeight:700 }}>確認升級</button>
+            <button onClick={()=>setCarModal({ open:false, userId:'', car_model:'Altis', car_plate:'BYF-9767', car_color:'銀色' })} style={{ padding:'8px 12px', borderRadius:8, border:'1px solid rgba(212,175,55,0.25)', color:'#e5e7eb' }}>取消</button>
+          </div>
+        </div>
+      </div>
+    )}
     <div style={{ padding:24 }}>
       <div style={{ fontSize:20, fontWeight:700, color:'#D4AF37', marginBottom:12 }}>30 天行程歷史</div>
       <div style={{ overflowX:'auto', border:'1px solid rgba(212,175,55,0.25)', borderRadius:12 }}>

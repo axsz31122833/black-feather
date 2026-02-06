@@ -32,6 +32,8 @@ export default function PassengerHome() {
   
   const mapRef = useRef(null)
   const [arrivedOverlay, setArrivedOverlay] = useState(false)
+  const [acceptedOverlay, setAcceptedOverlay] = useState(false)
+  const [driverInfo, setDriverInfo] = useState({ name:'', car:'' })
   const beepRef = useRef(null)
 
   // 1. 地址格式化：名稱 縣市區路號
@@ -80,6 +82,17 @@ export default function PassengerHome() {
           .on('postgres_changes', { event:'UPDATE', schema:'public', table:'rides', filter:`passenger_id=eq.${uid}` }, (payload) => {
             try {
               const row = payload.new
+              if (row?.driver_id) {
+                ;(async ()=>{
+                  try {
+                    const { data: prof } = await supabase.from('profiles').select('full_name,car_model,car_plate,car_color').eq('id', row.driver_id).limit(1).single()
+                    const name = prof?.full_name || '司機'
+                    const car = `${prof?.car_color || ''} ${prof?.car_model || ''} (${prof?.car_plate || ''})`.trim()
+                    setDriverInfo({ name, car })
+                    setAcceptedOverlay(true)
+                  } catch {}
+                })()
+              }
               if (row?.sop_status === 'arrived') {
                 setArrivedOverlay(true)
                 try {
@@ -163,10 +176,22 @@ export default function PassengerHome() {
         <Marker position={[origin.lat, origin.lng]} />
         {destAddress && <Marker position={[destination.lat, destination.lng]} />}
       </MapContainer>
+      {acceptedOverlay && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#111', border:'1px solid rgba(212,175,55,0.35)', borderRadius:12, padding:16, width:'92%', maxWidth:520, textAlign:'center' }}>
+            <div style={{ fontSize:24, fontWeight:900, color:'#D4AF37', marginBottom:8 }}>司機已接單</div>
+            <div style={{ color:'#e5e7eb', marginBottom:6 }}>{driverInfo.name}</div>
+            <div style={{ color:'#D4AF37', fontWeight:700, marginBottom:16 }}>{driverInfo.car}</div>
+            <button onClick={()=>setAcceptedOverlay(false)} style={{ padding:'10px 14px', borderRadius:10, border:'1px solid rgba(212,175,55,0.35)', color:'#e5e7eb' }}>關閉</button>
+          </div>
+        </div>
+      )}
       {arrivedOverlay && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center' }}>
           <div style={{ background:'#111', border:'1px solid rgba(212,175,55,0.35)', borderRadius:12, padding:16, width:'92%', maxWidth:520, textAlign:'center' }}>
             <div style={{ fontSize:24, fontWeight:900, color:'#D4AF37', marginBottom:8 }}>司機已抵達</div>
+            <div style={{ color:'#e5e7eb', marginBottom:6 }}>{driverInfo.name}</div>
+            <div style={{ color:'#D4AF37', fontWeight:700, marginBottom:16 }}>{driverInfo.car}</div>
             <div style={{ color:'#e5e7eb', marginBottom:16 }}>請確認周邊安全並準備上車</div>
             <button onClick={()=>setArrivedOverlay(false)} style={{ padding:'10px 14px', borderRadius:10, border:'1px solid rgba(212,175,55,0.35)', color:'#e5e7eb' }}>關閉</button>
           </div>

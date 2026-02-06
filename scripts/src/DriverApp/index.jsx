@@ -16,6 +16,7 @@ export default function DriverApp() {
   const watchIdRef = useRef(null)
   const timerRef = useRef(null)
   const uidRef = useRef('')
+  const [car, setCar] = useState({ model:'', plate:'', color:'' })
 
   useEffect(() => {
     ;(async ()=>{
@@ -140,6 +141,24 @@ export default function DriverApp() {
         <button onClick={goOnline} disabled={online} style={{ padding:'8px 12px', borderRadius:8, background:'#2e7d32', color:'#fff' }}>{online ? '已上線' : '上線 (Go Online)'}</button>
         <button onClick={goOffline} disabled={!online} style={{ padding:'8px 12px', borderRadius:8, background:'#b71c1c', color:'#fff' }}>{!online ? '已下線' : '下線 (Go Offline)'}</button>
         <div style={{ color:'#9ca3af' }}>{pos.lat && pos.lng ? `定位：${pos.lat.toFixed(5)}, ${pos.lng.toFixed(5)}` : '尚未定位'}</div>
+      </div>
+      <div style={{ padding:12, borderTop:'1px solid #222' }}>
+        <div style={{ fontWeight:700, color:'#e5e7eb', marginBottom:8 }}>車輛管理</div>
+        <div style={{ display:'grid', gap:8, gridTemplateColumns:'repeat(3,1fr)' }}>
+          <input placeholder="車型" value={car.model} onChange={e=>setCar(v=>({ ...v, model:e.target.value }))} style={{ padding:8, borderRadius:8, background:'#111', color:'#fff', border:'1px solid rgba(212,175,55,0.25)' }} />
+          <input placeholder="車牌" value={car.plate} onChange={e=>setCar(v=>({ ...v, plate:e.target.value }))} style={{ padding:8, borderRadius:8, background:'#111', color:'#fff', border:'1px solid rgba(212,175,55,0.25)' }} />
+          <input placeholder="顏色" value={car.color} onChange={e=>setCar(v=>({ ...v, color:e.target.value }))} style={{ padding:8, borderRadius:8, background:'#111', color:'#fff', border:'1px solid rgba(212,175,55,0.25)' }} />
+        </div>
+        <div style={{ marginTop:8 }}>
+          <button onClick={async ()=>{
+            try {
+              const id = uidRef.current
+              if (!id) return
+              await supabase.from('profiles').update({ car_model: car.model || null, car_plate: car.plate || null, car_color: car.color || null }).eq('id', id)
+              alert('已更新車輛資料')
+            } catch { alert('更新失敗') }
+          }} style={{ padding:'8px 12px', borderRadius:8, background:'linear-gradient(to right,#D4AF37,#B8860B)', color:'#111', fontWeight:700 }}>儲存</button>
+        </div>
       </div>
       {activeRide && (
         <div style={{ padding:12, display:'flex', gap:8, flexWrap:'wrap' }}>
