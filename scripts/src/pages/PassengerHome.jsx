@@ -4,6 +4,7 @@ import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import ChatPanel from '../components/ChatPanel'
 import { supabase } from '../lib/supabaseClient'
+import { cancelRide } from '../lib/rideApi'
 
 // 修正 Leaflet 圖示
 delete L.Icon.Default.prototype._getIconUrl;
@@ -27,6 +28,7 @@ export default function PassengerHome() {
   const [showFavs, setShowFavs] = useState(false)
   const [isReserving, setIsReserving] = useState(false)
   const [reserveTime, setReserveTime] = useState('')
+  const [rideId, setRideId] = useState('')
   
   const mapRef = useRef(null)
   const [arrivedOverlay, setArrivedOverlay] = useState(false)
@@ -135,7 +137,7 @@ export default function PassengerHome() {
   async function confirmRide() {
     if (!originAddress) return alert('請填寫上車地點');
     try {
-      const { error } = await supabase.from('rides').insert([{
+      const { data, error } = await supabase.from('rides').insert([{
         origin_address: originAddress,
         dest_address: destAddress || '現場跳表',
         origin_lat: origin.lat,
@@ -145,8 +147,9 @@ export default function PassengerHome() {
         status: 'searching',
         is_reservation: isReserving,
         scheduled_time: isReserving && reserveTime ? new Date(reserveTime).toISOString() : null,
-      }]);
+      }]).select('id').single();
       if (error) throw error;
+      setRideId(data?.id || '')
       alert(isReserving ? '預約成功！' : '叫車請求已發送！');
     } catch (err) {
       alert('叫車失敗：' + err.message);
@@ -205,6 +208,25 @@ export default function PassengerHome() {
           <div style={{ display: 'grid', gridTemplateColumns: destAddress ? '1fr 1fr' : '1fr', gap: 10 }}>
             {destAddress && <button onClick={calculateEstimate} style={{ padding: 15, borderRadius: 15, background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', fontWeight: 'bold' }}>預估金額</button>}
             <button onClick={confirmRide} style={{ padding: 18, borderRadius: 15, background: 'linear-gradient(135deg, #D4AF37, #B8860B)', color: '#000', fontWeight: '900', border: 'none' }}>確認{isReserving ? '預約' : '叫車'}</button>
+          </div>
+          <div style={{ marginTop: 10 }}>
+            <button
+              onClick={async ()=>{
+                try {
+                  if (!rideId) { alert('尚未建立行程'); return }
+                  const r = await cancelRide({ ride_id: rideId, reason: 'user_cancel' })
+                  alert('已取消行程（取消費 NT$100）')
+                  setRideId('')
+                  setShowEstimate(false)
+                } catch {
+                  alert('取消失敗，請稍後再試')
+                }
+              }}
+              disabled={!rideId}
+              style={{ padding:12, borderRadius:10, border:'1px solid rgba(212,175,55,0.35)', color:'#e5e7eb', background:'#1a1a1a', opacity: rideId ? 1 : 0.6 }}
+            >
+              取消行程（NT$100）
+            </button>
           </div>
 
           {showEstimate && (
