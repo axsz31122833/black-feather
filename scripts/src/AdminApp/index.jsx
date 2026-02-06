@@ -77,6 +77,18 @@ export default function AdminApp() {
     } catch {}
   }
 
+  function Countdown({ id, onExpire }) {
+    const [sec, setSec] = useState(90)
+    useEffect(() => {
+      const t = setInterval(() => setSec(s => s > 0 ? s - 1 : 0), 1000)
+      return () => clearInterval(t)
+    }, [])
+    useEffect(() => {
+      if (sec === 0) { try { onExpire?.() } catch {} }
+    }, [sec])
+    return <div style={{ color:'#ff8a80', marginTop:6 }}>釋放倒數：{sec}s</div>
+  }
+
   return (
     <>
     <div style={{ padding: 24 }}>
@@ -125,6 +137,7 @@ export default function AdminApp() {
           <div key={a.id} style={{ background:'#150000', border:'1px solid #b71c1c', borderRadius:8, padding:10 }}>
             <div style={{ color:'#ff8a80', fontWeight:700 }}>警報：{(a.distance_km||0)} km 預約單</div>
             <div style={{ color:'#e5e7eb' }}>{a.pickup_text} → {a.dropoff_text}</div>
+            <Countdown id={a.id} onExpire={()=>assignRide(a.id)} />
             <div style={{ display:'flex', gap:8, marginTop:8 }}>
               <button onClick={()=>assignRide(a.id)} style={{ padding:'6px 10px', borderRadius:8, background:'#1e88e5', color:'#fff' }}>釋放到預約專區</button>
             </div>
