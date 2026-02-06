@@ -126,10 +126,20 @@ export async function cancelRide({ ride_id, reason }) {
     const t1 = performance.now?.() || Date.now();
     try { await supabase.from('ops_events').insert({ event_type: 'backend_perf', payload: { url, ms: Math.round(t1 - t0), status: res.status } }); } catch {}
     const json = await res.json().catch(() => ({ error: 'Invalid JSON from cancel_ride' }));
+    try {
+      await supabase.from('rides').update({ cancel_fee: 100, status: 'cancelled' }).eq('id', ride_id);
+      await supabase.from('payments').insert({ trip_id: ride_id, amount: 100, payment_method: 'cash', status: 'pending' });
+    } catch (e) {
+      try { await supabase.from('ops_events').insert({ event_type: 'cancel_fallback_error', payload: { ride_id, error: String(e) } }) } catch {}
+    }
     return { ok: res.ok, status: res.status, data: json };
   } catch (e) {
     const t1 = performance.now?.() || Date.now();
     try { await supabase.from('ops_events').insert({ event_type: 'backend_error', payload: { url, ms: Math.round(t1 - t0), error: String(e) } }); } catch {}
+    try {
+      await supabase.from('rides').update({ cancel_fee: 100, status: 'cancelled' }).eq('id', ride_id);
+      await supabase.from('payments').insert({ trip_id: ride_id, amount: 100, payment_method: 'cash', status: 'pending' });
+    } catch {}
     return { ok: false, status: 0, data: { error: 'network_error' } };
   }
 }
