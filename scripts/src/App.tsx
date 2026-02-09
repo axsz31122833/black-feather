@@ -57,7 +57,11 @@ function App() {
       if (data && data.type === 'flush_ops' && data.item) {
         const it = data.item
         ;(async () => {
-          try { await supabase.from('ops_events').insert({ event_type: it.event_type, ref_id: it.ref_id || null, payload: it.payload || null }) } catch {}
+          try {
+            const { data: { user } } = await supabase.auth.getUser()
+            if (!user?.id) return
+            await supabase.from('ops_events').insert({ event_type: it.event_type, ref_id: it.ref_id || null, payload: it.payload || null })
+          } catch {}
         })()
       }
     }
