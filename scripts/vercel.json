@@ -1,6 +1,17 @@
 {
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "buildCommand": "npm run build",
+        "distDir": "dist"
+      }
+    }
+  ],
   "rewrites": [
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/manifest-:type.json", "destination": "/manifest-:type.json" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }
