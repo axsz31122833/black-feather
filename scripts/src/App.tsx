@@ -1,6 +1,9 @@
 import React, { useEffect, Suspense, lazy } from 'react'
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom'
-const Login = lazy(() => import('./pages/Login'))
+const Login = lazy(() => import('./pages/PassengerLogin.jsx'))
+const PassengerLogin = lazy(() => import('./pages/PassengerLogin.jsx'))
+const DriverLogin = lazy(() => import('./pages/DriverLogin.jsx'))
+const AdminLogin = lazy(() => import('./pages/AdminLogin.jsx'))
 const Register = lazy(() => import('./pages/Register.tsx'))
 const PassengerHome = lazy(() => import('./pages/PassengerHome'))
 const PassengerRidePage = lazy(() => import('./pages/PassengerRidePage'))
@@ -20,6 +23,7 @@ import GlobalMonitor from './components/GlobalMonitor'
 import PushInit from './components/PushInit'
 import { supabase } from './lib/supabaseClient'
 import ConnectionChecker from './components/ConnectionChecker'
+import ManifestManager from './components/ManifestManager'
 
 function AuthRouter() {
   const navigate = useNavigate()
@@ -119,12 +123,16 @@ function App() {
         <main className="container">
           <ConnectionChecker />
           <PushInit />
+          <ManifestManager />
           
           <Suspense fallback={<div style={{ padding: 24 }}>載入中...</div>}>
             <Routes>
               <Route path="/" element={<PassengerApp />} />
-              <Route path="/login" element={<Login />} />
+              <Route path="/login" element={<PassengerLogin />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/passenger/login" element={<PassengerLogin />} />
+              <Route path="/driver/login" element={<DriverLogin />} />
+              <Route path="/admin/login" element={<AdminLogin />} />
               <Route path="/passenger/*" element={<PassengerApp />} />
               <Route path="/driver/*" element={
                 <ProtectedRoute roles={['driver','admin']}>

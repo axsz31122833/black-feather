@@ -41,7 +41,11 @@ export default function ProtectedRoute({ children, roles }: Props) {
     )
   }
 
-  if (!isAuthenticated) return <Navigate to="/login" replace />
+  if (!isAuthenticated) {
+    if (path.startsWith('/admin')) return <Navigate to="/admin/login" replace />
+    if (path.startsWith('/driver')) return <Navigate to="/driver/login" replace />
+    return <Navigate to="/passenger/login" replace />
+  }
 
   // Hardened gatekeeper by path
   // Driver area: only driver/admin may enter
@@ -49,6 +53,11 @@ export default function ProtectedRoute({ children, roles }: Props) {
     if (!(role === 'driver' || role === 'admin')) {
       alert('請使用司機帳號登入')
       return <Navigate to="/passenger" replace />
+    }
+  }
+  if (path.startsWith('/passenger')) {
+    if (role === 'driver') {
+      return <Navigate to="/driver" replace />
     }
   }
   // Admin area: only admin; if not, show "無權存取"
