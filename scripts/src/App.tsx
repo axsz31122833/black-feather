@@ -52,21 +52,7 @@ function App() {
     checkAuth()
   }, [])
   useEffect(() => {
-    const onMsg = (e: MessageEvent) => {
-      const data: any = e.data
-      if (data && data.type === 'flush_ops' && data.item) {
-        const it = data.item
-        ;(async () => {
-          try {
-            const { data: { user } } = await supabase.auth.getUser()
-            if (!user?.id) return
-            await supabase.from('ops_events').insert({ event_type: it.event_type, ref_id: it.ref_id || null, payload: it.payload || null })
-          } catch {}
-        })()
-      }
-    }
-    navigator.serviceWorker?.addEventListener?.('message', onMsg as any)
-    return () => { navigator.serviceWorker?.removeEventListener?.('message', onMsg as any) }
+    return () => {}
   }, [])
   useEffect(() => {
     const onOnline = () => {
@@ -88,9 +74,6 @@ function App() {
           try {
             localStorage.setItem('bf_last_lat', String(pos.coords.latitude))
             localStorage.setItem('bf_last_lng', String(pos.coords.longitude))
-          } catch {}
-          try {
-            supabase.from('ops_events').insert({ event_type: 'user_geo', payload: { lat: pos.coords.latitude, lng: pos.coords.longitude } })
           } catch {}
         },
         () => {},

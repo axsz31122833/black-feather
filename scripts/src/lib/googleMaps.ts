@@ -4,7 +4,7 @@ let ready: Promise<typeof google> | null = null
 
 export async function loadGoogleMaps(libs: string[] = ['places']) {
   if (typeof window === 'undefined') throw new Error('no-window')
-  const key = import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  const key = (import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string) || (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string)
   if (!key) throw new Error('missing-google-maps-key')
   if ((window as any).google?.maps) return (window as any).google
   if (!loader) {
