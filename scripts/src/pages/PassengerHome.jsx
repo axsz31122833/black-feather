@@ -199,6 +199,7 @@ export default function PassengerHome() {
           mapId: 'BF_MAP',
         })
         gmapRef.current = map
+        try { console.log('Map Initialized Successfully!') } catch {}
         try { console.log('Map Instance Created:', map) } catch {}
         directionsRef.current = new google.maps.DirectionsRenderer({ map })
         const svc = new google.maps.DirectionsService()
@@ -272,9 +273,9 @@ export default function PassengerHome() {
   }
 
   return (
-    <div style={{ height: '100vh', background: '#000', color: '#fff', position: 'relative' }}>
+    <div style={{ height: '100vh', background: 'transparent', color: '#fff', position: 'relative' }}>
       {hasGoogleKey ? (
-        <div id="gmap" style={{ width:'100%', height:'100vh', minHeight:'400px', backgroundColor:'#555' }} />
+        <div id="gmap" style={{ width:'100%', height:'100vh', minHeight:'400px', backgroundColor:'#555', position:'absolute', top:0, left:0, zIndex:0 }} />
       ) : (
         <MapContainer center={[origin.lat, origin.lng]} zoom={15} style={{ height: '500px', width:'100%' }} whenCreated={m => mapRef.current = m}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
