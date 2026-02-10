@@ -67,7 +67,6 @@ export default function DriverHome() {
     const id = setInterval(async () => {
       try {
         const pos = driverLocation || null
-        await supabase.from('ops_events').insert({ event_type: 'driver_ping', payload: pos ? { lat: pos.lat, lng: pos.lng } : {} })
         if (user && pos) {
           try { await supabase.from('driver_profiles').upsert({ user_id: user.id, current_lat: pos.lat, current_lng: pos.lng, last_seen_at: new Date().toISOString() }, { onConflict: 'user_id' } as any) } catch {}
         }
@@ -133,22 +132,9 @@ export default function DriverHome() {
   useEffect(() => {
     if (offerCountdown !== 0 || !incomingOffer || !user) return
     ;(async () => {
-      try {
-        await supabase.from('ops_events').insert({ event_type: 'dispatch_timeout', payload: { driver_id: user.id, offer: incomingOffer } })
-      } catch {}
       setIncomingOffer(null)
       try {
-        const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString()
-        const { data: evs } = await supabase
-          .from('ops_events')
-          .select('event_type,payload,created_at')
-          .gte('created_at', oneHourAgo)
-          .in('event_type', ['dispatch_timeout','dispatch_reject'])
-        const count = (evs || []).filter(ev => ev?.payload?.driver_id === user.id).length
-        if (count >= 2) {
-          await supabase.from('drivers').update({ is_online: false, status: 'offline' }).eq('id', user.id)
-          try { await sendPush({ user_id: user.id, title: '狀態變更', body: '因多次逾時未接單，已自動切換為離線' }) } catch {}
-        }
+        // 暫停依賴 ops_events 歷史統計的自動離線邏輯
       } catch {}
     })()
   }, [offerCountdown, incomingOffer, user?.id])
@@ -188,36 +174,8 @@ export default function DriverHome() {
   const showRidePath = async () => {
     if (!currentTrip) return
     try {
-      const { data: evs } = await supabase
-        .from('ops_events')
-        .select('payload,created_at')
-        .eq('ref_id', currentTrip.id)
-        .eq('event_type', 'driver_location')
-        .order('created_at', { ascending: true })
-      const points = (evs || [])
-        .map((e: any) => e?.payload && e.payload.lat && e.payload.lng ? { lat: e.payload.lat, lng: e.payload.lng } : null)
-        .filter(Boolean) as Array<{ lat: number; lng: number }>
-      if (points.length < 2) {
-        alert('軌跡資料不足')
-        return
-      }
-      setRoutePath(points)
-      let distKm = 0
-      for (let i = 1; i < points.length; i++) {
-        const a = points[i - 1], b = points[i]
-        const toRad = (v: number) => (v * Math.PI) / 180
-        const R = 6371
-        const dLat = toRad(b.lat - a.lat)
-        const dLng = toRad(b.lng - a.lng)
-        const sa = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng / 2) ** 2
-        const c = 2 * Math.atan2(Math.sqrt(sa), Math.sqrt(1 - sa))
-        distKm += R * c
-      }
-      alert(`行程軌跡已繪製；估算距離：約 ${distKm.toFixed(2)} 公里`)
-    } catch (e) {
-      console.error('showRidePath error', e)
-      alert('載入軌跡失敗')
-    }
+      alert('軌跡功能暫時停用')
+    } catch {}
   }
 
   const distPointToSegmentMeters = (p: { lat: number; lng: number }, a: { lat: number; lng: number }, b: { lat: number; lng: number }) => {

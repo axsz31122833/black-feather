@@ -30,3 +30,8 @@ export async function loadGoogleMaps(libs: string[] = ['places']) {
   }
   return ready
 }
+try {
+  // proactively attempt load to decouple from app state
+  // libraries: maps + places
+  ;(async () => { try { await loadGoogleMaps(['places']) } catch {} })()
+} catch {}

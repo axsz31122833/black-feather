@@ -24,12 +24,10 @@ export async function requestRide({ passenger_id, origin, destination }) {
       body: JSON.stringify({ passenger_id, origin, destination }),
     });
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_perf', payload: { url, ms: Math.round(t1 - t0), status: res.status } }); } catch {}
     const json = await res.json().catch(() => ({ error: 'Invalid JSON from request_ride' }));
     return { ok: res.ok, status: res.status, data: json };
   } catch (e) {
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_error', payload: { url, ms: Math.round(t1 - t0), error: String(e) } }); } catch {}
     return { ok: false, status: 0, data: { error: 'network_error' } };
   }
 }
@@ -44,12 +42,10 @@ export async function assignDriver({ ride_id, driver_id }) {
       body: JSON.stringify(driver_id ? { ride_id, driver_id } : { ride_id }),
     });
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_perf', payload: { url, ms: Math.round(t1 - t0), status: res.status } }); } catch {}
     const json = await res.json().catch(() => ({ error: 'Invalid JSON from assign_driver' }));
     return { ok: res.ok, status: res.status, data: json };
   } catch (e) {
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_error', payload: { url, ms: Math.round(t1 - t0), error: String(e) } }); } catch {}
     return { ok: false, status: 0, data: { error: 'network_error' } };
   }
 }
@@ -64,12 +60,10 @@ export async function updateDriverLocation({ driver_id, lat, lng }) {
       body: JSON.stringify({ driver_id, lat, lng }),
     });
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_perf', payload: { url, ms: Math.round(t1 - t0), status: res.status } }); } catch {}
     const json = await res.json().catch(() => ({ error: 'Invalid JSON from update_location' }));
     return { ok: res.ok, status: res.status, data: json };
   } catch (e) {
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_error', payload: { url, ms: Math.round(t1 - t0), error: String(e) } }); } catch {}
     return { ok: false, status: 0, data: { error: 'network_error' } };
   }
 }
@@ -84,12 +78,10 @@ export async function startRide({ ride_id }) {
       body: JSON.stringify({ ride_id }),
     });
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_perf', payload: { url, ms: Math.round(t1 - t0), status: res.status } }); } catch {}
     const json = await res.json().catch(() => ({ error: 'Invalid JSON from start_ride' }));
     return { ok: res.ok, status: res.status, data: json };
   } catch (e) {
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_error', payload: { url, ms: Math.round(t1 - t0), error: String(e) } }); } catch {}
     return { ok: false, status: 0, data: { error: 'network_error' } };
   }
 }
@@ -104,12 +96,10 @@ export async function finishRide({ ride_id, dropoff }) {
       body: JSON.stringify({ ride_id, dropoff }),
     });
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_perf', payload: { url, ms: Math.round(t1 - t0), status: res.status } }); } catch {}
     const json = await res.json().catch(() => ({ error: 'Invalid JSON from finish_ride' }));
     return { ok: res.ok, status: res.status, data: json };
   } catch (e) {
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_error', payload: { url, ms: Math.round(t1 - t0), error: String(e) } }); } catch {}
     return { ok: false, status: 0, data: { error: 'network_error' } };
   }
 }
@@ -124,18 +114,14 @@ export async function cancelRide({ ride_id, reason }) {
       body: JSON.stringify({ ride_id, reason }),
     });
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_perf', payload: { url, ms: Math.round(t1 - t0), status: res.status } }); } catch {}
     const json = await res.json().catch(() => ({ error: 'Invalid JSON from cancel_ride' }));
     try {
       await supabase.from('rides').update({ cancel_fee: 100, status: 'cancelled' }).eq('id', ride_id);
       await supabase.from('payments').insert({ trip_id: ride_id, amount: 100, payment_method: 'cash', status: 'pending' });
-    } catch (e) {
-      try { await supabase.from('ops_events').insert({ event_type: 'cancel_fallback_error', payload: { ride_id, error: String(e) } }) } catch {}
-    }
+    } catch (e) {}
     return { ok: res.ok, status: res.status, data: json };
   } catch (e) {
     const t1 = performance.now?.() || Date.now();
-    try { await supabase.from('ops_events').insert({ event_type: 'backend_error', payload: { url, ms: Math.round(t1 - t0), error: String(e) } }); } catch {}
     try {
       await supabase.from('rides').update({ cancel_fee: 100, status: 'cancelled' }).eq('id', ride_id);
       await supabase.from('payments').insert({ trip_id: ride_id, amount: 100, payment_method: 'cash', status: 'pending' });

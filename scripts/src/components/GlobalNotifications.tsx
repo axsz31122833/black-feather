@@ -119,7 +119,6 @@ export default function GlobalNotifications() {
     if (!upcoming) return
     try {
       await supabase.from('scheduled_rides').update({ status: 'cancelled', processed: true }).eq('id', upcoming.id)
-      await supabase.from('ops_events').insert({ event_type: 'scheduled_cancel', ref_id: upcoming.id })
       setUpcoming(null)
     } catch {}
   }
