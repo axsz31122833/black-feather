@@ -273,9 +273,9 @@ export default function PassengerHome() {
   return (
     <div style={{ height: '100vh', background: '#000', color: '#fff', position: 'relative' }}>
       {hasGoogleKey ? (
-        <div id="gmap" style={{ position:'fixed', left:0, top:0, right:0, bottom:0, zIndex:0 }} />
+        <div id="gmap" style={{ position:'fixed', left:0, top:0, right:0, bottom:0, zIndex:0, minHeight:'500px', width:'100%' }} />
       ) : (
-        <MapContainer center={[origin.lat, origin.lng]} zoom={15} style={{ height: '100%' }} whenCreated={m => mapRef.current = m}>
+        <MapContainer center={[origin.lat, origin.lng]} zoom={15} style={{ height: '500px', width:'100%' }} whenCreated={m => mapRef.current = m}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
           <Marker position={[origin.lat, origin.lng]} />
           {destAddress && <Marker position={[destination.lat, destination.lng]} />}
