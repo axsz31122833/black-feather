@@ -57,11 +57,18 @@ export default function Register() {
         pwdHash = password
       }
       try { await supabase.auth.signOut() } catch {}
+      if (!adminPhone) {
+        const code = String(inviteCode || '').trim()
+        if (!code) { setError('邀請碼不可為空'); return }
+        const { data: ref } = await supabase.from('profiles').select('id').eq('phone', code).limit(1)
+        if (!ref || ref.length === 0) { setError('查無此邀請人，請確認推薦人電話號碼'); return }
+      }
       const { data: profData, error: profErr } = await supabase.from('profiles').insert({
         full_name: regName,
         phone,
         role,
-        password_hash: pwdHash
+        password_hash: pwdHash,
+        referrer_phone: String(inviteCode || '').trim() || null
       } as any)
       console.log('profiles insert result:', { data: profData, error: profErr })
       if (profErr) {

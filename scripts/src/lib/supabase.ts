@@ -6,7 +6,21 @@ const supabaseAnonKey =
   (import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string) ||
   (import.meta.env.VITE_SUPABASE_ANON_KEY as string)
 console.log('URL:', import.meta.env.VITE_SUPABASE_URL, 'NEXT_PUBLIC_URL:', import.meta.env.NEXT_PUBLIC_SUPABASE_URL)
+try {
+  const len = supabaseAnonKey ? String(supabaseAnonKey).length : 0
+  console.log('Supabase anon key length:', len)
+  if (!supabaseUrl || !supabaseAnonKey) console.error('ERROR: Supabase Key is missing!')
+} catch {}
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export function getSupabaseAnonKey() { return supabaseAnonKey }
+export function getSupabaseHeaders() { return { apikey: supabaseAnonKey } }
+export async function getAuthorizedHeaders() {
+  try {
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token || ''
+    return token ? { apikey: supabaseAnonKey, Authorization: `Bearer ${token}` } : { apikey: supabaseAnonKey }
+  } catch { return { apikey: supabaseAnonKey } }
+}
 
 export type Database = {
   public: {

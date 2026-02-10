@@ -5,6 +5,7 @@ import 'leaflet/dist/leaflet.css'
 import ChatPanel from '../components/ChatPanel'
 import { supabase } from '../lib/supabaseClient'
 import { cancelRide } from '../lib/rideApi'
+import { loadGoogleMaps } from '../lib/googleMaps'
 
 // 修正 Leaflet 圖示
 delete L.Icon.Default.prototype._getIconUrl;
@@ -31,10 +32,17 @@ export default function PassengerHome() {
   const [rideId, setRideId] = useState('')
   
   const mapRef = useRef(null)
+  const hasGoogleKey = !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+  const gmapRef = useRef(null)
+  const directionsRef = useRef(null)
+  const originInputRef = useRef(null)
+  const destInputRef = useRef(null)
   const [arrivedOverlay, setArrivedOverlay] = useState(false)
   const [acceptedOverlay, setAcceptedOverlay] = useState(false)
   const [driverInfo, setDriverInfo] = useState({ name:'', car:'' })
+  const [driverId, setDriverId] = useState('')
   const beepRef = useRef(null)
+  const driverMarkerRef = useRef(null)
 
   // 1. 地址格式化：名稱 縣市區路號
   const formatTaiwanAddress = (item) => {
@@ -89,6 +97,7 @@ export default function PassengerHome() {
                     const name = prof?.full_name || '司機'
                     const car = `${prof?.car_color || ''} ${prof?.car_model || ''} (${prof?.car_plate || ''})`.trim()
                     setDriverInfo({ name, car })
+                    setDriverId(row.driver_id || '')
                     setAcceptedOverlay(true)
                   } catch {}
                 })()
@@ -118,6 +127,98 @@ export default function PassengerHome() {
     })()
     return () => { try { beepRef.current?.unsubscribe?.() } catch {} }
   }, [])
+
+  useEffect(() => {
+    ;(async ()=>{
+      try {
+        const google = await loadGoogleMaps(['places'])
+        if (originInputRef.current) {
+          const ac = new google.maps.places.Autocomplete(originInputRef.current, { fields:['geometry','formatted_address','name'] })
+          ac.addListener('place_changed', () => {
+            const p = ac.getPlace()
+            const loc = p?.geometry?.location
+            if (loc) {
+              const lat = loc.lat()
+              const lng = loc.lng()
+              setOrigin({ lat, lng })
+              setOriginAddress(p?.formatted_address || p?.name || '')
+            }
+          })
+        }
+        if (destInputRef.current) {
+          const ac2 = new google.maps.places.Autocomplete(destInputRef.current, { fields:['geometry','formatted_address','name'] })
+          ac2.addListener('place_changed', () => {
+            const p = ac2.getPlace()
+            const loc = p?.geometry?.location
+            if (loc) {
+              const lat = loc.lat()
+              const lng = loc.lng()
+              setDestination({ lat, lng })
+              setDestAddress(p?.formatted_address || p?.name || '')
+              setShowEstimate(true)
+            }
+          })
+        }
+      } catch {}
+    })()
+  }, [])
+
+  useEffect(() => {
+    if (!driverId) return
+    try {
+      const ch = supabase
+        .channel('drivers-' + driverId)
+        .on('postgres_changes', { event:'UPDATE', schema:'public', table:'drivers', filter:`user_id=eq.${driverId}` }, (payload) => {
+          try {
+            const row = payload.new
+            const lat = Number(row?.lat || 0)
+            const lng = Number(row?.lng || 0)
+            if (lat && lng && gmapRef.current) {
+              const google = window.google
+              if (!driverMarkerRef.current) {
+                driverMarkerRef.current = new google.maps.Marker({ position:{ lat, lng }, map: gmapRef.current, icon: { path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW, scale:4, strokeColor:'#1e88e5' } })
+              } else {
+                driverMarkerRef.current.setPosition({ lat, lng })
+              }
+            }
+          } catch {}
+        })
+        .subscribe()
+      return () => { try { ch.unsubscribe() } catch {} }
+    } catch {}
+  }, [driverId])
+
+  useEffect(() => {
+    ;(async ()=>{
+      try {
+        const google = await loadGoogleMaps(['places'])
+        const mapEl = document.getElementById('gmap')
+        const map = new google.maps.Map(mapEl, {
+          center: { lat: origin.lat, lng: origin.lng },
+          zoom: 15,
+          mapId: 'BF_MAP',
+        })
+        gmapRef.current = map
+        directionsRef.current = new google.maps.DirectionsRenderer({ map })
+        const svc = new google.maps.DirectionsService()
+        function drawRoute() {
+          if (!destAddress) return
+          const req = {
+            origin: { lat: origin.lat, lng: origin.lng },
+            destination: { lat: destination.lat, lng: destination.lng },
+            travelMode: google.maps.TravelMode.DRIVING,
+            avoidHighways: !useHighway,
+          }
+          svc.route(req, (res, status) => {
+            if (status === 'OK' && res) {
+              directionsRef.current?.setDirections(res)
+            }
+          })
+        }
+        drawRoute()
+      } catch {}
+    })()
+  }, [origin, destination, destAddress, useHighway])
 
   // 3. 定位
   const handleLocate = () => {
@@ -171,11 +272,15 @@ export default function PassengerHome() {
 
   return (
     <div style={{ height: '100vh', background: '#000', color: '#fff', position: 'relative' }}>
-      <MapContainer center={[origin.lat, origin.lng]} zoom={15} style={{ height: '100%' }} whenCreated={m => mapRef.current = m}>
-        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
-        <Marker position={[origin.lat, origin.lng]} />
-        {destAddress && <Marker position={[destination.lat, destination.lng]} />}
-      </MapContainer>
+      {hasGoogleKey ? (
+        <div id="gmap" style={{ position:'fixed', left:0, top:0, right:0, bottom:0, zIndex:0 }} />
+      ) : (
+        <MapContainer center={[origin.lat, origin.lng]} zoom={15} style={{ height: '100%' }} whenCreated={m => mapRef.current = m}>
+          <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+          <Marker position={[origin.lat, origin.lng]} />
+          {destAddress && <Marker position={[destination.lat, destination.lng]} />}
+        </MapContainer>
+      )}
       {acceptedOverlay && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.85)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center' }}>
           <div style={{ background:'#111', border:'1px solid rgba(212,175,55,0.35)', borderRadius:12, padding:16, width:'92%', maxWidth:520, textAlign:'center' }}>
@@ -210,7 +315,7 @@ export default function PassengerHome() {
           {isReserving && <input type="datetime-local" value={reserveTime} onChange={(e) => setReserveTime(e.target.value)} style={{ width: '100%', padding: 12, borderRadius: 12, background: '#111', color: '#fff', border: '1px solid #D4AF37', marginBottom: 15 }} />}
 
           <div style={{ marginBottom: 10, display: 'flex', gap: 8 }}>
-            <input value={originAddress} onChange={(e) => { setOriginAddress(e.target.value); searchAddress(e.target.value, setOriginPred); }} placeholder="📍 上車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
+            <input ref={originInputRef} value={originAddress} onChange={(e) => { setOriginAddress(e.target.value); searchAddress(e.target.value, setOriginPred); }} placeholder="📍 上車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
             <button onClick={handleLocate} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>📍</button>
             <button onClick={() => setShowFavs(true)} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>⭐</button>
           </div>
@@ -219,7 +324,7 @@ export default function PassengerHome() {
           </div>}
 
           <div style={{ marginBottom: 15, display: 'flex', gap: 8 }}>
-            <input value={destAddress} onChange={(e) => { setDestAddress(e.target.value); searchAddress(e.target.value, setDestPred); }} placeholder="🏁 下車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
+            <input ref={destInputRef} value={destAddress} onChange={(e) => { setDestAddress(e.target.value); searchAddress(e.target.value, setDestPred); }} placeholder="🏁 下車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
             <button onClick={() => setShowChat(true)} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>💬</button>
           </div>
           {destPred.length > 0 && <div style={{ background: '#111', borderRadius: 10, marginBottom: 10, maxHeight: 150, overflowY: 'auto' }}>
