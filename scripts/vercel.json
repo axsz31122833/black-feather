@@ -11,6 +11,7 @@
   ],
   "rewrites": [
     { "source": "/assets/(.*)", "destination": "/assets/$1" },
+    { "source": "/icons/(.*)", "destination": "/icons/$1" },
     { "source": "/manifest-:type.json", "destination": "/manifest-:type.json" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]

@@ -5,6 +5,7 @@ const supabaseUrl =
 const supabaseAnonKey =
   (import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string) ||
   (import.meta.env.VITE_SUPABASE_ANON_KEY as string)
+console.log('URL:', import.meta.env.VITE_SUPABASE_URL, 'NEXT_PUBLIC_URL:', import.meta.env.NEXT_PUBLIC_SUPABASE_URL)
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 export type Database = {
