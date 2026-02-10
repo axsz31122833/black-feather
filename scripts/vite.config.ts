@@ -6,6 +6,7 @@ import { traeBadgePlugin } from 'vite-plugin-trae-solo-badge';
 // https://vite.dev/config/
 export default defineConfig({
   base: '/',
+  envPrefix: ['VITE_', 'NEXT_PUBLIC_'],
   build: {
     sourcemap: 'hidden',
     outDir: 'dist',
