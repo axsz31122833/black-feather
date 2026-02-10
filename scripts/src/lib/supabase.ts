@@ -14,6 +14,7 @@ try {
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 export function getSupabaseAnonKey() { return supabaseAnonKey }
 export function getSupabaseHeaders() { return { apikey: supabaseAnonKey } }
+export function getSupabaseUrl() { return supabaseUrl }
 export async function getAuthorizedHeaders() {
   try {
     const { data: { session } } = await supabase.auth.getSession()
