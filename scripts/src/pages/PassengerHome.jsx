@@ -200,8 +200,8 @@ export default function PassengerHome() {
           mapId: 'BF_MAP',
         })
         gmapRef.current = map
-        try { console.log('MAP_READY_AT:', new Date().toLocaleTimeString()) } catch {}
         try { console.log('MAP_READY') } catch {}
+        try { console.log('MAP_READY_AT:', new Date().toLocaleTimeString()) } catch {}
         try { console.log('Map Initialized Successfully!') } catch {}
         try { console.log('Map Instance Created:', map) } catch {}
         directionsRef.current = new google.maps.DirectionsRenderer({ map })

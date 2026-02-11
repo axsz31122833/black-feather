@@ -107,7 +107,7 @@ function App() {
             </nav>
           )}
         </header>
-        <main className="container">
+        <main className="container" style={{ background: 'transparent', position: 'relative', overflow: 'visible' }}>
           <ConnectionChecker />
           <PushInit />
           <ManifestManager />
