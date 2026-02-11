@@ -20,8 +20,6 @@ export default function PassengerHome() {
   const [destination, setDestination] = useState({ lat: 24.16, lng: 120.69 })
   const [originAddress, setOriginAddress] = useState('')
   const [destAddress, setDestAddress] = useState('')
-  const originMarkerRef = useRef(null)
-  const destMarkerRef = useRef(null)
   const [routeInfo, setRouteInfo] = useState({ distance: 0, duration: 0, fare: 0 })
   const [showEstimate, setShowEstimate] = useState(false)
   const [useHighway, setUseHighway] = useState(false) 
