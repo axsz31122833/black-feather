@@ -20,8 +20,8 @@ export default function PassengerHome() {
   const [destination, setDestination] = useState({ lat: 24.16, lng: 120.69 })
   const [originAddress, setOriginAddress] = useState('')
   const [destAddress, setDestAddress] = useState('')
-  const [originPred, setOriginPred] = useState([])
-  const [destPred, setDestPred] = useState([])
+  const originMarkerRef = useRef(null)
+  const destMarkerRef = useRef(null)
   const [routeInfo, setRouteInfo] = useState({ distance: 0, duration: 0, fare: 0 })
   const [showEstimate, setShowEstimate] = useState(false)
   const [useHighway, setUseHighway] = useState(false) 
@@ -58,26 +58,7 @@ export default function PassengerHome() {
     return `${name}${city}${suburb}${road}${houseNumber}`.replace(/undefined/g, '').trim();
   }
 
-  // 2. 搜尋邏輯 (支持門牌回退)
-  const searchAddress = async (q, setter) => {
-    if (q.length < 1) { setter([]); return; }
-    const url = `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(q)}&accept-language=zh-TW&countrycodes=tw&addressdetails=1&limit=10&viewbox=120.4,24.4,120.8,24.0`;
-    try {
-      const resp = await fetch(url, { headers: { 'User-Agent': 'BlackFeather' } });
-      let data = await resp.json();
-      if (data.length === 0 && /\d/.test(q)) {
-        const fallback = q.replace(/\d+/g, '').trim();
-        const resp2 = await fetch(`https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(fallback)}&accept-language=zh-TW&countrycodes=tw&addressdetails=1&limit=5`, { headers: { 'User-Agent': 'BlackFeather' } });
-        data = await resp2.json();
-      }
-      const list = data.map(item => ({ name: formatTaiwanAddress(item), lat: parseFloat(item.lat), lon: parseFloat(item.lon) }))
-      if (/金錢豹/.test(q)) {
-        if (list.length > 0) list[0].name = '金錢豹 臺中市西屯區臺灣大道二段960號'
-        else list.unshift({ name: '金錢豹 臺中市西屯區臺灣大道二段960號', lat: 24.1635, lon: 120.6406 })
-      }
-      setter(list)
-    } catch (e) { setter([]); }
-  }
+  // 移除舊的 OSM 下拉建議，只保留 Google Autocomplete
 
   useEffect(() => {
     ;(async ()=>{
@@ -142,6 +123,14 @@ export default function PassengerHome() {
               const lng = loc.lng()
               setOrigin({ lat, lng })
               setOriginAddress(p?.formatted_address || p?.name || '')
+              try {
+                gmapRef.current?.setCenter({ lat, lng })
+                if (!originMarkerRef.current) {
+                  originMarkerRef.current = new google.maps.Marker({ position:{ lat, lng }, map: gmapRef.current, title:'起點' })
+                } else {
+                  originMarkerRef.current.setPosition({ lat, lng })
+                }
+              } catch {}
             }
           })
         }
@@ -156,6 +145,14 @@ export default function PassengerHome() {
               setDestination({ lat, lng })
               setDestAddress(p?.formatted_address || p?.name || '')
               setShowEstimate(true)
+              try {
+                gmapRef.current?.setCenter({ lat, lng })
+                if (!destMarkerRef.current) {
+                  destMarkerRef.current = new google.maps.Marker({ position:{ lat, lng }, map: gmapRef.current, title:'終點' })
+                } else {
+                  destMarkerRef.current.setPosition({ lat, lng })
+                }
+              } catch {}
             }
           })
         }
@@ -320,21 +317,17 @@ export default function PassengerHome() {
           {isReserving && <input type="datetime-local" value={reserveTime} onChange={(e) => setReserveTime(e.target.value)} style={{ width: '100%', padding: 12, borderRadius: 12, background: '#111', color: '#fff', border: '1px solid #D4AF37', marginBottom: 15 }} />}
 
           <div style={{ marginBottom: 10, display: 'flex', gap: 8 }}>
-            <input ref={originInputRef} value={originAddress} onChange={(e) => { setOriginAddress(e.target.value); searchAddress(e.target.value, setOriginPred); }} placeholder="📍 上車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
+            <input ref={originInputRef} value={originAddress} onChange={(e) => { setOriginAddress(e.target.value) }} placeholder="📍 上車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
             <button onClick={handleLocate} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>📍</button>
             <button onClick={() => setShowFavs(true)} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>⭐</button>
           </div>
-          {originPred.length > 0 && <div style={{ background: '#111', borderRadius: 10, marginBottom: 10, maxHeight: 150, overflowY: 'auto' }}>
-            {originPred.map((p, i) => <div key={i} onClick={() => { setOrigin({ lat: p.lat, lng: p.lon }); setOriginAddress(p.name); setOriginPred([]); }} style={{ padding: 15, borderBottom: '1px solid #222' }}>{p.name}</div>)}
-          </div>}
+          
 
           <div style={{ marginBottom: 15, display: 'flex', gap: 8 }}>
-            <input ref={destInputRef} value={destAddress} onChange={(e) => { setDestAddress(e.target.value); searchAddress(e.target.value, setDestPred); }} placeholder="🏁 下車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
+            <input ref={destInputRef} value={destAddress} onChange={(e) => { setDestAddress(e.target.value) }} placeholder="🏁 下車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
             <button onClick={() => setShowChat(true)} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>💬</button>
           </div>
-          {destPred.length > 0 && <div style={{ background: '#111', borderRadius: 10, marginBottom: 10, maxHeight: 150, overflowY: 'auto' }}>
-            {destPred.map((p, i) => <div key={i} onClick={() => { setDestination({ lat: p.lat, lng: p.lon }); setDestAddress(p.name); setDestPred([]); }} style={{ padding: 15, borderBottom: '1px solid #222' }}>{p.name}</div>)}
-          </div>}
+          
 
           <label style={{ display: 'flex', alignItems: 'center', marginBottom: 15, color: '#D4AF37', fontSize: 13 }}>
             <input type="checkbox" checked={useHighway} onChange={(e) => setUseHighway(e.target.checked)} style={{ marginRight: 10 }} /> 行經高速公路

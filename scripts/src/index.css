@@ -44,6 +44,18 @@ button {
   color: #111111 !important;
   border: 1px solid rgba(212, 175, 55, 0.35);
 }
+.pac-container {
+  background: #111 !important;
+  color: #e5e7eb !important;
+  border: 1px solid #D4AF37 !important;
+  z-index: 2000 !important;
+}
+.pac-item {
+  color: #e5e7eb !important;
+}
+.pac-item:hover {
+  background: #1a1a1a !important;
+}
 .nav a {
   position: relative;
   transition: text-shadow 0.2s ease, color 0.2s ease;
