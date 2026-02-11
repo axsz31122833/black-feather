@@ -50,6 +50,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   signIn: async (phone: string, password: string, userType: 'passenger' | 'driver' | 'admin') => {
     try {
+      try { console.log('Attempting login for role:', userType) } catch {}
       set({ isLoading: true })
       const client = supabase
       let hash = ''
