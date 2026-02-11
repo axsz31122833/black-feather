@@ -200,6 +200,7 @@ export default function PassengerHome() {
           mapId: 'BF_MAP',
         })
         gmapRef.current = map
+        try { console.log('MAP_READY_AT:', new Date().toLocaleTimeString()) } catch {}
         try { console.log('MAP_READY') } catch {}
         try { console.log('Map Initialized Successfully!') } catch {}
         try { console.log('Map Instance Created:', map) } catch {}
@@ -277,7 +278,7 @@ export default function PassengerHome() {
   return (
     <div style={{ height: '100vh', background: 'transparent', color: '#fff', position: 'relative', overflow: 'visible' }}>
       {hasGoogleKey ? (
-        <div id="map" style={{ width:'100vw', height:'100vh', position:'fixed', top:0, left:0, zIndex:-1, backgroundColor:'#555' }} />
+        <div id="map" style={{ width:'100vw', height:'100vh', position:'fixed', top:0, left:0, zIndex:0, backgroundColor:'#222' }} />
       ) : (
         <MapContainer center={[origin.lat, origin.lng]} zoom={15} style={{ height: '500px', width:'100%' }} whenCreated={m => mapRef.current = m}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -308,7 +309,7 @@ export default function PassengerHome() {
       )}
 
       {/* 控制面板 */}
-      <div style={{ position: 'fixed', bottom: 0, left: '5%', right: '5%', zIndex: 1000 }}>
+      <div style={{ position: 'fixed', bottom: 0, left: '5%', right: '5%', zIndex: 10 }}>
         <div style={{ background: 'rgba(20,20,20,0.95)', borderRadius: 25, padding: 20, border: '1.5px solid #D4AF37' }}>
           
           <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
