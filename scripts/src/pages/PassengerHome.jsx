@@ -192,7 +192,8 @@ export default function PassengerHome() {
     ;(async ()=>{
       try {
         const google = await loadGoogleMaps(['places'])
-        const mapEl = document.getElementById('gmap')
+        const mapEl = document.getElementById('map')
+        try { console.log('Map target element height:', document.getElementById('map')?.offsetHeight) } catch {}
         const map = new google.maps.Map(mapEl, {
           center: { lat: origin.lat, lng: origin.lng },
           zoom: 15,
@@ -276,7 +277,7 @@ export default function PassengerHome() {
   return (
     <div style={{ height: '100vh', background: 'transparent', color: '#fff', position: 'relative', overflow: 'visible' }}>
       {hasGoogleKey ? (
-        <div id="gmap" style={{ width:'100%', height:'100vh', minHeight:'400px', backgroundColor:'#222', position:'absolute', top:0, left:0, zIndex:0 }} />
+        <div id="map" style={{ width:'100vw', height:'100vh', position:'fixed', top:0, left:0, zIndex:-1, backgroundColor:'#555' }} />
       ) : (
         <MapContainer center={[origin.lat, origin.lng]} zoom={15} style={{ height: '500px', width:'100%' }} whenCreated={m => mapRef.current = m}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
@@ -307,7 +308,7 @@ export default function PassengerHome() {
       )}
 
       {/* 控制面板 */}
-      <div style={{ position: 'fixed', bottom: 20, left: '5%', right: '5%', zIndex: 1000 }}>
+      <div style={{ position: 'fixed', bottom: 0, left: '5%', right: '5%', zIndex: 1000 }}>
         <div style={{ background: 'rgba(20,20,20,0.95)', borderRadius: 25, padding: 20, border: '1.5px solid #D4AF37' }}>
           
           <div style={{ display: 'flex', gap: 10, marginBottom: 15 }}>
