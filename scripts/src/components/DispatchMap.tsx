@@ -62,7 +62,7 @@ export default function DispatchMap({
   }
   if (!clientReady) return null
   return (
-    <MapContainer {...({ center: defaultCenter as any, zoom: 13, style: { height: '100%', width: '100%' } } as any)}>
+    <MapContainer {...({ center: defaultCenter as any, zoom: 13, style: { height: '100vh', width: '100%' } } as any)}>
       <MapInvalidator />
       <CenterFlyer c={center || null} />
       <TileLayer {...({ url: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', attribution: '&copy; <a href=\"https://carto.com/attributions\">CARTO</a> &copy; OpenStreetMap contributors', crossOrigin: 'anonymous' } as any)} />

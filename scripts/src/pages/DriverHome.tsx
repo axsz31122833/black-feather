@@ -165,9 +165,41 @@ export default function DriverHome() {
     try {
       const pickupCoords = currentTrip.pickup_location
       const dropoffCoords = currentTrip.dropoff_location
-      const r = await getRouteWithFallbacks(pickupCoords, dropoffCoords)
-      setRoutePath(r.path || [])
-      setMapCenter({ lat: (pickupCoords.lat + dropoffCoords.lat) / 2, lng: (pickupCoords.lng + dropoffCoords.lng) / 2 })
+      const google: any = (window as any).google
+      if (google?.maps) {
+        const svc = new google.maps.DirectionsService()
+        const req = {
+          origin: pickupCoords,
+          destination: dropoffCoords,
+          travelMode: google.maps.TravelMode.DRIVING,
+          avoidHighways: false
+        }
+        const res = await new Promise<any>((resolve, reject) => {
+          try {
+            svc.route(req, (r: any, status: string) => {
+              if (status === 'OK' && r) resolve(r)
+              else reject(new Error(status))
+            })
+          } catch (e) { reject(e) }
+        })
+        const pts: Array<{ lat: number; lng: number }> = []
+        try {
+          const legs = res.routes?.[0]?.legs || []
+          for (const leg of legs) {
+            const steps = leg.steps || []
+            for (const st of steps) {
+              const path = st.path || []
+              for (const p of path) pts.push({ lat: p.lat(), lng: p.lng() })
+            }
+          }
+        } catch {}
+        setRoutePath(pts)
+        setMapCenter({ lat: (pickupCoords.lat + dropoffCoords.lat) / 2, lng: (pickupCoords.lng + dropoffCoords.lng) / 2 })
+      } else {
+        const r = await getRouteWithFallbacks(pickupCoords, dropoffCoords)
+        setRoutePath(r.path || [])
+        setMapCenter({ lat: (pickupCoords.lat + dropoffCoords.lat) / 2, lng: (pickupCoords.lng + dropoffCoords.lng) / 2 })
+      }
     } catch {}
   }
 
@@ -595,7 +627,7 @@ export default function DriverHome() {
       </div>
 
       {/* Map */}
-      <div id="driver-map" className="h-full w-full">
+      <div id="driver-map" style={{ height: '100vh', width: '100%' }}>
       <RideLeafletMap
         center={mapCenter}
         pickup={currentTrip?.pickup_location || undefined}
