@@ -30,6 +30,8 @@ export default function PassengerHome() {
   const [isReserving, setIsReserving] = useState(false)
   const [reserveTime, setReserveTime] = useState('')
   const [rideId, setRideId] = useState('')
+  const [routeDistanceKm, setRouteDistanceKm] = useState(0)
+  const [routeDurationMin, setRouteDurationMin] = useState(0)
   
   const mapRef = useRef(null)
   const hasGoogleKey = !!import.meta.env.VITE_GOOGLE_MAPS_API_KEY
@@ -43,6 +45,8 @@ export default function PassengerHome() {
   const [driverId, setDriverId] = useState('')
   const beepRef = useRef(null)
   const driverMarkerRef = useRef(null)
+  const originMarkerRef = useRef(null)
+  const destMarkerRef = useRef(null)
 
   // 1. 地址格式化：名稱 縣市區路號
   const formatTaiwanAddress = (item) => {
@@ -131,6 +135,14 @@ export default function PassengerHome() {
                   originMarkerRef.current.setPosition({ lat, lng })
                 }
               } catch {}
+              try {
+                gmapRef.current?.setCenter({ lat, lng })
+                if (!originMarkerRef.current) {
+                  originMarkerRef.current = new google.maps.Marker({ position:{ lat, lng }, map: gmapRef.current, title:'起點' })
+                } else {
+                  originMarkerRef.current.setPosition({ lat, lng })
+                }
+              } catch {}
             }
           })
         }
@@ -145,6 +157,14 @@ export default function PassengerHome() {
               setDestination({ lat, lng })
               setDestAddress(p?.formatted_address || p?.name || '')
               setShowEstimate(true)
+              try {
+                gmapRef.current?.setCenter({ lat, lng })
+                if (!destMarkerRef.current) {
+                  destMarkerRef.current = new google.maps.Marker({ position:{ lat, lng }, map: gmapRef.current, title:'終點' })
+                } else {
+                  destMarkerRef.current.setPosition({ lat, lng })
+                }
+              } catch {}
               try {
                 gmapRef.current?.setCenter({ lat, lng })
                 if (!destMarkerRef.current) {
@@ -214,6 +234,13 @@ export default function PassengerHome() {
           svc.route(req, (res, status) => {
             if (status === 'OK' && res) {
               directionsRef.current?.setDirections(res)
+              try {
+                const leg = res.routes[0].legs[0]
+                const meters = leg.distance?.value || 0
+                const secs = leg.duration?.value || 0
+                setRouteDistanceKm(meters / 1000)
+                setRouteDurationMin(Math.round(secs / 60))
+              } catch {}
             }
           })
         }
@@ -234,15 +261,11 @@ export default function PassengerHome() {
     });
   }
 
-  // 4. 預估金額
+  // 4. 預估金額（使用 Directions 真實里程/時間）
   const calculateEstimate = () => {
     if (!destAddress) return;
-    const R = 6371;
-    const dLat = (destination.lat - origin.lat) * Math.PI / 180;
-    const dLon = (destination.lng - (origin.lng || origin.lon)) * Math.PI / 180;
-    const h = Math.sin(dLat/2)**2 + Math.cos(origin.lat*Math.PI/180)*Math.cos(destination.lat*Math.PI/180)*Math.sin(dLon/2)**2;
-    const dist = 2 * R * Math.asin(Math.sqrt(h)) * (useHighway ? 1.15 : 1.3);
-    const dur = Math.max(5, Math.round(dist * 2.5));
+    const dist = routeDistanceKm > 0 ? routeDistanceKm : 0;
+    const dur = routeDurationMin > 0 ? routeDurationMin : Math.max(5, Math.round((dist || 1) * 2.5));
     let fare = 70 + (dist * 15) + (dur * 3);
     if (useHighway) fare += 40;
     setRouteInfo({ distance: dist.toFixed(1), duration: dur, fare: Math.round(fare) });
@@ -366,17 +389,7 @@ export default function PassengerHome() {
         </div>
       </div>
 
-      {/* 常用地點彈窗 */}
-      {showFavs && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 2000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div style={{ width: '85%', background: '#1a1a1a', borderRadius: 20, padding: 20, border: '1.5px solid #D4AF37' }}>
-            <h3 style={{ color: '#D4AF37' }}>常用地點</h3>
-            <div onClick={() => { setOriginAddress("金錢豹 臺中市西屯區臺灣大道二段960號"); setOrigin({lat:24.1643, lng:120.6436}); setShowFavs(false); }} style={{ padding: 15, borderBottom: '1px solid #333' }}>🐆 金錢豹</div>
-            <div onClick={() => { setOriginAddress("臺中火車站"); setOrigin({lat:24.1373, lng:120.6856}); setShowFavs(false); }} style={{ padding: 15, borderBottom: '1px solid #333' }}>🚂 臺中火車站</div>
-            <button onClick={() => setShowFavs(false)} style={{ width: '100%', marginTop: 15, padding: 12, background: '#D4AF37', border: 'none', borderRadius: 10 }}>關閉</button>
-          </div>
-        </div>
-      )}
+      
 
       {showChat && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.85)', zIndex: 2001 }}>

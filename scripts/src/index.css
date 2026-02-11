@@ -45,16 +45,17 @@ button {
   border: 1px solid rgba(212, 175, 55, 0.35);
 }
 .pac-container {
-  background: #111 !important;
-  color: #e5e7eb !important;
+  background: #2A2A2A !important;
+  color: #FFFFFF !important;
   border: 1px solid #D4AF37 !important;
   z-index: 2000 !important;
 }
-.pac-item {
-  color: #e5e7eb !important;
+.pac-item, .pac-item-query {
+  color: #FFFFFF !important;
 }
 .pac-item:hover {
-  background: #1a1a1a !important;
+  background: #DAA520 !important;
+  color: #000 !important;
 }
 .nav a {
   position: relative;
