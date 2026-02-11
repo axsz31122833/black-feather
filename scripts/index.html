@@ -1,4 +1,4 @@
-﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
+﻿﻿﻿﻿﻿﻿﻿﻿﻿﻿<!DOCTYPE html>
 <html lang="zh-TW">
   <head>
     <meta charset="UTF-8" />
@@ -7,6 +7,18 @@
     <link rel="manifest" href="/manifest-passenger.json" />
     <script>console.log('Current Path:', window.location.pathname)</script>
     <link rel="icon" href="/icons/icon-192.svg" type="image/svg+xml" />
+    <script type="module">
+      const key = import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || import.meta.env.VITE_GOOGLE_MAPS_API_KEY
+      if (key) {
+        const s = document.createElement('script')
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${key}&libraries=places`
+        s.async = true
+        s.defer = true
+        document.head.appendChild(s)
+      } else {
+        console.warn('GMAPS key missing')
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

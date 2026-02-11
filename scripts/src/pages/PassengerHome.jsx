@@ -278,7 +278,7 @@ export default function PassengerHome() {
   return (
     <div style={{ height: '100vh', background: 'transparent', color: '#fff', position: 'relative', overflow: 'visible' }}>
       {hasGoogleKey ? (
-        <div id="map" style={{ width:'100vw', height:'100vh', position:'fixed', top:0, left:0, zIndex:0, backgroundColor:'#222' }} />
+        <div id="map" style={{ width:'100vw', height:'919px', position:'fixed', top:0, left:0, zIndex:0, backgroundColor:'#222' }} />
       ) : (
         <MapContainer center={[origin.lat, origin.lng]} zoom={15} style={{ height: '500px', width:'100%' }} whenCreated={m => mapRef.current = m}>
           <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
