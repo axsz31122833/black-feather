@@ -203,6 +203,7 @@ export default function AdminDashboard() {
   const [eventTypes, setEventTypes] = useState<string[]>([])
   const [merchants, setMerchants] = useState<Array<{ id: string; name: string; phone: string; address?: string; jkopay?: string }>>([])
   const [merchantStats, setMerchantStats] = useState<Record<string, { monthlyCount: number; monthlyReward: number }>>({})
+  const [cashbackTotal, setCashbackTotal] = useState(0)
   useEffect(() => {
     (async () => {
       try {
@@ -212,19 +213,25 @@ export default function AdminDashboard() {
         thisMonthStart.setDate(1); thisMonthStart.setHours(0,0,0,0)
         const startIso = thisMonthStart.toISOString()
         const stats: Record<string, { monthlyCount: number; monthlyReward: number }> = {}
+        let cashbackSum = 0
         for (const m of (ms || [])) {
           const { data: tripsData } = await supabase
             .from('trips')
-            .select('id')
+            .select('id,final_price,estimated_price')
             .eq('status','completed')
             .gte('created_at', startIso)
             .eq('passenger_phone', m.phone)
           const count = (tripsData || []).length
+          for (const t of (tripsData || [])) {
+            const price = (t as any).final_price || (t as any).estimated_price || 0
+            cashbackSum += Math.floor(price / 100) * 10 + 20
+          }
           stats[m.id] = { monthlyCount: count, monthlyReward: count * 20 }
         }
         setMerchantStats(stats)
+        setCashbackTotal(cashbackSum)
       } catch {
-        setMerchants([]); setMerchantStats({})
+        setMerchants([]); setMerchantStats({}); setCashbackTotal(0)
       }
     })()
   }, [])
@@ -1868,6 +1875,7 @@ export default function AdminDashboard() {
                 <input type="number" min={5} max={60} value={minutesBefore} onChange={e=>setMinutesBefore(parseInt(e.target.value||'15')||15)} className="px-2 py-1 border border-gray-300 rounded w-16" />
                 <button onClick={runSchedule} className="px-3 py-1 bg-indigo-600 text-white rounded">執行排程</button>
                 <button onClick={saveSchedulerMinutes} className="px-3 py-1 bg-gray-200 text-gray-700 rounded">保存雲端</button>
+                <div className="ml-3 text-xs text-gray-700">本月回金總額：<span className="font-bold" style={{ color:'#D4AF37' }}>NT$ {cashbackTotal}</span></div>
               </div>
             </div>
             <div className="bg-white rounded-lg shadow-md p-6">

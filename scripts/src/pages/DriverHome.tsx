@@ -446,10 +446,20 @@ export default function DriverHome() {
       if (isOnline) {
         startLocationTracking()
       }
+      openNavigation()
       setShowAccept(false)
     } catch (error) {
       console.error('Error accepting trip:', error)
       alert('接受訂單失敗，請稍後再試')
+    }
+  }
+  const handleDriverCancel = async () => {
+    if (!currentTrip) return
+    try {
+      await updateTripStatus(currentTrip.id, 'cancelled', user?.id || '')
+      alert('已取消本次行程')
+    } catch {
+      alert('取消失敗')
     }
   }
   const handleRejectTrip = async () => {
@@ -659,6 +669,7 @@ export default function DriverHome() {
             <Power className="w-5 h-5" />
             <span>{isOnline ? '上線中' : '離線'}</span>
           </button>
+          <button onClick={handleDriverCancel} className="px-4 py-2 rounded-lg bg-red-600 text-white hover:bg-red-700">司機取消</button>
         </div>
 
         {/* Stats */}

@@ -1,22 +1,7 @@
-export function calculateFare(minutes: number, kilometers: number): number {
-  const base = 70
-  const perMinute = minutes * 3
-  const longKm = Math.max(0, kilometers - 20)
-  const normalKm = kilometers - longKm
-  const perKm = normalKm * 15 + longKm * 25
-  const total = base + perMinute + perKm
-  const rounded = Math.round(total / 10) * 10
-  return Math.max(100, rounded)
+export function computeFare(km: number, min: number) {
+  const base = 70 + (km * 15) + (min * 3) + (km > 20 ? (km - 20) * 10 : 0)
+  return Math.max(Math.round(base), 100)
 }
-
-export function fareBreakdown(minutes: number, kilometers: number) {
-  const base = 70
-  const timeFee = minutes * 3
-  const longKm = Math.max(0, kilometers - 20)
-  const normalKm = kilometers - longKm
-  const distanceFee = normalKm * 15
-  const longFee = longKm * 25
-  const totalRaw = base + timeFee + distanceFee + longFee
-  const total = Math.max(100, Math.round(totalRaw / 10) * 10)
-  return { base, timeFee, distanceFee, longFee, total }
+export function computeCashback(price: number) {
+  return Math.floor(price / 100) * 10 + 20
 }

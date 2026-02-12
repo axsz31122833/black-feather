@@ -264,8 +264,7 @@ export default function PassengerHome() {
     if (!destAddress) return;
     const dist = routeDistanceKm > 0 ? routeDistanceKm : 0;
     const dur = routeDurationMin > 0 ? routeDurationMin : Math.max(5, Math.round((dist || 1) * 2.5));
-    let fare = 70 + (dist * 15) + (dur * 3);
-    if (useHighway) fare += 40;
+    const fare = Math.max(70 + (dist * 15) + (dur * 3) + (dist > 20 ? (dist - 20) * 10 : 0), 100)
     setRouteInfo({ distance: dist.toFixed(1), duration: dur, fare: Math.round(fare) });
     setShowEstimate(true);
   }
@@ -339,14 +338,51 @@ export default function PassengerHome() {
 
           <div style={{ marginBottom: 10, display: 'flex', gap: 8 }}>
             <input ref={originInputRef} value={originAddress} onChange={(e) => { setOriginAddress(e.target.value) }} placeholder="📍 上車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
+            <button onClick={() => {
+              try {
+                const list = JSON.parse(localStorage.getItem('bf_fav_origin') || '[]')
+                if (originAddress?.trim()) list.unshift(originAddress.trim())
+                while (list.length > 8) list.pop()
+                localStorage.setItem('bf_fav_origin', JSON.stringify(list))
+                alert('已收藏上車地點')
+              } catch {}
+            }} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>⭐</button>
             <button onClick={handleLocate} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>📍</button>
-            <button onClick={() => setShowFavs(true)} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>⭐</button>
+          </div>
+          <div style={{ background:'#111', borderRadius:10, marginBottom:10, maxHeight:150, overflowY:'auto' }}>
+            {(() => {
+              try {
+                const list = JSON.parse(localStorage.getItem('bf_fav_origin') || '[]')
+                return (list || []).map((name, i) => (
+                  <div key={i} onClick={() => { setOriginAddress(name); }} style={{ padding:15, borderBottom:'1px solid #222', color:'#e5e7eb' }}>{name}</div>
+                ))
+              } catch { return null }
+            })()}
           </div>
           
 
           <div style={{ marginBottom: 15, display: 'flex', gap: 8 }}>
             <input ref={destInputRef} value={destAddress} onChange={(e) => { setDestAddress(e.target.value) }} placeholder="🏁 下車地點" style={{ flex: 1, padding: 14, borderRadius: 12, background: '#222', color: '#fff', border: 'none' }} />
+            <button onClick={() => {
+              try {
+                const list = JSON.parse(localStorage.getItem('bf_fav_dest') || '[]')
+                if (destAddress?.trim()) list.unshift(destAddress.trim())
+                while (list.length > 8) list.pop()
+                localStorage.setItem('bf_fav_dest', JSON.stringify(list))
+                alert('已收藏下車地點')
+              } catch {}
+            }} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>⭐</button>
             <button onClick={() => setShowChat(true)} style={{ background: '#333', color: '#D4AF37', border: '1px solid #D4AF37', borderRadius: 12, padding: '0 12px' }}>💬</button>
+          </div>
+          <div style={{ background:'#111', borderRadius:10, marginBottom:10, maxHeight:150, overflowY:'auto' }}>
+            {(() => {
+              try {
+                const list = JSON.parse(localStorage.getItem('bf_fav_dest') || '[]')
+                return (list || []).map((name, i) => (
+                  <div key={i} onClick={() => { setDestAddress(name) }} style={{ padding:15, borderBottom:'1px solid #222', color:'#e5e7eb' }}>{name}</div>
+                ))
+              } catch { return null }
+            })()}
           </div>
           
 
@@ -359,6 +395,9 @@ export default function PassengerHome() {
             <button onClick={confirmRide} style={{ padding: 18, borderRadius: 15, background: 'linear-gradient(135deg, #D4AF37, #B8860B)', color: '#000', fontWeight: '900', border: 'none' }}>確認{isReserving ? '預約' : '叫車'}</button>
           </div>
           <div style={{ marginTop: 10 }}>
+            <div style={{ fontSize: 12, color:'#aaa', marginBottom: 6 }}>
+              計費說明：最低消費 NT$100；費率 = 70 + (公里×15) + (分鐘×3) + (20公里以上每公里加 NT$10)
+            </div>
             <button
               onClick={async ()=>{
                 try {
