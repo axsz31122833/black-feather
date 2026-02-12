@@ -145,6 +145,51 @@ export async function sendPush({ user_id, title, body }) {
   }
 }
 
+export async function storeRoute({ trip_id, path, price }) {
+  const url = `${FUNCTIONS_URL}/store_route`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: await withHeaders(),
+      body: JSON.stringify({ trip_id, path, price }),
+    });
+    const json = await res.json().catch(() => ({ ok: res.ok }))
+    return { ok: res.ok, status: res.status, data: json }
+  } catch (e) {
+    return { ok: false, status: 0, data: { error: String(e) } }
+  }
+}
+
+export async function requestPrebook({ trip_id }) {
+  const url = `${FUNCTIONS_URL}/dispatch_prebook`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: await withHeaders(),
+      body: JSON.stringify({ trip_id }),
+    });
+    const json = await res.json().catch(() => ({ ok: res.ok }))
+    return { ok: res.ok, status: res.status, data: json }
+  } catch (e) {
+    return { ok: false, status: 0, data: { error: String(e) } }
+  }
+}
+
+export async function setPriorityLock({ trip_id, lock_sec = 15, admin_sec = 90 }) {
+  const url = `${FUNCTIONS_URL}/priority_lock`;
+  try {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: await withHeaders(),
+      body: JSON.stringify({ trip_id, lock_sec, admin_sec }),
+    });
+    const json = await res.json().catch(() => ({ ok: res.ok }))
+    return { ok: res.ok, status: res.status, data: json }
+  } catch (e) {
+    return { ok: false, status: 0, data: { error: String(e) } }
+  }
+}
+
 export function subscribeDriverRides(driverId, handler) {
   try {
     return supabase

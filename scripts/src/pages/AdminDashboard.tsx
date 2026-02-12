@@ -236,6 +236,7 @@ export default function AdminDashboard() {
     })()
   }, [])
   const [messages, setMessages] = useState<Array<{ id: string; from_user_id: string; role: string; text: string; reply_text?: string; created_at: string; reply_at?: string }>>([])
+  const [priorityLock, setPriorityLock] = useState<{ lockUntil?: number; adminUntil?: number }>({})
   useEffect(() => {
     try {
       const ch = supabase
@@ -262,6 +263,23 @@ export default function AdminDashboard() {
       return () => { ch.unsubscribe() }
     } catch {}
   }, [])
+  useEffect(() => {
+    try {
+      const ride = trips.find(t => t.id === dispatchRideId) as any
+      if (!ride) return
+      const a = ride?.pickup_location, b = ride?.dropoff_location
+      if (a && b && typeof a.lat==='number' && typeof b.lat==='number') {
+        const toRad = (v: number) => (v * Math.PI) / 180
+        const R = 6371
+        const dLat = toRad(b.lat - a.lat), dLng = toRad(b.lng - a.lng)
+        const h = Math.sin(dLat/2)**2 + Math.cos(toRad(a.lat)) * Math.cos(toRad(b.lat)) * Math.sin(dLng/2)**2
+        const distKm = 2 * R * Math.asin(Math.sqrt(h))
+        if (distKm >= 40) {
+          ;(async () => { try { await setPriorityLock({ trip_id: dispatchRideId, lock_sec: 15, admin_sec: 90 }) } catch {} })()
+        }
+      }
+    } catch {}
+  }, [dispatchRideId])
   const [fromDate, setFromDate] = useState('')
   const [toDate, setToDate] = useState('')
   const [eventsResult, setEventsResult] = useState<any[]>([])

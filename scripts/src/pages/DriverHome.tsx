@@ -44,6 +44,8 @@ export default function DriverHome() {
   const [showBidOverlay, setShowBidOverlay] = useState(false)
   const [bidCountdown, setBidCountdown] = useState(0)
   const bidTimerRef = useRef<any>(null)
+  const [lockUntil, setLockUntil] = useState<number | null>(null)
+  const [adminUntil, setAdminUntil] = useState<number | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -171,6 +173,15 @@ export default function DriverHome() {
             return c - 1
           })
         }, 1000)
+      })
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter: 'event_type=eq.priority_lock' }, (payload: any) => {
+        const p = payload?.new?.payload
+        try {
+          const lu = p?.lock_until ? new Date(p.lock_until).getTime() : null
+          const au = p?.admin_until ? new Date(p.admin_until).getTime() : null
+          setLockUntil(lu)
+          setAdminUntil(au)
+        } catch {}
       })
       .subscribe()
     return () => { ch.unsubscribe(); if (bidTimerRef.current) clearInterval(bidTimerRef.current) }
@@ -709,7 +720,11 @@ export default function DriverHome() {
             <div style={{ color:'#D4AF37', fontSize:20, fontWeight:900, marginBottom:10 }}>預派單搶單倒數</div>
             <div style={{ color:'#e5e7eb', fontSize:48, fontWeight:900, marginBottom:12 }}>{bidCountdown}</div>
             <div style={{ color:'#aaa', fontSize:12, marginBottom:12 }}>附近 5km 內可搶單，倒數結束後自動關閉</div>
-            <button onClick={()=>{ setShowBidOverlay(false) }} style={{ padding:'10px 14px', borderRadius:10, border:'1px solid rgba(212,175,55,0.35)', background:'#D4AF37', color:'#111', fontWeight:700 }}>搶單</button>
+            <button
+              disabled={lockUntil != null && Date.now() < lockUntil}
+              onClick={()=>{ setShowBidOverlay(false) }}
+              style={{ padding:'10px 14px', borderRadius:10, border:'1px solid rgba(212,175,55,0.35)', background:'#D4AF37', color:'#111', fontWeight:700, opacity: (lockUntil != null && Date.now() < lockUntil) ? 0.6 : 1 }}
+            >搶單</button>
           </div>
         </div>
       )}
