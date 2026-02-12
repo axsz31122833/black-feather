@@ -10,7 +10,7 @@ import TripChat from '../components/TripChat'
 import { confirmPaymentRPC, recordPayment } from '../utils/payments'
 import { sendOpsEvent } from '../utils/ops'
 import { env } from '../config/env'
-import { sendPush } from '../lib/rideApi'
+import { sendPush, requestPrebook, storeRoute } from '../lib/rideApi'
 
 export default function DriverHome() {
   const navigate = useNavigate()
@@ -40,6 +40,10 @@ export default function DriverHome() {
   const [supportText, setSupportText] = useState('')
   const [incomingOffer, setIncomingOffer] = useState<any>(null)
   const [offerCountdown, setOfferCountdown] = useState<number>(0)
+  const prebookTriggeredRef = useRef(false)
+  const [showBidOverlay, setShowBidOverlay] = useState(false)
+  const [bidCountdown, setBidCountdown] = useState(0)
+  const bidTimerRef = useRef<any>(null)
 
   useEffect(() => {
     if (user) {
@@ -80,6 +84,23 @@ export default function DriverHome() {
       displayTripRoute()
     }
   }, [currentTrip])
+  // Auto trigger prebook when distance to dropoff < 2km
+  useEffect(() => {
+    try {
+      const trip = currentTrip
+      if (!trip || !driverLocation || !trip.dropoff_location) return
+      const toRad = (v: number) => (v * Math.PI) / 180
+      const R = 6371
+      const dLat = toRad(trip.dropoff_location.lat - (driverLocation as any).lat)
+      const dLng = toRad(trip.dropoff_location.lng - (driverLocation as any).lng)
+      const a = Math.sin(dLat/2)**2 + Math.cos(toRad((driverLocation as any).lat)) * Math.cos(toRad(trip.dropoff_location.lat)) * Math.sin(dLng/2)**2
+      const distKm = 2 * R * Math.asin(Math.sqrt(a))
+      if (distKm < 2 && !prebookTriggeredRef.current) {
+        prebookTriggeredRef.current = true
+        ;(async () => { try { await requestPrebook({ trip_id: trip.id }) } catch {} })()
+      }
+    } catch {}
+  }, [driverLocation?.lat, driverLocation?.lng, currentTrip?.dropoff_location])
   useEffect(() => {
     if (!waitCountdownSec) return
     const t = setInterval(() => {
@@ -129,6 +150,31 @@ export default function DriverHome() {
     }, 1000)
     return () => { ch.unsubscribe(); clearInterval(timer) }
   }, [user?.id])
+  // Listen for prebook offers → show 10s bid overlay
+  useEffect(() => {
+    if (!user) return
+    const ch = supabase
+      .channel('driver-prebook-' + user.id)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter: 'event_type=eq.prebook_offer' }, (payload: any) => {
+        const exp = payload?.new?.payload?.expires_in_sec || 10
+        setShowBidOverlay(true)
+        setBidCountdown(exp)
+        if (bidTimerRef.current) clearInterval(bidTimerRef.current)
+        bidTimerRef.current = setInterval(() => {
+          setBidCountdown((c) => {
+            if (c <= 1) {
+              clearInterval(bidTimerRef.current)
+              bidTimerRef.current = null
+              setShowBidOverlay(false)
+              return 0
+            }
+            return c - 1
+          })
+        }, 1000)
+      })
+      .subscribe()
+    return () => { ch.unsubscribe(); if (bidTimerRef.current) clearInterval(bidTimerRef.current) }
+  }, [user?.id])
   useEffect(() => {
     if (offerCountdown !== 0 || !incomingOffer || !user) return
     ;(async () => {
@@ -138,6 +184,15 @@ export default function DriverHome() {
       } catch {}
     })()
   }, [offerCountdown, incomingOffer, user?.id])
+  // Store route when trip completed
+  useEffect(() => {
+    try {
+      const trip = currentTrip
+      if (!trip || trip.status !== 'completed') return
+      const price = (trip as any).final_price || (trip as any).estimated_price || 0
+      ;(async () => { try { await storeRoute({ trip_id: trip.id, path: routePath, price }) } catch {} })()
+    } catch {}
+  }, [currentTrip?.status])
   useEffect(() => {
     if (currentTrip?.status === 'completed') setPostFlowStep(1)
     else setPostFlowStep(0)
@@ -647,6 +702,17 @@ export default function DriverHome() {
         suggestions={[]}
       />
       </div>
+
+      {showBidOverlay && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div style={{ background:'#111', border:'1px solid rgba(212,175,55,0.35)', borderRadius:14, padding:16, width:'92%', maxWidth:460, textAlign:'center' }}>
+            <div style={{ color:'#D4AF37', fontSize:20, fontWeight:900, marginBottom:10 }}>預派單搶單倒數</div>
+            <div style={{ color:'#e5e7eb', fontSize:48, fontWeight:900, marginBottom:12 }}>{bidCountdown}</div>
+            <div style={{ color:'#aaa', fontSize:12, marginBottom:12 }}>附近 5km 內可搶單，倒數結束後自動關閉</div>
+            <button onClick={()=>{ setShowBidOverlay(false) }} style={{ padding:'10px 14px', borderRadius:10, border:'1px solid rgba(212,175,55,0.35)', background:'#D4AF37', color:'#111', fontWeight:700 }}>搶單</button>
+          </div>
+        </div>
+      )}
 
         {/* Driver Status Panel */}
         <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-6">

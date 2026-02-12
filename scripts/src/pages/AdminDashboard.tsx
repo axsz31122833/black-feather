@@ -2038,10 +2038,31 @@ export default function AdminDashboard() {
                                 <span className="font-medium">{d.name || d.phone}</span>
                                 <span className="ml-2">{d.plate_number || '未提供'} {d.car_model || ''} {d.car_color || ''}</span>
                               </div>
-                              <button onClick={() => manualAssign(d.id)} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">指派此候選</button>
+                              {!((() => {
+                                try {
+                                  const ride = trips.find(t => t.id === dispatchRideId) as any
+                                  const a = ride?.pickup_location, b = ride?.dropoff_location
+                                  if (a && b) {
+                                    const toRad = (v:number)=> (v*Math.PI)/180
+                                    const R=6371; const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng)
+                                    const h=Math.sin(dLat/2)**2+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2
+                                    const distKm=2*R*Math.asin(Math.sqrt(h))
+                                    return distKm>=40
+                                  }
+                                  return false
+                                } catch { return false }
+                              })()) && (
+                                <button onClick={() => manualAssign(d.id)} className="px-2 py-1 text-xs bg-blue-600 text-white rounded hover:bg-blue-700">指派此候選</button>
+                              )}
                             </div>
                           )) : <div className="text-xs text-gray-600">尚無候補</div>}
                         </div>
+                        <div className="mt-2 text-xs text-gray-600">管理優先權：{(() => {
+                          const ride = trips.find(t => t.id === dispatchRideId) as any
+                          if (!ride) return '—'
+                          // 簡易顯示，詳見優先權定時器
+                          return '前 15 秒 / 前 90 秒 / 一般模式'
+                        })()}</div>
                       </div>
                     )}
                     <div className="bg-gray-50 rounded-lg p-3">
