@@ -18,10 +18,15 @@ export default function ProtectedRoute({ children, roles }: Props) {
     let mounted = true
     ;(async ()=>{
       try {
-        const { data: { user } } = await supabase.auth.getUser()
-        if (!user?.id) { if (mounted) setLoading(false); return }
-        const { data } = await supabase.from('profiles').select('role').eq('id', user.id).limit(1).single()
-        if (mounted) setRole(data?.role || (typeof window !== 'undefined' ? (localStorage.getItem('bf_role') || '') : ''))
+        const storedRole = typeof window !== 'undefined' ? (localStorage.getItem('bf_role') || '') : ''
+        if (storedRole) {
+          if (mounted) setRole(storedRole)
+        } else {
+          const { data: { user } } = await supabase.auth.getUser()
+          if (!user?.id) { if (mounted) setLoading(false); return }
+          const { data } = await supabase.from('profiles').select('role').eq('id', user.id).limit(1).single()
+          if (mounted) setRole(data?.role || '')
+        }
       } catch {}
       if (mounted) setLoading(false)
     })()
@@ -42,6 +47,8 @@ export default function ProtectedRoute({ children, roles }: Props) {
   }
 
   if (!isAuthenticated) {
+    const storedRole = typeof window !== 'undefined' ? (localStorage.getItem('bf_role') || '') : ''
+    if (storedRole === 'admin') return children
     if (path.startsWith('/admin')) return <Navigate to="/admin/login" replace />
     if (path.startsWith('/driver')) return <Navigate to="/driver/login" replace />
     return <Navigate to="/passenger/login" replace />
