@@ -90,9 +90,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       if (tempUser.user_type === 'driver') {
         await get().loadDriverProfile()
       }
+      try {
+        if (tempUser.user_type === 'admin') {
+          (window as any).location.href = '/admin/dashboard'
+        } else if (tempUser.user_type === 'driver') {
+          (window as any).location.href = '/driver'
+        } else {
+          (window as any).location.href = '/passenger'
+        }
+      } catch {}
     } catch (error) {
       set({ isLoading: false })
-      throw error
+      const msg = typeof error === 'string' ? error : (error instanceof Error ? error.message : '登入失敗，請稍後再試')
+      throw new Error(msg)
     }
   },
 

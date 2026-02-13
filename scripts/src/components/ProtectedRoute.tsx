@@ -48,6 +48,9 @@ export default function ProtectedRoute({ children, roles }: Props) {
   }
 
   // Hardened gatekeeper by path
+  if (role === 'admin') {
+    return children
+  }
   // Driver area: only driver/admin may enter
   if (path.startsWith('/driver')) {
     if (!(role === 'driver' || role === 'admin')) {
