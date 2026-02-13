@@ -365,10 +365,11 @@ export default function AdminDashboard() {
   useEffect(() => {
     const run = async () => {
       try {
-        if (!(window as any).google?.maps) return
+        const g = await (await import('../lib/googleMaps')).loadGoogleMaps()
+        if (!g?.maps) return
         const center = radiusCenter || { lat: 24.147736, lng: 120.673648 }
-        const bounds = new (window as any).google.maps.Circle({ center, radius: 20000 }).getBounds()
-        const ap = new (window as any).google.maps.places.Autocomplete(document.getElementById('admin-pickup-input') as HTMLInputElement, { bounds, strictBounds: true })
+        const bounds = new g.maps.Circle({ center, radius: 20000 }).getBounds()
+        const ap = new g.maps.places.Autocomplete(document.getElementById('admin-pickup-input') as HTMLInputElement, { bounds, strictBounds: true })
         ap.addListener('place_changed', () => {
           const p = ap.getPlace()
           if (p && p.geometry && p.geometry.location) {
@@ -377,7 +378,7 @@ export default function AdminDashboard() {
             setRadiusCenter(loc)
           }
         })
-        const ad = new (window as any).google.maps.places.Autocomplete(document.getElementById('admin-dropoff-input') as HTMLInputElement, { bounds, strictBounds: true })
+        const ad = new g.maps.places.Autocomplete(document.getElementById('admin-dropoff-input') as HTMLInputElement, { bounds, strictBounds: true })
         ad.addListener('place_changed', () => {
           const p = ad.getPlace()
           if (p && p.geometry && p.geometry.location) {
