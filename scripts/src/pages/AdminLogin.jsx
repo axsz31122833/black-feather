@@ -26,6 +26,7 @@ export default function AdminLogin() {
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err || 'Login failed')
       setError(msg)
+      try { alert(msg) } catch {}
     }
   }
 
