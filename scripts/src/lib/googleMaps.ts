@@ -11,6 +11,7 @@ export async function loadGoogleMaps() {
   try {
     await loader!.importLibrary('maps')
     await loader!.importLibrary('places')
+    try { await import('@googlemaps/extended-component-library') } catch {}
     loaded = true
     return (window as any).google
   } catch (e) {

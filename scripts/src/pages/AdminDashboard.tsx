@@ -2204,11 +2204,19 @@ export default function AdminDashboard() {
                       <div className="rounded-2xl shadow-2xl border border-[#D4AF37]/50 bg-[#1a1a1a] p-3">
                         <div className="mb-2">
                           <label className="block text-xs text-gray-300 mb-1">🔍 您的位置（上車地點）</label>
-                          <input id="admin-pickup-input" value={adminPickupAddress} onChange={e=>setAdminPickupAddress(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="例如：台中市政府" />
+                          {mapReady ? (
+                            <gmpx-place-autocomplete id="admin-pickup-el" style={{ display:'block' }} placeholder="例如：台中市政府"></gmpx-place-autocomplete>
+                          ) : (
+                            <input id="admin-pickup-input" value={adminPickupAddress} onChange={e=>setAdminPickupAddress(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="例如：台中市政府" />
+                          )}
                         </div>
                         <div>
                           <label className="block text-xs text-gray-300 mb-1">📍 您要去哪？（目的地點）</label>
-                          <input id="admin-dropoff-input" value={adminDropoffAddress} onChange={e=>setAdminDropoffAddress(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="例如：台中火車站" />
+                          {mapReady ? (
+                            <gmpx-place-autocomplete id="admin-dropoff-el" style={{ display:'block' }} placeholder="例如：台中火車站"></gmpx-place-autocomplete>
+                          ) : (
+                            <input id="admin-dropoff-input" value={adminDropoffAddress} onChange={e=>setAdminDropoffAddress(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="例如：台中火車站" />
+                          )}
                         </div>
                       </div>
                     </div>
