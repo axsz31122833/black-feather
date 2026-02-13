@@ -21,7 +21,8 @@ export default function AdminLogin() {
       if (!id) throw new Error('未登入')
       const { data } = await supabase.from('profiles').select('role').eq('id', id).limit(1).single()
       if (data?.role !== 'admin') throw new Error('非管理員帳號')
-      navigate('/admin/dashboard')
+      try { window.localStorage.setItem('bf_role', 'admin') } catch {}
+      window.location.href = '/admin/dashboard'
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err || 'Login failed')
       setError(msg)

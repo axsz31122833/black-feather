@@ -80,6 +80,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         created_at: now,
         updated_at: now,
       }
+      try { localStorage.setItem('bf_role', String(tempUser.user_type || '')) } catch {}
       set({ 
         user: tempUser, 
         isAuthenticated: true, 

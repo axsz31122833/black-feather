@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
         const { data: { user } } = await supabase.auth.getUser()
         if (!user?.id) { if (mounted) setLoading(false); return }
         const { data } = await supabase.from('profiles').select('role').eq('id', user.id).limit(1).single()
-        if (mounted) setRole(data?.role || '')
+        if (mounted) setRole(data?.role || (typeof window !== 'undefined' ? (localStorage.getItem('bf_role') || '') : ''))
       } catch {}
       if (mounted) setLoading(false)
     })()
@@ -55,22 +55,12 @@ export default function ProtectedRoute({ children, roles }: Props) {
       return <Navigate to="/passenger" replace />
     }
   }
-  if (path.startsWith('/passenger')) {
-    if (role === 'driver') {
-      return <Navigate to="/driver" replace />
-    }
-  }
+  // Passenger area: passenger/driver/admin allowed
   // Admin area: only admin; if not, show "無權存取"
   if (path.startsWith('/admin')) {
     if (role !== 'admin') {
-      return (
-        <div style={{ padding:24, background:'#000', minHeight:'60vh', color:'#e5e7eb' }}>
-          <div style={{ fontSize:24, fontWeight:900, color:'#D4AF37', marginBottom:12 }}>Black Feather</div>
-          <div style={{ fontSize:18, fontWeight:700, marginBottom:8 }}>無權存取</div>
-          <div style={{ color:'#9ca3af', marginBottom:16 }}>此頁面僅限管理員使用</div>
-          <a href="/passenger" style={{ padding:'10px 14px', borderRadius:10, border:'1px solid rgba(212,175,55,0.35)', color:'#e5e7eb' }}>返回乘客端</a>
-        </div>
-      )
+      try { alert('無權存取管理後台') } catch {}
+      return <Navigate to="/" replace />
     }
   }
 
