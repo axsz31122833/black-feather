@@ -92,7 +92,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       try {
         if (tempUser.user_type === 'admin') {
-          (window as any).location.href = '/admin/dashboard'
+          (window as any).location.replace('/admin/dashboard')
         } else if (tempUser.user_type === 'driver') {
           (window as any).location.href = '/driver'
         } else {

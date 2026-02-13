@@ -1,8 +1,8 @@
 {
   "name": "黑羽管理",
   "short_name": "黑羽管理",
-  "start_url": "/admin",
-  "scope": "/admin/",
+  "start_url": "/admin/dashboard",
+  "scope": "/",
   "display": "standalone",
   "background_color": "#000000",
   "theme_color": "#000000",

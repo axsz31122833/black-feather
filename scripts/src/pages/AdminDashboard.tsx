@@ -363,9 +363,9 @@ export default function AdminDashboard() {
   const [adminPickupAddress, setAdminPickupAddress] = useState('')
   const [adminDropoffAddress, setAdminDropoffAddress] = useState('')
   useEffect(() => {
-    (async () => {
+    const run = async () => {
       try {
-        await initGoogleMaps()
+        if (!(window as any).google?.maps) return
         const center = radiusCenter || { lat: 24.147736, lng: 120.673648 }
         const bounds = new (window as any).google.maps.Circle({ center, radius: 20000 }).getBounds()
         const ap = new (window as any).google.maps.places.Autocomplete(document.getElementById('admin-pickup-input') as HTMLInputElement, { bounds, strictBounds: true })
@@ -386,7 +386,9 @@ export default function AdminDashboard() {
           }
         })
       } catch {}
-    })()
+    }
+    const t = setTimeout(run, 200)
+    return () => clearTimeout(t)
   }, [radiusCenter])
 
   useEffect(() => {
