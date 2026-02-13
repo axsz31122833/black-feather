@@ -1,6 +1,4 @@
 import React from 'react'
-import { MapContainer, TileLayer, Marker, Polyline, Popup, useMap, useMapEvents } from 'react-leaflet'
-import L from 'leaflet'
 
 export default function RideLeafletMap({
   center,
@@ -19,87 +17,100 @@ export default function RideLeafletMap({
   suggestions?: Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>
   onMapClick?: (lat: number, lng: number) => void
 }) {
-  const polyPoints = (path || []).map(p => [p.lat, p.lng]) as any
-  const M: any = MapContainer
-  const T: any = TileLayer
-  const Mk: any = Marker
-  const Pl: any = Polyline
-  const Pp: any = Popup
-  const carIcon = L.divIcon({ html: '<span style="font-size:18px">🚖</span>' })
-  const MapInvalidator = () => {
-    const map = useMap()
-    React.useEffect(() => {
-      try { map.invalidateSize() } catch {}
-      const t = setTimeout(() => { try { map.invalidateSize() } catch {} }, 300)
-      const onResize = () => { try { map.invalidateSize() } catch {} }
-      window.addEventListener('resize', onResize)
-      return () => { clearTimeout(t); window.removeEventListener('resize', onResize) }
-    }, [map])
-    return null
-  }
-  const FitToRoute = () => {
-    const map = useMap()
-    React.useEffect(() => {
-      const pts: Array<[number, number]> = []
-      if (pickup) pts.push([pickup.lat, pickup.lng])
-      if (dropoff) pts.push([dropoff.lat, dropoff.lng])
-      if (polyPoints && polyPoints.length > 0) {
-        for (const p of polyPoints) pts.push([p[0], p[1]])
+  const divRef = React.useRef<HTMLDivElement>(null)
+  const [gmap, setGmap] = React.useState<google.maps.Map | null>(null)
+  const [markers, setMarkers] = React.useState<google.maps.Marker[]>([])
+  const [polyline, setPolyline] = React.useState<google.maps.Polyline | null>(null)
+
+  React.useEffect(() => {
+    let clickListener: google.maps.MapsEventListener | null = null
+    ;(async () => {
+      try {
+        const { loadGoogleMaps } = await import('../lib/googleMaps')
+        const g = await loadGoogleMaps()
+        if (!divRef.current) return
+        const map = new g.maps.Map(divRef.current, {
+          center,
+          zoom: 13,
+          mapTypeControl: false,
+          streetViewControl: false,
+          fullscreenControl: false
+        })
+        clickListener = map.addListener('click', (ev: any) => {
+          try {
+            const lat = ev.latLng.lat()
+            const lng = ev.latLng.lng()
+            onMapClick && onMapClick(lat, lng)
+          } catch {}
+        })
+        setGmap(map)
+      } catch {}
+    })()
+    return () => {
+      try {
+        markers.forEach(m => m.setMap(null))
+        setMarkers([])
+        polyline?.setMap(null)
+        setPolyline(null)
+        clickListener?.remove?.()
+      } catch {}
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  React.useEffect(() => {
+    try {
+      if (!gmap) return
+      gmap.setCenter(center as any)
+    } catch {}
+  }, [center.lat, center.lng, gmap])
+
+  React.useEffect(() => {
+    try {
+      if (!gmap) return
+      markers.forEach(m => m.setMap(null))
+      const nextMarkers: google.maps.Marker[] = []
+      const add = (pos?: { lat: number; lng: number }, label?: string, emoji?: string) => {
+        if (!pos) return
+        const m = new (window as any).google.maps.Marker({
+          position: pos,
+          map: gmap,
+          label: emoji ? { text: emoji, fontSize: '20px' } : undefined,
+          title: label || ''
+        })
+        nextMarkers.push(m)
       }
-      if (pts.length >= 2) {
-        try {
-          const bounds = L.latLngBounds(pts.map(p => L.latLng(p[0], p[1])))
-          map.fitBounds(bounds, { padding: [40, 40] })
-        } catch {}
+      add(pickup, '上車地點', '🅿️')
+      add(dropoff, '下車地點', '🏁')
+      add(driver, '司機位置', '🚖')
+      for (const s of (suggestions || [])) add(s.location, s.name)
+      setMarkers(nextMarkers)
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gmap, pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, driver?.lat, driver?.lng, suggestions?.length])
+
+  React.useEffect(() => {
+    try {
+      if (!gmap) return
+      polyline?.setMap(null)
+      if (path && path.length > 0) {
+        const pl = new (window as any).google.maps.Polyline({
+          path,
+          strokeColor: '#2563eb',
+          strokeOpacity: 1,
+          strokeWeight: 4,
+          map: gmap
+        })
+        setPolyline(pl)
+        const bounds = new (window as any).google.maps.LatLngBounds()
+        path.forEach(p => bounds.extend(p as any))
+        if (pickup) bounds.extend(pickup as any)
+        if (dropoff) bounds.extend(dropoff as any)
+        gmap.fitBounds(bounds, 40)
       }
-    }, [map, pickup?.lat, pickup?.lng, dropoff?.lat, dropoff?.lng, polyPoints.length])
-    return null
-  }
-  const ClickCatcher = () => {
-    useMapEvents({
-      click(e) {
-        try { onMapClick && onMapClick(e.latlng.lat, e.latlng.lng) } catch {}
-      }
-    })
-    return null
-  }
-  const CenterSetter = ({ c }: { c: { lat: number; lng: number } }) => {
-    const map = useMap()
-    React.useEffect(() => {
-      try { map.flyTo([c.lat, c.lng], map.getZoom?.() || 13, { duration: 0.6 }) } catch {}
-    }, [c.lat, c.lng])
-    return null
-  }
-  return (
-    <M center={[center.lat, center.lng]} zoom={13} style={{ width: '100%', height: '100%' }}>
-      <MapInvalidator />
-      <FitToRoute />
-      <CenterSetter c={center} />
-      <ClickCatcher />
-      <T url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png" attribution={'&copy; CARTO &copy; OpenStreetMap contributors'} />
-      {pickup && (
-        <Mk position={[pickup.lat, pickup.lng]}>
-          <Pp>上車地點</Pp>
-        </Mk>
-      )}
-      {dropoff && (
-        <Mk position={[dropoff.lat, dropoff.lng]}>
-          <Pp>下車地點</Pp>
-        </Mk>
-      )}
-      {driver && (
-        <Mk position={[driver.lat, driver.lng]} icon={carIcon}>
-          <Pp>司機位置</Pp>
-        </Mk>
-      )}
-      {polyPoints.length > 0 && (
-        <Pl positions={polyPoints} pathOptions={{ color: '#2563eb', weight: 4 }} />
-      )}
-      {(suggestions || []).map((s, i) => (
-        <Mk key={i} position={[s.location.lat, s.location.lng]}>
-          <Pp>{s.name}{s.etaMin != null ? `｜ETA 約 ${s.etaMin} 分` : ''}</Pp>
-        </Mk>
-      ))}
-    </M>
-  )
+    } catch {}
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gmap, path?.length])
+
+  return <div ref={divRef} style={{ width: '100%', height: '100vh' }} />
 }

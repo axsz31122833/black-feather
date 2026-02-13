@@ -2199,7 +2199,7 @@ export default function AdminDashboard() {
                 </div>
                 <div>
                   <h4 className="text-md font-semibold text-gray-200 mb-2">地圖</h4>
-                  <div id="admin-map" className="rounded-2xl shadow-2xl overflow-hidden w-full relative" style={{ height: 320 }}>
+                  <div id="admin-map" className="rounded-2xl shadow-2xl overflow-hidden w-full relative" style={{ height: '100vh' }}>
                     <div className="absolute top-3 left-1/2 -translate-x-1/2 w-[90%] max-w-xl z-20">
                       <div className="rounded-2xl shadow-2xl border border-[#D4AF37]/50 bg-[#1a1a1a] p-3">
                         <div className="mb-2">
