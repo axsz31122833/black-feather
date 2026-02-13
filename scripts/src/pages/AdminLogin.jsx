@@ -14,13 +14,14 @@ export default function AdminLogin() {
     e.preventDefault()
     setError('')
     try {
+      await supabase.auth.signOut()
       await signIn(phone, password, 'admin')
-      const { data: { user } } = await supabase.auth.getUser()
-      const id = user?.id || ''
+      const u = useAuthStore.getState().user
+      const id = u?.id || ''
       if (!id) throw new Error('未登入')
       const { data } = await supabase.from('profiles').select('role').eq('id', id).limit(1).single()
       if (data?.role !== 'admin') throw new Error('非管理員帳號')
-      navigate('/admin')
+      navigate('/admin/dashboard')
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err || 'Login failed')
       setError(msg)

@@ -53,6 +53,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try { console.log('Attempting login for role:', userType) } catch {}
       set({ isLoading: true })
       const client = supabase
+      try { await client.auth.signOut() } catch {}
       let hash = ''
       try {
         const enc = new TextEncoder().encode(password)
@@ -68,6 +69,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .eq('password_hash', hash)
         .maybeSingle()
       if (!prof) throw new Error('找不到帳戶或密碼錯誤')
+      if (userType === 'admin' && (prof as any).role !== 'admin') throw new Error('非管理員帳號')
       const now = new Date().toISOString()
       const tempUser: any = {
         id: prof.id,
