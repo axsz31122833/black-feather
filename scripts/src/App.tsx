@@ -6,9 +6,9 @@ const DriverLogin = lazy(() => import('./pages/DriverLogin.jsx'))
 const AdminLogin = lazy(() => import('./pages/AdminLogin.jsx'))
 const Register = lazy(() => import('./pages/Register.tsx'))
 const PassengerHome = lazy(() => import('./pages/PassengerHome'))
-const PassengerRidePage = lazy(() => import('./pages/PassengerRidePage'))
+// const PassengerRidePage = lazy(() => import('./pages/PassengerRidePage'))
 const DriverHome = lazy(() => import('./pages/DriverHome'))
-const DriverRidePage = lazy(() => import('./pages/DriverRidePage'))
+// const DriverRidePage = lazy(() => import('./pages/DriverRidePage'))
 const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
 const DevBypass = lazy(() => import('./pages/DevBypass'))
 import AppSelector from './AppSelector.jsx'
@@ -143,7 +143,7 @@ function App() {
               } />
               <Route path="/passenger/ride" element={
                 <ProtectedRoute roles={['passenger','driver','admin']}>
-                  <PassengerRidePage />
+                  <PassengerHome />
                 </ProtectedRoute>
               } />
               <Route path="/driver" element={
@@ -158,7 +158,7 @@ function App() {
               } />
               <Route path="/driver/ride" element={
                 <ProtectedRoute roles={['driver','admin']}>
-                  <DriverRidePage />
+                  <DriverHome />
                 </ProtectedRoute>
               } />
               <Route path="/driver/scheduled" element={
