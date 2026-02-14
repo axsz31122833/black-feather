@@ -170,6 +170,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         isAuthenticated: false, 
         userType: null 
       })
+      try {
+        const path = typeof window !== 'undefined' ? window.location.pathname : '/'
+        if (path.startsWith('/admin')) (window as any).location.replace('/admin/login')
+        else if (path.startsWith('/driver')) (window as any).location.replace('/driver/login')
+        else (window as any).location.replace('/passenger/login')
+      } catch {}
     } catch (error) {
       throw error
     }

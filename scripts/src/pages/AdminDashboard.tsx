@@ -67,6 +67,9 @@ export default function AdminDashboard() {
     admins: 0
   })
   const [users, setUsers] = useState<User[]>([])
+  const [adminsList, setAdminsList] = useState<User[]>([])
+  const [driversUsers, setDriversUsers] = useState<User[]>([])
+  const [passengersUsers, setPassengersUsers] = useState<User[]>([])
   const [trips, setTrips] = useState<Trip[]>([])
   const [tripRowsLimit, setTripRowsLimit] = useState(50)
   const [driversList, setDriversList] = useState<Driver[]>([])
@@ -182,6 +185,20 @@ export default function AdminDashboard() {
         const { data: us } = await supabase.from('users').select('id,email,phone,user_type').eq('user_type','passenger').limit(50)
         setPromoteCandidates((us || []).map(u => ({ id: u.id, email: u.email, phone: (u as any).phone || '' })))
       } catch { setPromoteCandidates([]) }
+    })()
+  }, [])
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: a } = await supabase.from('users').select('*').eq('user_type','admin').limit(200)
+        const { data: d } = await supabase.from('users').select('*').eq('user_type','driver').limit(200)
+        const { data: p } = await supabase.from('users').select('*').eq('user_type','passenger').limit(200)
+        setAdminsList(a || [])
+        setDriversUsers(d || [])
+        setPassengersUsers(p || [])
+      } catch {
+        setAdminsList([]); setDriversUsers([]); setPassengersUsers([])
+      }
     })()
   }, [])
   useEffect(() => {
@@ -1664,13 +1681,41 @@ export default function AdminDashboard() {
         {/* Users Tab */}
         {activeTab === 'users' && (
           <div>
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="rounded-2xl overflow-hidden border border-[#DAA520]/40" style={{ background:'#1A1A1A', color:'#e5e7eb' }}>
+              <div className="px-6 py-4 border-b border-[#DAA520]/30">
+                <h3 className="text-lg font-semibold" style={{ color:'#DAA520' }}>用戶管理</h3>
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 p-4">
+                <div className="rounded-2xl p-3 border border-[#DAA520]/30" style={{ background:'#2A2A2A' }}>
+                  <div className="text-sm font-semibold mb-2" style={{ color:'#DAA520' }}>管理員</div>
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    {adminsList.map(u => (<div key={u.id} className="text-xs">{u.phone} · {(u as any).name || u.email}</div>))}
+                    {adminsList.length===0 && <div className="text-xs text-gray-400">無</div>}
+                  </div>
+                </div>
+                <div className="rounded-2xl p-3 border border-[#DAA520]/30" style={{ background:'#2A2A2A' }}>
+                  <div className="text-sm font-semibold mb-2" style={{ color:'#DAA520' }}>司機</div>
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    {driversUsers.map(u => (<div key={u.id} className="text-xs">{u.phone} · {(u as any).name || u.email}</div>))}
+                    {driversUsers.length===0 && <div className="text-xs text-gray-400">無</div>}
+                  </div>
+                </div>
+                <div className="rounded-2xl p-3 border border-[#DAA520]/30" style={{ background:'#2A2A2A' }}>
+                  <div className="text-sm font-semibold mb-2" style={{ color:'#DAA520' }}>乘客</div>
+                  <div className="space-y-1 max-h-64 overflow-y-auto">
+                    {passengersUsers.map(u => (<div key={u.id} className="text-xs">{u.phone} · {(u as any).name || u.email}</div>))}
+                    {passengersUsers.length===0 && <div className="text-xs text-gray-400">無</div>}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="rounded-2xl shadow-md overflow-hidden mt-4 border border-[#DAA520]/40" style={{ background:'#1A1A1A' }}>
               <div className="px-6 py-4 border-b border-gray-200">
-                <h3 className="text-lg font-semibold text-gray-900">用戶列表</h3>
+                <h3 className="text-lg font-semibold" style={{ color:'#DAA520' }}>用戶列表</h3>
               </div>
               <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
+                <table className="min-w-full">
+                  <thead style={{ background:'#2A2A2A' }}>
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         用戶資訊
@@ -1686,15 +1731,15 @@ export default function AdminDashboard() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody style={{ background:'#1A1A1A' }}>
                     {users.map((user) => (
                       <tr key={user.id}>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <User className="w-8 h-8 text-gray-400 mr-3" />
+                            <User className="w-8 h-8 mr-3" style={{ color:'#DAA520' }} />
                             <div>
-                              <div className="text-sm font-medium text-gray-900">{(user as any).name || user.email}</div>
-                              <div className="text-sm text-gray-500">{user.phone}</div>
+                              <div className="text-sm font-medium" style={{ color:'#e5e7eb' }}>{(user as any).name || user.email}</div>
+                              <div className="text-sm" style={{ color:'#9ca3af' }}>{user.phone}</div>
                             </div>
                           </div>
                         </td>
@@ -1716,7 +1761,7 @@ export default function AdminDashboard() {
                             {user.status === 'active' ? '活躍' : '停用'}
                           </span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-6 py-4 whitespace-nowrap text-sm" style={{ color:'#9ca3af' }}>
                           {formatDate(user.created_at)}
                         </td>
                       </tr>

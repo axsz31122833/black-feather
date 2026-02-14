@@ -652,7 +652,7 @@ export default function DriverHome() {
 
   const handleLogout = async () => {
     await signOut()
-    navigate('/login')
+    navigate('/driver/login')
   }
 
   if (driverProfile && (driverProfile as any).status && (driverProfile as any).status !== 'approved') {
@@ -662,9 +662,9 @@ export default function DriverHome() {
   return (
     <div className="h-screen bg-transparent relative">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-white shadow-md p-4">
+      <div className="absolute top-0 left-0 right-0 z-10 bg-[#1A1A1A] border-b border-[#DAA520]/40 p-4">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900">司機控制台</h1>
+            <h1 className="text-xl font-bold" style={{ color:'#DAA520' }}>司機控制台</h1>
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/driver/trips')}
@@ -673,9 +673,9 @@ export default function DriverHome() {
                 我的行程
               </button>
               <button
-                onClick={() => setShowSupportModal(true)}
-                className="px-3 py-2 rounded-2xl text-black"
-                style={{ backgroundImage: 'linear-gradient(to right, #FFD700, #B8860B)' }}
+                onClick={() => { try { window.open('mailto:support@blackfeather.com?subject=Driver%20Support','_blank') } catch {} }}
+                className="px-3 py-2 rounded-2xl"
+                style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}
               >
                 聯繫客服
               </button>

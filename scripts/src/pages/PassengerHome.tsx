@@ -905,8 +905,8 @@ export default function PassengerHome() {
 
   if (currentTrip && ['requested', 'accepted', 'in_progress'].includes(currentTrip.status)) {
     return (
-      <div className="min-h-screen bg-transparent flex items-center justify-center p-4">
-        <div className="bg-white rounded-lg shadow-lg p-8 text-center max-w-md">
+      <div className="min-h-screen bg-[#1A1A1A] flex items-center justify-center p-4">
+        <div className="rounded-2xl p-8 text-center max-w-md" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
           <div className="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
           <h2 className="text-2xl font-bold text-gray-900 mb-2">
             {currentTrip.status === 'requested' && '正在尋找司機...'}
@@ -990,7 +990,7 @@ export default function PassengerHome() {
         )}
         {showRatingModal && currentTrip && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg白 rounded-lg p-6 max-w-sm w-full mx-4">
+            <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">本次行程評分</h3>
               <div className="mb-4">
                 <input type="number" min={1} max={5} value={ratingScore} onChange={e=>setRatingScore(Math.max(1, Math.min(5, parseInt(e.target.value||'5')||5)))} className="w-full px-3 py-2 border border-gray-300 rounded" />
@@ -1041,9 +1041,9 @@ export default function PassengerHome() {
 
   return (
     <>
-    <div className="h-screen bg-transparent relative">
+    <div className="h-screen bg-[#1A1A1A] relative">
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-white shadow-md p-4">
+      <div className="absolute top-0 left-0 right-0 z-10 bg-[#1A1A1A] border-b border-[#DAA520]/40 p-4">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">叫車服務</h1>
           <div className="flex items-center space-x-4">
@@ -1062,7 +1062,7 @@ export default function PassengerHome() {
                 <span className="text-sm">{user?.email}</span>
               </button>
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2">
+                <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-2" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
@@ -1159,7 +1159,7 @@ export default function PassengerHome() {
       </div>
 
       {/* Booking Panel */}
-      <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-6 max-h-96 overflow-y-auto">
+      <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl p-6 max-h-96 overflow-y-auto" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">預約行程</h2>
         
         {/* Pickup Location */}
