@@ -703,7 +703,7 @@ export default function DriverHome() {
       </div>
 
       {/* Map */}
-      <div id="driver-map" style={{ height: '100vh', width: '100%' }}>
+      <div id="driver-map" style={{ height: '80vh', width: '100vw' }}>
       <RideLeafletMap
         center={mapCenter}
         pickup={currentTrip?.pickup_location || undefined}
@@ -807,17 +807,17 @@ export default function DriverHome() {
               </div>
               {opsOpen && (
                 <div className="mt-3 grid grid-cols-2 gap-3 text-sm text-gray-800">
-                  <div className="bg-white rounded p-3 border border-gray-200">
+                  <div className="rounded p-3 border border-[#DAA520]/30" style={{ background:'#1A1A1A', color:'#e5e7eb' }}>
                     <div className="font-semibold mb-1">週報</div>
                     <div>收入：${weekly.revenue}</div>
                     <div>里程：{weekly.distance.toFixed(1)} km</div>
                   </div>
-                  <div className="bg-white rounded p-3 border border-gray-200">
+                  <div className="rounded p-3 border border-[#DAA520]/30" style={{ background:'#1A1A1A', color:'#e5e7eb' }}>
                     <div className="font-semibold mb-1">月報</div>
                     <div>收入：${monthly.revenue}</div>
                     <div>里程：{monthly.distance.toFixed(1)} km</div>
                   </div>
-                  <div className="bg-white rounded p-3 border border-gray-200 col-span-2">
+                  <div className="rounded p-3 border border-[#DAA520]/30 col-span-2" style={{ background:'#1A1A1A', color:'#e5e7eb' }}>
                     <div className="font-semibold mb-2">加油記錄</div>
                     <div className="flex items-center space-x-2">
                       <input type="number" value={fuelLiters} onChange={e=>setFuelLiters(parseFloat(e.target.value||'0')||0)} placeholder="公升" className="px-2 py-1 border border-gray-300 rounded w-24" />

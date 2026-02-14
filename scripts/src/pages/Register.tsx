@@ -75,7 +75,7 @@ export default function Register() {
         const code = (profErr as any)?.code ?? (profErr as any)?.status ?? null
         const msg = (profErr as any)?.message || '註冊失敗，資料庫拒絕寫入'
         if (String(code) === '23505' || /duplicate/i.test(msg)) {
-          navigate('/login')
+          navigate('/passenger/login')
           return
         }
         alert(msg)
@@ -92,7 +92,7 @@ export default function Register() {
     } catch (err) {
       const code = (err as any)?.code ?? (err as any)?.status ?? null
       const msg = typeof err === 'string' ? err : (err instanceof Error ? err.message : '註冊失敗，請確認資料或稍後再試')
-      if (String(code) === '23505' || /duplicate/i.test(msg)) { navigate('/login'); return }
+      if (String(code) === '23505' || /duplicate/i.test(msg)) { navigate('/passenger/login'); return }
       setError(code ? `[${code}] ${msg}` : msg)
       try { alert(code ? `[${code}] ${msg}` : msg) } catch {}
     }
@@ -206,7 +206,7 @@ export default function Register() {
           <p className="text-gray-600">
             已經有帳號？{' '}
             <button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/passenger/login')}
               className="text-blue-600 hover:text-blue-800 font-medium"
             >
               立即登入

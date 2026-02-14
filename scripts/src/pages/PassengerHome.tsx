@@ -877,7 +877,7 @@ export default function PassengerHome() {
 
   const handleLogout = async () => {
     await signOut()
-    navigate('/login')
+    navigate('/passenger/login')
   }
 
   const [payMethod] = useState<'cash'>('cash')
@@ -1084,7 +1084,7 @@ export default function PassengerHome() {
 
       {/* Map */}
       {useGoogle ? (
-        <div id="map" ref={mapRef} className="h-full w-full" />
+        <div id="map" ref={mapRef} className="absolute inset-0" />
       ) : (
         <div className="h-full w-full">
           <RideLeafletMap
@@ -1098,7 +1098,8 @@ export default function PassengerHome() {
           />
         </div>
       )}
-      <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl z-20">
+      {/* 搜尋浮層移除，改由底部抽屜呈現 */}
+      {/* <div className="absolute top-20 left-1/2 -translate-x-1/2 w-full max-w-2xl z-20">
         <div className="rounded-2xl shadow-2xl border border-[#D4AF37]/50 bg-[#1a1a1a] p-4">
           <div className="mb-3">
             <label className="block text-sm text-gray-300 mb-2">🔍 您的位置（上車地點）</label>
@@ -1162,7 +1163,7 @@ export default function PassengerHome() {
             </label>
           </div>
         </div>
-      </div>
+      </div> */}
 
       {/* Booking Panel */}
       <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl p-6 max-h-96 overflow-y-auto" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>

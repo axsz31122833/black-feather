@@ -39,7 +39,10 @@ function AuthRouter() {
       navigate('/apps')
     } else {
       try { localStorage.clear(); sessionStorage.clear() } catch {}
-      navigate('/login')
+      const path = window.location.pathname
+      if (path.startsWith('/admin')) navigate('/admin/login')
+      else if (path.startsWith('/driver')) navigate('/driver/login')
+      else navigate('/passenger/login')
     }
   }, [isAuthenticated, userType])
   return null

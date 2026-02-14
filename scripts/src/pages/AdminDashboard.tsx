@@ -190,9 +190,10 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const { data: a } = await supabase.from('users').select('*').eq('user_type','admin').limit(200)
-        const { data: d } = await supabase.from('users').select('*').eq('user_type','driver').limit(200)
-        const { data: p } = await supabase.from('users').select('*').eq('user_type','passenger').limit(200)
+        const { data: profs } = await supabase.from('profiles').select('id,full_name,phone,role').limit(500)
+        const a = (profs || []).filter((x: any) => x.role === 'admin') as any
+        const d = (profs || []).filter((x: any) => x.role === 'driver') as any
+        const p = (profs || []).filter((x: any) => x.role === 'passenger') as any
         setAdminsList(a || [])
         setDriversUsers(d || [])
         setPassengersUsers(p || [])
@@ -1089,7 +1090,7 @@ export default function AdminDashboard() {
 
   const handleLogout = async () => {
     await signOut()
-    navigate('/login')
+    navigate('/admin/login')
   }
 
   const getStatusColor = (status: string) => {
@@ -1186,7 +1187,7 @@ export default function AdminDashboard() {
     <div className="min-h-screen bg-[#0a0a0a] text-white">
       {/* 左側導覽暫不固定，使用上方導航 */}
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="shadow-sm border-b" style={{ background:'#1A1A1A' }}>
         <div className="max-w-7xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -1208,7 +1209,7 @@ export default function AdminDashboard() {
       </div>
 
       {/* Navigation */}
-      <div className="bg-white border-b">
+      <div className="border-b" style={{ background:'#1A1A1A' }}>
         <div className="max-w-7xl mx-auto px-4">
           <nav className="flex space-x-8">
             <button
@@ -1776,7 +1777,7 @@ export default function AdminDashboard() {
         {/* Trips Tab */}
         {activeTab === 'trips' && (
           <div>
-            <div className="bg-white rounded-lg shadow-md overflow-hidden">
+            <div className="rounded-lg shadow-md overflow-hidden" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)' }}>
               <div className="px-6 py-4 border-b border-gray-200">
                 <h3 className="text-lg font-semibold text-gray-900">行程監控</h3>
               </div>
@@ -1801,7 +1802,7 @@ export default function AdminDashboard() {
                       </th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody>
                     {trips.slice(0, tripRowsLimit).map((trip) => (
                       <tr key={trip.id} className="cursor-pointer hover:bg-gray-50" onClick={()=>{
                         const pick: any = (trip as any).pickup_location
@@ -1868,7 +1869,7 @@ export default function AdminDashboard() {
 
         {activeTab === 'ops' && (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div className="bg-white rounded-lg shadow-md p-6">
+            <div className="rounded-lg shadow-md p-6" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)' }}>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">事件查詢</h3>
               <div className="space-y-3">
                 <label className="block text-sm font-medium text-gray-700">Trip ID</label>
@@ -2062,7 +2063,7 @@ export default function AdminDashboard() {
                       <div className="text-sm font-semibold text-red-900 mb-2">長距離行程（&gt;30km）待決定</div>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {longDistance.length > 0 ? longDistance.map(x => (
-                          <div key={x.id} className="flex items-center justify-between p-2 bg-white rounded border border-red-200">
+                          <div key={x.id} className="flex items-center justify-between p-2 rounded border border-red-200" style={{ background:'#1A1A1A', color:'#e5e7eb' }}>
                             <div className="text-sm text-gray-800">
                               <div className="font-medium">{x.id}</div>
                               <div className="text-xs text-gray-600">{x.distance.toFixed(1)} 公里 · {new Date(x.created_at).toLocaleString('zh-TW')}</div>
@@ -2099,7 +2100,7 @@ export default function AdminDashboard() {
                         </div>
                         <div className="space-y-2">
                           {candidatePool.length > 0 ? candidatePool.map(d => (
-                            <div key={d.id} className="flex items-center justify-between p-2 bg-white rounded border border-gray-200">
+                            <div key={d.id} className="flex items-center justify-between p-2 rounded border border-[#DAA520]/30" style={{ background:'#1A1A1A', color:'#e5e7eb' }}>
                               <div className="text-sm text-gray-700">
                                 <span className="font-medium">{d.name || d.phone}</span>
                                 <span className="ml-2">{d.plate_number || '未提供'} {d.car_model || ''} {d.car_color || ''}</span>
