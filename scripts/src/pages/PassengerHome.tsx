@@ -956,16 +956,16 @@ export default function PassengerHome() {
 
         {/* Payment Modal */}
         {showPaymentModal && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">付款資訊（現金）</h3>
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+              <h3 className="text-lg font-semibold mb-4" style={{ color:'#DAA520' }}>付款資訊（現金）</h3>
               
               <div className="space-y-4 mb-6">
                 <div className="flex justify-between items-center">
-                  <span className="text-gray-600">行程費用</span>
-                  <span className="font-bold">${currentTrip?.final_price || currentTrip?.estimated_price}</span>
+                  <span style={{ color:'#9ca3af' }}>行程費用</span>
+                  <span className="font-bold" style={{ color:'#DAA520' }}>${currentTrip?.final_price || currentTrip?.estimated_price}</span>
                 </div>
-                <div className="text-xs text-gray-600">
+                <div className="text-xs" style={{ color:'#9ca3af' }}>
                   請於車上或下車時以現金支付給司機；司機確認後系統將標記付款完成。
                 </div>
               </div>
@@ -973,14 +973,16 @@ export default function PassengerHome() {
               <div className="flex space-x-3">
                 <button
                   onClick={() => setShowPaymentModal(false)}
-                  className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
+                  className="flex-1 px-4 py-2 rounded-lg hover:bg-[#333]"
+                  style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}
                 >
                   取消
                 </button>
                 <button
                   onClick={handlePayment}
                   disabled={isLoading}
-                  className="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 disabled:opacity-50"
+                  className="flex-1 px-4 py-2 rounded-lg disabled:opacity-50"
+                  style={{ backgroundImage:'linear-gradient(to right, #22c55e, #16a34a)', color:'#111' }}
                 >
                   {isLoading ? '處理中...' : '確認付款'}
                 </button>
@@ -1015,22 +1017,23 @@ export default function PassengerHome() {
           </div>
         )}
         {searchInfoModal.show && currentTrip?.status==='requested' && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-lg p-6 max-w-sm w-full mx-4">
-              <h3 className="text-lg font-semibold text-gray-900 mb-2">{searchInfoModal.type==='far' ? '正在為您尋找較遠司機' : '目前該區域司機忙碌中'}</h3>
-              <p className="text-sm text-gray-600 mb-4">{searchInfoModal.type==='far' ? '已擴大搜索範圍，請稍候' : '10 分鐘內無人接單，是否繼續等待或取消訂單？'}</p>
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+              <h3 className="text-lg font-semibold mb-2" style={{ color:'#DAA520' }}>{searchInfoModal.type==='far' ? '正在為您尋找較遠司機' : '目前該區域司機忙碌中'}</h3>
+              <p className="text-sm mb-4" style={{ color:'#9ca3af' }}>{searchInfoModal.type==='far' ? '已擴大搜索範圍，請稍候' : '10 分鐘內無人接單，是否繼續等待或取消訂單？'}</p>
               <div className="flex space-x-3">
                 {searchInfoModal.type==='timeout' && (
                   <button
                     onClick={async ()=>{
                       try { await supabase.from('trips').update({ status: 'cancelled' }).eq('id', currentTrip.id); setSearchInfoModal({ show:false, type:'far' }); alert('已取消訂單') } catch { alert('取消失敗') }
                     }}
-                    className="flex-1 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                    className="flex-1 px-4 py-2 rounded-lg"
+                    style={{ backgroundImage:'linear-gradient(to right, #ef4444, #dc2626)', color:'#111' }}
                   >
                     取消訂單
                   </button>
                 )}
-                <button onClick={()=>setSearchInfoModal({ show:false, type:'far' })} className="flex-1 px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50">繼續等待</button>
+                <button onClick={()=>setSearchInfoModal({ show:false, type:'far' })} className="flex-1 px-4 py-2 rounded-lg hover:bg-[#333]" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>繼續等待</button>
               </div>
             </div>
           </div>
@@ -1045,18 +1048,20 @@ export default function PassengerHome() {
       {/* Header */}
       <div className="absolute top-0 left-0 right-0 z-10 bg-[#1A1A1A] border-b border-[#DAA520]/40 p-4">
         <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">叫車服務</h1>
+          <h1 className="text-xl font-bold" style={{ color:'#DAA520' }}>叫車服務</h1>
           <div className="flex items-center space-x-4">
             <button
               onClick={() => navigate('/trips')}
-              className="text-blue-600 hover:text-blue-800"
+              className="hover:text-white"
+              style={{ color:'#DAA520' }}
             >
               我的行程
             </button>
             <div className="relative">
               <button
                 onClick={() => setShowMenu(!showMenu)}
-                className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
+                className="flex items-center space-x-2 hover:text-white"
+                style={{ color:'#DAA520' }}
               >
                 <User className="w-5 h-5" />
                 <span className="text-sm">{user?.email}</span>
@@ -1065,7 +1070,8 @@ export default function PassengerHome() {
                 <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-2" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-2 text-sm hover:bg-[#333]"
+                    style={{ color:'#e5e7eb' }}
                   >
                     登出
                   </button>
