@@ -5,9 +5,9 @@ import { supabase, ensureAuth } from '../lib/supabaseClient'
 import { assignDriver, runScheduleChecker, sendPush } from '../lib/rideApi'
 import { retry } from '../utils/retry'
 import { Users, Car, DollarSign, TrendingUp, User, MapPin, Clock, Shield, ArrowLeft, LogOut } from 'lucide-react'
-import { getRouteWithFallbacks, initGoogleMaps } from '../utils/maps'
+import { getRouteWithFallbacks } from '../utils/maps'
 import { lazy, Suspense } from 'react'
-const DispatchMap = lazy(() => import('../components/DispatchMap'))
+const DispatchMap = lazy(() => import('../components/DispatchMapG'))
 import DbMigrationsCheck from './components/DbMigrationsCheck'
 
 interface DashboardStats {

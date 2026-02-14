@@ -91,12 +91,12 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         await get().loadDriverProfile()
       }
       try {
-        if (tempUser.user_type === 'admin') {
+        if (userType === 'admin') {
           (window as any).location.replace('/admin/dashboard')
-        } else if (tempUser.user_type === 'driver') {
-          (window as any).location.href = '/driver'
+        } else if (userType === 'driver') {
+          (window as any).location.assign('/driver')
         } else {
-          (window as any).location.href = '/passenger'
+          (window as any).location.assign('/passenger')
         }
       } catch {}
     } catch (error) {
