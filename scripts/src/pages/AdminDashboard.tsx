@@ -893,6 +893,17 @@ export default function AdminDashboard() {
   const manualAssign = async (driverId: string) => {
     if (!dispatchRideId) return
     try {
+      const ride = trips.find(t => t.id === dispatchRideId) as any
+      if (ride?.pickup_location && ride?.dropoff_location) {
+        const distKm = haversine(ride.pickup_location.lat, ride.pickup_location.lng, ride.dropoff_location.lat, ride.dropoff_location.lng)
+        if (distKm > 50) {
+          const val = window.prompt(`此單距離約 ${distKm.toFixed(1)} 公里。是否直收？請輸入金額（空白略過）`, '')
+          if (val && /^\d+(\.\d+)?$/.test(val)) {
+            const amt = Math.round(parseFloat(val))
+            try { await supabase.from('rides').update({ direct_payment_amount: amt, direct_payment: true }).eq('id', dispatchRideId) } catch {}
+          }
+        }
+      }
       const r = await assignDriver({ ride_id: dispatchRideId, driver_id: driverId })
       setDispatchRes(r.data)
       await loadDashboardData()

@@ -78,6 +78,7 @@ export default function PassengerHome() {
   const [lockPickup, setLockPickup] = useState(false)
   const [noteNoSmoking, setNoteNoSmoking] = useState(false)
   const [notePets, setNotePets] = useState(false)
+  const [driverMeta, setDriverMeta] = useState<{ plate?: string; color?: string; model?: string } | null>(null)
   const formatMMSS = (sec: number) => {
     const m = Math.floor(sec / 60).toString().padStart(2, '0')
     const s = Math.floor(sec % 60).toString().padStart(2, '0')
@@ -317,6 +318,16 @@ export default function PassengerHome() {
       displayTripRoute()
     }
   }, [currentTrip, map])
+  useEffect(() => {
+    ;(async () => {
+      try {
+        if (!currentTrip?.driver_id) { setDriverMeta(null); return }
+        const { data } = await supabase.from('driver_profiles').select('plate_number,car_color,car_model').eq('user_id', currentTrip.driver_id).limit(1)
+        const d = data?.[0] || null
+        setDriverMeta(d ? { plate: d.plate_number, color: d.car_color, model: d.car_model } : null)
+      } catch { setDriverMeta(null) }
+    })()
+  }, [currentTrip?.driver_id])
 
   useEffect(() => {
     if (driverLocation && map && currentTrip && currentTrip.status === 'accepted') {
@@ -1247,6 +1258,7 @@ export default function PassengerHome() {
               disabled={lockPickup}
               placeholder="輸入上車地址"
             />
+            <button onClick={()=>saveFavorite('pickup')} className="px-3 rounded-2xl" style={{ border:'1px solid rgba(218,165,32,0.35)', color:'#DAA520' }}>⭐</button>
             <button
               onClick={handlePickupSearch}
               className="px-4 py-2 rounded-2xl text-black transition-colors"
@@ -1314,6 +1326,7 @@ export default function PassengerHome() {
               className="flex-1 px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="輸入目的地地址"
             />
+            <button onClick={()=>saveFavorite('dropoff')} className="px-3 rounded-2xl" style={{ border:'1px solid rgba(218,165,32,0.35)', color:'#DAA520' }}>⭐</button>
             <button
               onClick={handleDropoffSearch}
               className="px-4 py-2 rounded-2xl text-black transition-colors"
@@ -1437,12 +1450,20 @@ export default function PassengerHome() {
             {surgeMultiplier > 1 && (
               <div className="mt-1 text-xs text-yellow-700">動態加價 x{surgeMultiplier.toFixed(1)}（依司機供給與抵達時間）</div>
             )}
-            {currentTrip && currentTrip.status === 'accepted' && arrivalSeconds != null && (
-              <div className="mt-3 flex items-center justify-between">
-                <span className="text-sm text-gray-600">司機抵達倒數</span>
-                <span className="font-medium">{Math.floor(arrivalSeconds / 60)} 分 {arrivalSeconds % 60} 秒</span>
+          {currentTrip && currentTrip.status === 'accepted' && arrivalSeconds != null && (
+            <div className="mt-3 flex items-center justify-between">
+              <span className="text-sm text-gray-600">司機抵達倒數</span>
+              <span className="font-medium">{Math.floor(arrivalSeconds / 60)} 分 {arrivalSeconds % 60} 秒</span>
+            </div>
+          )}
+          {currentTrip && currentTrip.status === 'accepted' && (
+            <div className="mt-3 rounded-2xl p-3" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)' }}>
+              <div className="text-sm font-semibold mb-2" style={{ color:'#DAA520' }}>車輛資訊</div>
+              <div className="text-sm" style={{ color:'#e5e7eb' }}>
+                車牌：{driverMeta?.plate || '待同步'}　顏色：{driverMeta?.color || '待同步'}　車型：{driverMeta?.model || '待同步'}
               </div>
-            )}
+            </div>
+          )}
             {currentTrip && currentTrip.status === 'accepted' && arrivalSeconds != null && arrivalSeconds <= 180 && (
               <div className="mt-3 p-3 bg-yellow-50 border border-yellow-200 rounded">
                 <div className="text-sm text-yellow-800 font-medium">請在安全的集合點等候司機</div>

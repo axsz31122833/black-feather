@@ -46,6 +46,7 @@ export default function DriverHome() {
   const bidTimerRef = useRef<any>(null)
   const [lockUntil, setLockUntil] = useState<number | null>(null)
   const [adminUntil, setAdminUntil] = useState<number | null>(null)
+  const [showSupportChat, setShowSupportChat] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -714,6 +715,28 @@ export default function DriverHome() {
       />
       </div>
 
+      {/* Support Chat */}
+      {user && (
+        <button
+          onClick={()=>setShowSupportChat(true)}
+          className="fixed bottom-40 right-6 z-30 px-4 py-3 rounded-full"
+          style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}
+        >
+          🛎️ 聯繫客服
+        </button>
+      )}
+      {user && showSupportChat && (
+        <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+          <div className="rounded-2xl p-4 w-full max-w-lg" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-semibold" style={{ color:'#DAA520' }}>客服聊天室（連線管理端）</div>
+              <button onClick={()=>setShowSupportChat(false)} className="px-2 py-1 rounded" style={{ background:'#2A2A2A', color:'#e5e7eb' }}>關閉</button>
+            </div>
+            <TripChat tripId={`support_driver_${user.id}`} userId={user.id} role="driver" />
+          </div>
+        </div>
+      )}
+
       {showBidOverlay && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center' }}>
           <div style={{ background:'#111', border:'1px solid rgba(212,175,55,0.35)', borderRadius:14, padding:16, width:'92%', maxWidth:460, textAlign:'center' }}>
@@ -730,7 +753,7 @@ export default function DriverHome() {
       )}
 
         {/* Driver Status Panel */}
-        <div className="absolute bottom-0 left-0 right-0 bg-white rounded-t-2xl shadow-lg p-6">
+        <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl shadow-lg p-6" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>
         {/* Online Status Toggle */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -834,6 +857,11 @@ export default function DriverHome() {
         {currentTrip && (
           <div className="bg-gray-50 rounded-lg p-4 mb-6">
             <h4 className="text-lg font-semibold text-gray-900 mb-4">當前訂單</h4>
+            {currentTrip?.direct_payment_amount ? (
+              <div className="mb-3 px-3 py-2 rounded-2xl" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+                直收單：NT${currentTrip.direct_payment_amount}
+              </div>
+            ) : null}
             
             <div className="space-y-3 mb-4">
               <div className="flex items-start space-x-3">
