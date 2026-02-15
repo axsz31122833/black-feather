@@ -72,13 +72,19 @@ export default function RideLeafletMap({
       const nextMarkers: any[] = []
       const add = (pos?: { lat: number; lng: number }, label?: string, emoji?: string) => {
         if (!pos) return
-        const AM = (window as any).google.maps.marker.AdvancedMarkerElement
+        const AM = (window as any).google.maps.marker?.AdvancedMarkerElement
         const content = document.createElement('div')
         if (emoji) {
           content.textContent = emoji
           content.style.fontSize = '18px'
         }
-        const m = new AM({ position: pos, map: gmap, title: label || '', content: emoji ? content : undefined })
+        const m = AM
+          ? new AM({ position: pos, map: gmap, title: label || '', content: emoji ? content : undefined })
+          : new (window as any).google.maps.Marker({
+              position: pos,
+              map: gmap,
+              title: label || ''
+            })
         nextMarkers.push(m)
       }
       add(pickup, '上車地點', '🅿️')

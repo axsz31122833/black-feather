@@ -45,6 +45,20 @@ export default function PassengerHome() {
   const [routeInfoWindow, setRouteInfoWindow] = useState<google.maps.InfoWindow | null>(null)
   const [routePolyline, setRoutePolyline] = useState<google.maps.Polyline | null>(null)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
+  const createMarker = (mapInst: any, position: any, options?: any) => {
+    try {
+      const AM = (google.maps as any).marker?.AdvancedMarkerElement
+      if (AM) return new AM({ position, map: mapInst, ...options })
+    } catch {}
+    return new google.maps.Marker({ position, map: mapInst, draggable: !!options?.gmpDraggable, title: options?.title })
+  }
+  const removeMarker = (mk: any) => {
+    try {
+      if (!mk) return
+      if (typeof mk.setMap === 'function') mk.setMap(null)
+      else mk.map = null
+    } catch {}
+  }
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [ratingScore, setRatingScore] = useState(5)
@@ -332,17 +346,17 @@ export default function PassengerHome() {
   useEffect(() => {
     if (driverLocation && map && currentTrip && currentTrip.status === 'accepted') {
       // Update driver location marker
-      if (driverMarker) {
-        (driverMarker as any).position = driverLocation as any
-      } else {
-        const AdvancedMarkerElement = (google.maps as any).marker.AdvancedMarkerElement
-        const marker = new AdvancedMarkerElement({
-          position: driverLocation as any,
-          map,
-          title: '司機位置'
-        })
-        setDriverMarker(marker)
-      }
+      try {
+        if (driverMarker) {
+          if (typeof (driverMarker as any).setPosition === 'function') (driverMarker as any).setPosition(driverLocation as any)
+          else (driverMarker as any).position = driverLocation as any
+        } else {
+          const mk: any = (google.maps as any).marker?.AdvancedMarkerElement
+            ? new (google.maps as any).marker.AdvancedMarkerElement({ position: driverLocation as any, map, title: '司機位置' })
+            : new google.maps.Marker({ position: driverLocation as any, map, title: '司機位置' })
+          setDriverMarker(mk)
+        }
+      } catch {}
       if (pickupCoords) {
         const toRad = (v: number) => (v * Math.PI) / 180
         const R = 6371
