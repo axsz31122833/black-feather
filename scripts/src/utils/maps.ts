@@ -140,10 +140,11 @@ export const initGoogleMaps = async (): Promise<void> => {
       const loader = new Loader({
         apiKey,
         version: 'weekly',
-        libraries: ['places']
+        libraries: ['places', 'marker']
       })
       await loader.importLibrary('maps')
       await loader.importLibrary('places')
+      await loader.importLibrary('marker')
       return (window as any).google
     })()
   }

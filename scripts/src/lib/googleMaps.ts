@@ -6,11 +6,12 @@ export async function loadGoogleMaps() {
   if ((window as any).google?.maps) { loaded = true; return (window as any).google }
   const key = (import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string) || (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string)
   if (!loader) {
-    loader = new Loader({ apiKey: key || '', libraries: ['places'] })
+    loader = new Loader({ apiKey: key || '', libraries: ['places', 'marker'] })
   }
   try {
     await loader!.importLibrary('maps')
     await loader!.importLibrary('places')
+    await loader!.importLibrary('marker')
     try {
       // load extended component library via CDN if not present
       if (!(window as any).customElements?.get?.('gmpx-place-autocomplete')) {
