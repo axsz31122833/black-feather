@@ -49,6 +49,7 @@ export default function PassengerHome() {
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [ratingScore, setRatingScore] = useState(5)
   const [showSupportModal, setShowSupportModal] = useState(false)
+  const [showSupportChat, setShowSupportChat] = useState(false)
   const [supportText, setSupportText] = useState('')
   const [arrivalSeconds, setArrivalSeconds] = useState<number | null>(null)
   const [driverArrivedAt, setDriverArrivedAt] = useState<number | null>(null)
@@ -1205,7 +1206,7 @@ export default function PassengerHome() {
       </div> */}
 
       {/* Booking Panel */}
-      <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl p-6 max-h-96 overflow-y-auto" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>
+      <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl p-6 max-h-96 overflow-y-auto z-20" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>
         <h2 className="text-lg font-semibold text-gray-900 mb-4">預約行程</h2>
         
         {/* Pickup Location */}
@@ -1464,6 +1465,16 @@ export default function PassengerHome() {
           </button>
         )}
       </div>
+      {user && (
+        <button
+          onClick={() => setShowSupportChat(true)}
+          className="fixed bottom-40 right-6 z-30 px-4 py-3 rounded-full"
+          style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}
+          aria-label="聯繫客服"
+        >
+          🛎️ 聯繫客服
+        </button>
+      )}
       {user && currentTrip && (
         <button
           onClick={() => {
@@ -1507,6 +1518,22 @@ export default function PassengerHome() {
           <div className="text-sm mb-4">選擇高速道路可能縮短行程時間，但預估金額將包含里程增加與潛在通行費。</div>
           <div className="flex justify-end space-x-2">
             <button onClick={() => setShowHighwayAlert(false)} className="px-4 py-2 rounded-2xl" style={{ background: '#111', color: '#FFD700' }}>知道了</button>
+          </div>
+        </div>
+      </div>
+    )}
+    {showSupportChat && user && (
+      <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+        <div className="rounded-2xl p-4 w-full max-w-lg" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-semibold" style={{ color:'#DAA520' }}>客服聊天室（連線管理端）</div>
+            <button onClick={()=>setShowSupportChat(false)} className="px-2 py-1 rounded" style={{ background:'#2A2A2A', color:'#e5e7eb' }}>關閉</button>
+          </div>
+          <div>
+            <TripChat tripId={`support_${user.id}`} userId={user.id} role="passenger" />
+          </div>
+          <div className="mt-2 text-xs" style={{ color:'#9ca3af' }}>
+            外派單進行時將自動由管理員與您連線安撫與告知後續安排。
           </div>
         </div>
       </div>

@@ -129,7 +129,28 @@ export const getPickupSuggestions = async (
   } catch { return [] }
 }
 
-// No-op stubs for legacy Google API exports to avoid compile errors
-export const initGoogleMaps = async (): Promise<void> => {}
-export const createMap = async (element?: any, options?: any): Promise<any> => undefined
+let _gmapsReady: Promise<typeof google> | null = null
+export const initGoogleMaps = async (): Promise<void> => {
+  if (typeof window !== 'undefined' && (window as any).google?.maps?.places) return
+  if (!_gmapsReady) {
+    _gmapsReady = (async () => {
+      const { Loader } = await import('@googlemaps/js-api-loader')
+      const { getMapsKey } = await import('../config/env')
+      const apiKey = getMapsKey()
+      const loader = new Loader({
+        apiKey,
+        version: 'weekly',
+        libraries: ['places']
+      })
+      await loader.importLibrary('maps')
+      await loader.importLibrary('places')
+      return (window as any).google
+    })()
+  }
+  await _gmapsReady
+}
+export const createMap = async (element?: HTMLElement, options?: google.maps.MapOptions): Promise<google.maps.Map> => {
+  await initGoogleMaps()
+  return new (window as any).google.maps.Map(element, options)
+}
 
