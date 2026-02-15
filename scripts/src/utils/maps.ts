@@ -152,6 +152,10 @@ export const initGoogleMaps = async (): Promise<void> => {
 }
 export const createMap = async (element?: HTMLElement, options?: google.maps.MapOptions): Promise<google.maps.Map> => {
   await initGoogleMaps()
-  return new (window as any).google.maps.Map(element, options)
+  const { getMapId } = await import('../config/env')
+  const mapId = getMapId()
+  const opts = { ...options } as any
+  if (mapId && !opts.mapId) opts.mapId = mapId
+  return new (window as any).google.maps.Map(element, opts)
 }
 

@@ -12,16 +12,6 @@ export async function loadGoogleMaps() {
     await loader!.importLibrary('maps')
     await loader!.importLibrary('places')
     await loader!.importLibrary('marker')
-    try {
-      // load extended component library via CDN if not present
-      if (!(window as any).customElements?.get?.('gmpx-place-autocomplete')) {
-        const s = document.createElement('script')
-        s.src = 'https://unpkg.com/@googlemaps/extended-component-library@latest/dist/index.min.js'
-        s.async = true
-        s.defer = true
-        document.head.appendChild(s)
-      }
-    } catch {}
     loaded = true
     return (window as any).google
   } catch (e) {

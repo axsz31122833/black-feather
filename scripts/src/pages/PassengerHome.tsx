@@ -1040,7 +1040,8 @@ export default function PassengerHome() {
                   <button
                     onClick={async ()=>{
                       try {
-                        await fetch('/functions/v1/cancel_ride', { method:'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ ride_id: currentTrip.id, reason: 'passenger_cancel' }) })
+                        const { cancelRide } = await import('../lib/rideApi.js')
+                        await cancelRide({ ride_id: currentTrip.id, reason: 'passenger_cancel' })
                         setSearchInfoModal({ show:false, type:'far' })
                         alert('已取消訂單；若司機已接單將收取 NT$100 手續費')
                       } catch { alert('取消失敗') }
@@ -1067,7 +1068,8 @@ export default function PassengerHome() {
                 <button
                   onClick={async ()=>{
                     try {
-                      await fetch('/functions/v1/cancel_ride', { method:'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ ride_id: currentTrip.id, reason: 'passenger_cancel' }) })
+                      const { cancelRide } = await import('../lib/rideApi.js')
+                      await cancelRide({ ride_id: currentTrip.id, reason: 'passenger_cancel' })
                       alert('已取消行程，將收取 NT$100 手續費')
                       setShowCancelConfirm(false)
                       navigate('/trips')

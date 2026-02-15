@@ -42,11 +42,13 @@ export default function DispatchMapG({
     ;(async () => {
       try {
         const { loadGoogleMaps } = await import('../lib/googleMaps')
+        const { getMapId } = await import('../config/env')
         const g = await loadGoogleMaps()
         if (!divRef.current) return
         const m = new g.maps.Map(divRef.current, {
           center: defaultCenter,
           zoom: 13,
+          mapId: getMapId(),
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false

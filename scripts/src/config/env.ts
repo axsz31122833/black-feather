@@ -1,5 +1,6 @@
 export const env = {
   MAPS_API_KEY: import.meta.env.VITE_GOOGLE_MAPS_API_KEY || '',
+  MAPS_MAP_ID: import.meta.env.VITE_GOOGLE_MAP_ID || '',
   SUPABASE_URL: import.meta.env.VITE_SUPABASE_URL || '',
   SUPABASE_ANON_KEY: import.meta.env.VITE_SUPABASE_ANON_KEY || '',
   NODE_ENV: import.meta.env.MODE || 'development',
@@ -8,3 +9,4 @@ export const env = {
 }
 
 export const getMapsKey = () => env.MAPS_API_KEY
+export const getMapId = () => env.MAPS_MAP_ID
