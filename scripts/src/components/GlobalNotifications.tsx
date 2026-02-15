@@ -134,18 +134,18 @@ export default function GlobalNotifications() {
 
   return (
     <div style={{ position:'fixed', right:16, bottom:16, zIndex:9999 }}>
-      <button onClick={openTrip} className="flex items-center space-x-2 px-3 py-2 bg-yellow-600 text-white rounded-lg shadow hover:bg-yellow-700">
+      <button onClick={openTrip} className="flex items-center space-x-2 px-3 py-2 rounded-lg shadow hover:opacity-90" style={{ backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>
         <Bell className="w-4 h-4" />
         <span className="text-sm">通知</span>
-        {unread > 0 && <span className="ml-1 text-xs bg-white/20 px-2 py-0.5 rounded">{unread}</span>}
+        {unread > 0 && <span className="ml-1 text-xs px-2 py-0.5 rounded" style={{ background:'#2A2A2A', color:'#e5e7eb' }}>{unread}</span>}
       </button>
-      {lastText && <div className="mt-2 text-xs bg-black/70 text-white px-2 py-1 rounded max-w-[240px]">{lastText}</div>}
+      {lastText && <div className="mt-2 text-xs px-2 py-1 rounded max-w-[240px]" style={{ background:'#0f0f0f', color:'#e5e7eb' }}>{lastText}</div>}
       {upcoming && (
-        <div className="mt-2 text-xs bg-indigo-600 text-white px-3 py-2 rounded max-w-[280px]">
+        <div className="mt-2 text-xs px-3 py-2 rounded max-w-[280px]" style={{ background:'#2A2A2A', color:'#e5e7eb', border:'1px solid rgba(218,165,32,0.35)' }}>
           <div>預約 15 分鐘後開始：{new Date(upcoming.time).toLocaleString('zh-TW')}</div>
           <div className="mt-2 flex space-x-2">
-            <button onClick={cancelUpcoming} className="px-2 py-1 bg-red-600 rounded">取消</button>
-            <button onClick={postponeUpcoming} className="px-2 py-1 bg-yellow-500 rounded">延後 30 分</button>
+            <button onClick={cancelUpcoming} className="px-2 py-1 rounded" style={{ backgroundImage:'linear-gradient(to right, #ef4444, #dc2626)', color:'#111' }}>取消</button>
+            <button onClick={postponeUpcoming} className="px-2 py-1 rounded" style={{ backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>延後 30 分</button>
           </div>
         </div>
       )}

@@ -70,25 +70,27 @@ export default function DriverTrips() {
   const completedTripsCount = trips.filter(trip => trip.status === 'completed').length
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background:'#1A1A1A' }}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="shadow-sm border-b" style={{ background:'#1A1A1A' }}>
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/driver')}
-                className="text-blue-600 hover:text-blue-800"
+                className="hover:text-white"
+                style={{ color:'#DAA520' }}
               >
                 <ArrowLeft className="w-6 h-6" />
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">我的行程</h1>
+              <h1 className="text-2xl font-bold" style={{ color:'#DAA520' }}>我的行程</h1>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">{user?.email}</span>
+              <span className="text-sm" style={{ color:'#9ca3af' }}>{user?.email}</span>
               <button
                 onClick={() => navigate('/driver')}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                className="text-sm font-medium hover:text-white"
+                style={{ color:'#DAA520' }}
               >
                 返回首頁
               </button>
@@ -100,29 +102,29 @@ export default function DriverTrips() {
       <div className="max-w-4xl mx-auto px-4 py-8">
         {/* Earnings Overview */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="rounded-lg shadow-md p-6" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">本週收入</p>
-                <p className="text-2xl font-bold text-gray-900">${calculateEarnings().toFixed(2)}</p>
+                <p className="text-sm font-medium" style={{ color:'#9ca3af' }}>本週收入</p>
+                <p className="text-2xl font-bold" style={{ color:'#DAA520' }}>${calculateEarnings().toFixed(2)}</p>
               </div>
               <DollarSign className="w-8 h-8 text-green-600" />
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="rounded-lg shadow-md p-6" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">完成訂單</p>
-                <p className="text-2xl font-bold text-gray-900">{completedTripsCount}</p>
+                <p className="text-sm font-medium" style={{ color:'#9ca3af' }}>完成訂單</p>
+                <p className="text-2xl font-bold" style={{ color:'#DAA520' }}>{completedTripsCount}</p>
               </div>
               <Car className="w-8 h-8 text-blue-600" />
             </div>
           </div>
-          <div className="bg-white rounded-lg shadow-md p-6">
+          <div className="rounded-lg shadow-md p-6" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)' }}>
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-600">平均評分</p>
-                <p className="text-2xl font-bold text-gray-900">4.8</p>
+                <p className="text-sm font-medium" style={{ color:'#9ca3af' }}>平均評分</p>
+                <p className="text-2xl font-bold" style={{ color:'#DAA520' }}>4.8</p>
               </div>
               <Star className="w-8 h-8 text-yellow-500" />
             </div>
@@ -132,12 +134,12 @@ export default function DriverTrips() {
         {/* Current Trip */}
         {currentTrip && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">當前行程</h2>
-            <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+            <h2 className="text-xl font-semibold mb-4" style={{ color:'#DAA520' }}>當前行程</h2>
+            <div className="rounded-lg shadow-md p-6 border-l-4" style={{ background:'#1A1A1A', borderColor:'#3b82f6', borderLeftWidth:4, borderRightWidth:1, borderTopWidth:1, borderBottomWidth:1, borderStyle:'solid', borderRightColor:'rgba(218,165,32,0.35)', borderTopColor:'rgba(218,165,32,0.35)', borderBottomColor:'rgba(218,165,32,0.35)' }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm text-gray-600">
+                  <Calendar className="w-5 h-5" style={{ color:'#9ca3af' }} />
+                  <span className="text-sm" style={{ color:'#9ca3af' }}>
                     {formatDate(currentTrip.created_at)}
                   </span>
                 </div>
@@ -150,49 +152,49 @@ export default function DriverTrips() {
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-5 h-5 text-green-600 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">上車地點</p>
-                    <p className="text-sm text-gray-600">{currentTrip.pickup_address}</p>
+                    <p className="text-sm font-medium" style={{ color:'#DAA520' }}>上車地點</p>
+                    <p className="text-sm" style={{ color:'#e5e7eb' }}>{currentTrip.pickup_address}</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-5 h-5 text-red-600 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">目的地</p>
-                    <p className="text-sm text-gray-600">{currentTrip.dropoff_address}</p>
+                    <p className="text-sm font-medium" style={{ color:'#DAA520' }}>目的地</p>
+                    <p className="text-sm" style={{ color:'#e5e7eb' }}>{currentTrip.dropoff_address}</p>
                   </div>
                 </div>
               </div>
 
               {/* Passenger Info */}
-              <div className="bg-gray-50 rounded-lg p-4 mb-4">
-                <h3 className="text-sm font-medium text-gray-900 mb-2">乘客資訊</h3>
+              <div className="rounded-lg p-4 mb-4" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>
+                <h3 className="text-sm font-medium mb-2" style={{ color:'#DAA520' }}>乘客資訊</h3>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center space-x-3">
-                    <User className="w-5 h-5 text-gray-500" />
+                    <User className="w-5 h-5" style={{ color:'#9ca3af' }} />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{currentTrip.passenger_name}</p>
-                      <p className="text-xs text-gray-600">乘客</p>
+                      <p className="text-sm font-medium" style={{ color:'#e5e7eb' }}>{currentTrip.passenger_name}</p>
+                      <p className="text-xs" style={{ color:'#9ca3af' }}>乘客</p>
                     </div>
                   </div>
-                  <button className="flex items-center space-x-2 text-blue-600 hover:text-blue-800">
+                  <button className="flex items-center space-x-2 hover:text-white" style={{ color:'#DAA520' }}>
                     <Phone className="w-4 h-4" />
                     <span className="text-sm">聯繫乘客</span>
                   </button>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between pt-4" style={{ borderTop:'1px solid rgba(218,165,32,0.35)' }}>
                 <div className="flex items-center space-x-2">
-                  <Car className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm text-gray-600">
+                  <Car className="w-5 h-5" style={{ color:'#9ca3af' }} />
+                  <span className="text-sm" style={{ color:'#9ca3af' }}>
                     {currentTrip.car_type === 'economy' && '經濟型'}
                     {currentTrip.car_type === 'comfort' && '舒適型'}
                     {currentTrip.car_type === 'business' && '商務型'}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <DollarSign className="w-5 h-5 text-gray-500" />
-                  <span className="text-lg font-bold text-gray-900">
+                  <DollarSign className="w-5 h-5" style={{ color:'#9ca3af' }} />
+                  <span className="text-lg font-bold" style={{ color:'#DAA520' }}>
                     ${currentTrip.final_price || currentTrip.estimated_price}
                   </span>
                 </div>

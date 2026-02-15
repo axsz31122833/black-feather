@@ -20,6 +20,16 @@ export default async function handler(req: Request): Promise<Response> {
     const { ride_id, reason } = body as { ride_id: string; reason?: string };
     if (!ride_id) return new Response(JSON.stringify({ error: "Missing ride_id" }), { status: 400 });
 
+    // Fetch current ride status before update
+    const { data: beforeRide, error: beforeErr } = await supabase
+      .from("rides")
+      .select("id, driver_id, passenger_id, status")
+      .eq("id", ride_id)
+      .single();
+    if (beforeErr) throw beforeErr;
+
+    const prevStatus = beforeRide?.status as string | null;
+
     const { data: ride, error: rideErr } = await supabase
       .from("rides")
       .update({ status: "canceled", canceled_at: new Date().toISOString() })
@@ -33,13 +43,24 @@ export default async function handler(req: Request): Promise<Response> {
       await supabase.from("drivers").update({ status: "online" }).eq("id", ride.driver_id);
     }
 
-    // Optional: record a penalty template (not applied)
-    if (reason) {
+    // Apply penalty when driver had accepted
+    if (prevStatus === "accepted") {
       await supabase.from("penalties").insert({
         ride_id: ride_id,
-        passenger_id: ride?.passenger_id ?? null,
-        driver_id: ride?.driver_id ?? null,
-        type: "late_cancel",
+        passenger_id: ride?.passenger_id ?? beforeRide?.passenger_id ?? null,
+        driver_id: ride?.driver_id ?? beforeRide?.driver_id ?? null,
+        type: "passenger_cancel_after_accept",
+        amount_cents: 10000,
+        reason: reason || "passenger_cancel_after_accept",
+        applied: true,
+      });
+    } else if (reason) {
+      // Optional recording for other cancel reasons without fee
+      await supabase.from("penalties").insert({
+        ride_id: ride_id,
+        passenger_id: ride?.passenger_id ?? beforeRide?.passenger_id ?? null,
+        driver_id: ride?.driver_id ?? beforeRide?.driver_id ?? null,
+        type: "cancel",
         amount_cents: 0,
         reason,
         applied: false,

@@ -925,6 +925,15 @@ export default function PassengerHome() {
             >
               查看行程詳情
             </button>
+            {['requested','accepted'].includes(currentTrip.status) && (
+              <button
+                onClick={() => setShowCancelConfirm(true)}
+                className="w-full px-6 py-2 rounded-2xl"
+                style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}
+              >
+                取消行程
+              </button>
+            )}
             <button
               onClick={() => setShowSupportModal(true)}
               className="w-full px-6 py-2 rounded-2xl text-black"
@@ -1025,7 +1034,11 @@ export default function PassengerHome() {
                 {searchInfoModal.type==='timeout' && (
                   <button
                     onClick={async ()=>{
-                      try { await supabase.from('trips').update({ status: 'cancelled' }).eq('id', currentTrip.id); setSearchInfoModal({ show:false, type:'far' }); alert('已取消訂單') } catch { alert('取消失敗') }
+                      try {
+                        await fetch('/functions/v1/cancel_ride', { method:'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ ride_id: currentTrip.id, reason: 'passenger_cancel' }) })
+                        setSearchInfoModal({ show:false, type:'far' })
+                        alert('已取消訂單；若司機已接單將收取 NT$100 手續費')
+                      } catch { alert('取消失敗') }
                     }}
                     className="flex-1 px-4 py-2 rounded-lg"
                     style={{ backgroundImage:'linear-gradient(to right, #ef4444, #dc2626)', color:'#111' }}
@@ -1034,6 +1047,32 @@ export default function PassengerHome() {
                   </button>
                 )}
                 <button onClick={()=>setSearchInfoModal({ show:false, type:'far' })} className="flex-1 px-4 py-2 rounded-lg hover:bg-[#333]" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>繼續等待</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showCancelConfirm && currentTrip && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+              <div className="text-sm mb-3" style={{ color:'#DAA520' }}>
+                司機已接單，現在取消將產生 NT$100 手續費
+              </div>
+              <div className="flex space-x-3">
+                <button onClick={()=>setShowCancelConfirm(false)} className="flex-1 px-4 py-2 rounded-lg hover:bg-[#333]" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>保留行程</button>
+                <button
+                  onClick={async ()=>{
+                    try {
+                      await fetch('/functions/v1/cancel_ride', { method:'POST', headers: { 'Content-Type':'application/json' }, body: JSON.stringify({ ride_id: currentTrip.id, reason: 'passenger_cancel' }) })
+                      alert('已取消行程，將收取 NT$100 手續費')
+                      setShowCancelConfirm(false)
+                      navigate('/trips')
+                    } catch { alert('取消失敗') }
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg"
+                  style={{ backgroundImage:'linear-gradient(to right, #ef4444, #dc2626)', color:'#111' }}
+                >
+                  確認取消
+                </button>
               </div>
             </div>
           </div>

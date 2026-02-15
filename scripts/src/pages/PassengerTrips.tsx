@@ -62,25 +62,27 @@ export default function PassengerTrips() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen" style={{ background:'#1A1A1A' }}>
       {/* Header */}
-      <div className="bg-white shadow-sm border-b">
+      <div className="shadow-sm border-b" style={{ background:'#1A1A1A' }}>
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/')}
-                className="text-blue-600 hover:text-blue-800"
+                className="hover:text-white"
+                style={{ color:'#DAA520' }}
               >
                 <ArrowLeft className="w-6 h-6" />
               </button>
-              <h1 className="text-2xl font-bold text-gray-900">我的行程</h1>
+              <h1 className="text-2xl font-bold" style={{ color:'#DAA520' }}>我的行程</h1>
             </div>
             <div className="flex items-center space-x-2">
-              <span className="text-sm text-gray-600">{user?.email}</span>
+              <span className="text-sm" style={{ color:'#9ca3af' }}>{user?.email}</span>
               <button
                 onClick={() => navigate('/')}
-                className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                className="text-sm font-medium hover:text-white"
+                style={{ color:'#DAA520' }}
               >
                 返回首頁
               </button>
@@ -93,12 +95,12 @@ export default function PassengerTrips() {
         {/* Current Trip */}
         {currentTrip && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold text-gray-900 mb-4">當前行程</h2>
-            <div className="bg-white rounded-lg shadow-md p-6 border-l-4 border-blue-500">
+            <h2 className="text-xl font-semibold mb-4" style={{ color:'#DAA520' }}>當前行程</h2>
+            <div className="rounded-lg shadow-md p-6 border-l-4" style={{ background:'#1A1A1A', borderColor:'#3b82f6', borderLeftWidth:4, borderRightWidth:1, borderTopWidth:1, borderBottomWidth:1, borderStyle:'solid', borderRightColor:'rgba(218,165,32,0.35)', borderTopColor:'rgba(218,165,32,0.35)', borderBottomColor:'rgba(218,165,32,0.35)' }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="flex items-center space-x-2">
-                  <Calendar className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm text-gray-600">
+                  <Calendar className="w-5 h-5" style={{ color:'#9ca3af' }} />
+                  <span className="text-sm" style={{ color:'#9ca3af' }}>
                     {formatDate(currentTrip.created_at)}
                   </span>
                 </div>
@@ -111,31 +113,31 @@ export default function PassengerTrips() {
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-5 h-5 text-green-600 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">上車地點</p>
-                    <p className="text-sm text-gray-600">{currentTrip.pickup_address}</p>
+                    <p className="text-sm font-medium" style={{ color:'#DAA520' }}>上車地點</p>
+                    <p className="text-sm" style={{ color:'#e5e7eb' }}>{currentTrip.pickup_address}</p>
                   </div>
                 </div>
                 <div className="flex items-start space-x-3">
                   <MapPin className="w-5 h-5 text-red-600 mt-0.5" />
                   <div>
-                    <p className="text-sm font-medium text-gray-900">目的地</p>
-                    <p className="text-sm text-gray-600">{currentTrip.dropoff_address}</p>
+                    <p className="text-sm font-medium" style={{ color:'#DAA520' }}>目的地</p>
+                    <p className="text-sm" style={{ color:'#e5e7eb' }}>{currentTrip.dropoff_address}</p>
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+              <div className="flex items-center justify-between pt-4" style={{ borderTop:'1px solid rgba(218,165,32,0.35)' }}>
                 <div className="flex items-center space-x-2">
-                  <Car className="w-5 h-5 text-gray-500" />
-                  <span className="text-sm text-gray-600">
+                  <Car className="w-5 h-5" style={{ color:'#9ca3af' }} />
+                  <span className="text-sm" style={{ color:'#9ca3af' }}>
                     {currentTrip.car_type === 'economy' && '經濟型'}
                     {currentTrip.car_type === 'comfort' && '舒適型'}
                     {currentTrip.car_type === 'business' && '商務型'}
                   </span>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <DollarSign className="w-5 h-5 text-gray-500" />
-                  <span className="text-lg font-bold text-gray-900">
+                  <DollarSign className="w-5 h-5" style={{ color:'#9ca3af' }} />
+                  <span className="text-lg font-bold" style={{ color:'#DAA520' }}>
                     ${currentTrip.final_price || currentTrip.estimated_price}
                   </span>
                 </div>
@@ -146,16 +148,17 @@ export default function PassengerTrips() {
 
         {/* Trip History */}
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">歷史行程</h2>
+          <h2 className="text-xl font-semibold mb-4" style={{ color:'#DAA520' }}>歷史行程</h2>
           
           {trips.length === 0 ? (
-            <div className="bg-white rounded-lg shadow-md p-8 text-center">
-              <Car className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">尚無行程記錄</h3>
-              <p className="text-gray-600 mb-4">您還沒有預約過任何行程</p>
+            <div className="rounded-lg shadow-md p-8 text-center" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+              <Car className="w-16 h-16 mx-auto mb-4" style={{ color:'#DAA520' }} />
+              <h3 className="text-lg font-medium mb-2" style={{ color:'#DAA520' }}>尚無行程記錄</h3>
+              <p className="mb-4" style={{ color:'#9ca3af' }}>您還沒有預約過任何行程</p>
               <button
                 onClick={() => navigate('/')}
-                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                className="px-6 py-2 rounded-lg transition-colors"
+                style={{ backgroundImage:'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}
               >
                 立即叫車
               </button>
@@ -163,11 +166,11 @@ export default function PassengerTrips() {
           ) : (
             <div className="space-y-4">
               {trips.map((trip) => (
-                <div key={trip.id} className="bg-white rounded-lg shadow-md p-6">
+                <div key={trip.id} className="rounded-lg shadow-md p-6" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)' }}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center space-x-2">
-                      <Calendar className="w-5 h-5 text-gray-500" />
-                      <span className="text-sm text-gray-600">
+                      <Calendar className="w-5 h-5" style={{ color:'#9ca3af' }} />
+                      <span className="text-sm" style={{ color:'#9ca3af' }}>
                         {formatDate(trip.created_at)}
                       </span>
                     </div>
@@ -180,24 +183,24 @@ export default function PassengerTrips() {
                     <div className="flex items-start space-x-3">
                       <MapPin className="w-5 h-5 text-green-600 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">上車地點</p>
-                        <p className="text-sm text-gray-600">{trip.pickup_address}</p>
+                        <p className="text-sm font-medium" style={{ color:'#DAA520' }}>上車地點</p>
+                        <p className="text-sm" style={{ color:'#e5e7eb' }}>{trip.pickup_address}</p>
                       </div>
                     </div>
                     <div className="flex items-start space-x-3">
                       <MapPin className="w-5 h-5 text-red-600 mt-0.5" />
                       <div>
-                        <p className="text-sm font-medium text-gray-900">目的地</p>
-                        <p className="text-sm text-gray-600">{trip.dropoff_address}</p>
+                        <p className="text-sm font-medium" style={{ color:'#DAA520' }}>目的地</p>
+                        <p className="text-sm" style={{ color:'#e5e7eb' }}>{trip.dropoff_address}</p>
                       </div>
                     </div>
                   </div>
 
-                  <div className="flex items-center justify-between pt-4 border-t border-gray-200">
+                  <div className="flex items-center justify-between pt-4" style={{ borderTop:'1px solid rgba(218,165,32,0.35)' }}>
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-1">
-                        <Car className="w-4 h-4 text-gray-500" />
-                        <span className="text-sm text-gray-600">
+                        <Car className="w-4 h-4" style={{ color:'#9ca3af' }} />
+                        <span className="text-sm" style={{ color:'#9ca3af' }}>
                           {trip.car_type === 'economy' && '經濟型'}
                           {trip.car_type === 'comfort' && '舒適型'}
                           {trip.car_type === 'business' && '商務型'}
@@ -205,16 +208,16 @@ export default function PassengerTrips() {
                       </div>
                       {trip.distance_km && (
                         <div className="flex items-center space-x-1">
-                          <Clock className="w-4 h-4 text-gray-500" />
-                          <span className="text-sm text-gray-600">
+                          <Clock className="w-4 h-4" style={{ color:'#9ca3af' }} />
+                          <span className="text-sm" style={{ color:'#9ca3af' }}>
                             {trip.distance_km.toFixed(1)} 公里
                           </span>
                         </div>
                       )}
                     </div>
                     <div className="flex items-center space-x-1">
-                      <DollarSign className="w-4 h-4 text-gray-500" />
-                      <span className="font-bold text-gray-900">
+                      <DollarSign className="w-4 h-4" style={{ color:'#9ca3af' }} />
+                      <span className="font-bold" style={{ color:'#DAA520' }}>
                         ${trip.final_price || trip.estimated_price}
                       </span>
                     </div>
