@@ -1,6 +1,17 @@
 import { supabase, ensureAuth } from './supabaseClient';
 
-const FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL || 'https://hmlyfcpicjpjxayilyhk.functions.supabase.co';
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || import.meta.env.NEXT_PUBLIC_SUPABASE_URL || '';
+let FUNCTIONS_URL = import.meta.env.VITE_SUPABASE_FUNCTIONS_URL || '';
+if (!FUNCTIONS_URL) {
+  // Derive from Supabase project URL to avoid misconfigured domains
+  if (SUPABASE_URL) {
+    // Prefer same-origin functions path to avoid cross-origin 404/CORS
+    FUNCTIONS_URL = `${SUPABASE_URL.replace(/\/+$/, '')}/functions/v1`;
+  } else {
+    // Fallback to canonical pattern if envs are missing
+    FUNCTIONS_URL = 'https://hmlyfcpicjpjxayilyhk.functions.supabase.co';
+  }
+}
 
 async function withHeaders() {
   await ensureAuth()

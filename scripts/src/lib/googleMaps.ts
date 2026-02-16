@@ -6,7 +6,11 @@ export async function loadGoogleMaps() {
   if ((window as any).google?.maps) { loaded = true; return (window as any).google }
   const key = (import.meta.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY as string) || (import.meta.env.VITE_GOOGLE_MAPS_API_KEY as string)
   if (!loader) {
-    loader = new Loader({ apiKey: key || '', libraries: ['places', 'marker'] })
+    loader = new Loader({
+      apiKey: key || '',
+      libraries: ['places', 'marker'],
+      authReferrerPolicy: 'origin'
+    })
   }
   try {
     await loader!.importLibrary('maps')

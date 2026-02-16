@@ -1,10 +1,14 @@
 import { createClient } from '@supabase/supabase-js'
-const supabaseUrl =
+let supabaseUrl =
   (import.meta.env.NEXT_PUBLIC_SUPABASE_URL as string) ||
-  (import.meta.env.VITE_SUPABASE_URL as string)
+  (import.meta.env.VITE_SUPABASE_URL as string) || ''
 const supabaseAnonKey =
   (import.meta.env.NEXT_PUBLIC_SUPABASE_ANON_KEY as string) ||
   (import.meta.env.VITE_SUPABASE_ANON_KEY as string)
+// Fallback to known project URL only if env is missing, to avoid /rest/v1 404 due to empty base
+if (!supabaseUrl) {
+  supabaseUrl = 'https://hmlyfcpicjpjxayilyhk.supabase.co'
+}
 console.log('URL:', import.meta.env.VITE_SUPABASE_URL, 'NEXT_PUBLIC_URL:', import.meta.env.NEXT_PUBLIC_SUPABASE_URL)
 try {
   const len = supabaseAnonKey ? String(supabaseAnonKey).length : 0
