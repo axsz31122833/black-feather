@@ -425,10 +425,9 @@ export default function PassengerHome() {
               window.addEventListener('resize', onResize)
               setTimeout(() => { window.removeEventListener('resize', onResize) }, 60000)
               try {
-                const bounds = new google.maps.Circle({ center: coords as any, radius: 20000 }).getBounds()
                 const pickupEl = document.getElementById('pickup-input')
                 if (pickupEl && pickupEl instanceof HTMLInputElement) {
-                  const acPickup = new (google.maps as any).places.Autocomplete(pickupEl, { bounds, strictBounds: true })
+                  const acPickup = new (google.maps as any).places.Autocomplete(pickupEl, {})
                   acPickup.addListener('place_changed', () => {
                     const p = acPickup.getPlace()
                     if (p && p.geometry && p.geometry.location) {
@@ -451,7 +450,7 @@ export default function PassengerHome() {
                 }
                 const dropEl = document.getElementById('dropoff-input')
                 if (dropEl && dropEl instanceof HTMLInputElement) {
-                  const acDrop = new (google.maps as any).places.Autocomplete(dropEl, { bounds, strictBounds: true })
+                  const acDrop = new (google.maps as any).places.Autocomplete(dropEl, {})
                   acDrop.addListener('place_changed', () => {
                     const p = acDrop.getPlace()
                     if (p && p.geometry && p.geometry.location) {
@@ -475,7 +474,7 @@ export default function PassengerHome() {
                 }
                 const pickupEl2 = document.getElementById('pickup-input-ux')
                 if (pickupEl2 && pickupEl2 instanceof HTMLInputElement) {
-                  const acPickup2 = new (google.maps as any).places.Autocomplete(pickupEl2, { bounds, strictBounds: true })
+                  const acPickup2 = new (google.maps as any).places.Autocomplete(pickupEl2, {})
                   acPickup2.addListener('place_changed', () => {
                     const p = acPickup2.getPlace()
                     if (p && p.geometry && p.geometry.location) {
@@ -498,7 +497,7 @@ export default function PassengerHome() {
                 }
                 const dropEl2 = document.getElementById('dropoff-input-ux')
                 if (dropEl2 && dropEl2 instanceof HTMLInputElement) {
-                  const acDrop2 = new (google.maps as any).places.Autocomplete(dropEl2, { bounds, strictBounds: true })
+                  const acDrop2 = new (google.maps as any).places.Autocomplete(dropEl2, {})
                   acDrop2.addListener('place_changed', () => {
                     const p = acDrop2.getPlace()
                     if (p && p.geometry && p.geometry.location) {
