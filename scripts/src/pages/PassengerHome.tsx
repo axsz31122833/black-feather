@@ -1426,14 +1426,7 @@ export default function PassengerHome() {
             </span>
             <span className="font-extrabold text-2xl" style={{ color:'#1A1A1A' }}>${Math.round(estimatedPrice * surgeMultiplier)}</span>
           </div>
-          {fareDetail && (
-            <div className="mt-2 text-xs" style={{ color:'#666666' }}>
-              <div>里程費 ${fareDetail.distanceFee}</div>
-              <div>時間費 ${fareDetail.timeFee}</div>
-              <div>長途費 ${fareDetail.longFee}</div>
-              {fareDetail.storeFee ? <div>店家加價：${fareDetail.storeFee}</div> : null}
-            </div>
-          )}
+          
             <div className="mt-3 flex items-center justify-between">
               <label className="flex items-center space-x-2">
                 <input
