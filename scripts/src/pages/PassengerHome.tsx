@@ -46,6 +46,7 @@ export default function PassengerHome() {
   const [routePolyline, setRoutePolyline] = useState<google.maps.Polyline | null>(null)
   const directionsRendererRef = useRef<any>(null)
   const directionsServiceRef = useRef<any>(null)
+  const [showEstimate, setShowEstimate] = useState(false)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
   const createMarker = (mapInst: any, position: any, options?: any) => {
     return new google.maps.Marker({ position, map: mapInst, draggable: !!options?.gmpDraggable, title: options?.title })
@@ -400,14 +401,11 @@ export default function PassengerHome() {
     return () => clearInterval(timer)
   }, [arrivalSeconds])
 
-  useEffect(() => {
-    try {
-      if (!useGoogle || !map) return
-      if (pickupCoords && dropoffCoords) {
-        calculateRoute(pickupCoords, dropoffCoords)
-      }
-    } catch {}
-  }, [useGoogle, map, pickupCoords?.lat, pickupCoords?.lng, dropoffCoords?.lat, dropoffCoords?.lng])
+  const handleEstimate = async () => {
+    if (!pickupCoords || !dropoffCoords) return
+    await calculateRoute(pickupCoords, dropoffCoords)
+    setShowEstimate(true)
+  }
 
   useEffect(() => {
     if (arrivalSeconds == null) return
@@ -460,7 +458,6 @@ export default function PassengerHome() {
                         setPickupAddress(addr)
                       })
                       pickupMarkerRef.current = m
-                      if (dropoffCoords) calculateRoute(loc, dropoffCoords)
                     }
                   })
                 }
@@ -476,7 +473,6 @@ export default function PassengerHome() {
                       setDropoffAddress(p.formatted_address || p.name || '')
                       mapInstance.setCenter(loc as any)
                       mapInstance.setZoom(15)
-                      if (pickupCoords) calculateRoute(pickupCoords, loc)
                       if (dropoffMarkerRef.current) { (dropoffMarkerRef.current as any).map = null }
                       const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
                       m.addListener('dragend', async () => {
@@ -1417,36 +1413,20 @@ export default function PassengerHome() {
           </div>
         )}
 
-        {/* Car Type Selection */}
-        {distance > 0 && (
-          <div className="mb-6">
-            <label className="block text-sm font-medium text-gray-700 mb-3">選擇車型</label>
-            <div className="grid grid-cols-3 gap-3">
-              {carTypes.map((carType) => {
-                const Icon = carType.icon
-                return (
-                  <button
-                    key={carType.id}
-                    onClick={() => setSelectedCarType(carType.id)}
-                    className={`p-3 rounded-lg border-2 transition-colors ${
-                      selectedCarType === carType.id
-                        ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                  >
-                    <Icon className="w-6 h-6 mx-auto mb-1 text-gray-700" />
-                    <div className="text-xs font-medium text-gray-900">{carType.name}</div>
-                    <div className="text-xs text-gray-600">{carType.estimatedTime}</div>
-                    <div className="text-sm font-bold text-blue-600">${carType.price}</div>
-                  </button>
-                )
-              })}
-            </div>
-          </div>
-        )}
+        {/* 查看預估路徑與金額 */}
+        <div className="mb-4">
+          <button
+            onClick={handleEstimate}
+            disabled={!pickupCoords || !dropoffCoords}
+            className="w-full py-3 px-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-black"
+            style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
+          >
+            查看預估路徑與金額
+          </button>
+        </div>
 
         {/* Trip Summary */}
-        {distance > 0 && (
+        {showEstimate && distance > 0 && (
           <div className="mb-6 p-4 bg-gray-50 rounded-lg">
             <div className="mb-3">
               <div className="text-sm font-medium text-gray-700 mb-1">單別</div>
@@ -1502,7 +1482,7 @@ export default function PassengerHome() {
                     const v = e.target.checked
                     setPreferHighway(v)
                     if (v) setShowHighwayAlert(true)
-                    if (pickupCoords && dropoffCoords) calculateRoute(pickupCoords, dropoffCoords)
+                    if (showEstimate && pickupCoords && dropoffCoords) calculateRoute(pickupCoords, dropoffCoords)
                   }}
                 />
                 <span>行經高速/快速道路</span>
