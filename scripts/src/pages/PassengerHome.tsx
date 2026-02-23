@@ -48,6 +48,7 @@ export default function PassengerHome() {
   const directionsServiceRef = useRef<any>(null)
   const [showEstimate, setShowEstimate] = useState(false)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
+  const [fareConfig, setFareConfig] = useState<{ base: number; per_km: number; per_min: number; long_threshold: number; long_rate: number } | null>(null)
   const createMarker = (mapInst: any, position: any, options?: any) => {
     return new google.maps.Marker({ position, map: mapInst, draggable: !!options?.gmpDraggable, title: options?.title })
   }
@@ -66,6 +67,21 @@ export default function PassengerHome() {
       }
     } catch {}
   }, [user])
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.from('fare_config').select('*').eq('id','global').single()
+        if (data) setFareConfig({ base: Number(data.base||70), per_km: Number(data.per_km||15), per_min: Number(data.per_min||3), long_threshold: Number(data.long_threshold||20), long_rate: Number(data.long_rate||10) })
+        else {
+          const s = localStorage.getItem('bf_fare_config')
+          if (s) {
+            const cfg = JSON.parse(s)
+            setFareConfig({ base: Number(cfg.base||70), per_km: Number(cfg.per_km||15), per_min: Number(cfg.per_min||3), long_threshold: Number(cfg.long_threshold||20), long_rate: Number(cfg.long_rate||10) })
+          }
+        }
+      } catch {}
+    })()
+  }, [])
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [ratingScore, setRatingScore] = useState(5)
@@ -743,8 +759,27 @@ export default function PassengerHome() {
         path = r.path
       }
       const adjKm = preferHighway ? distanceKm * 1.1 : distanceKm
-      let price = calculateFare(durationMin, adjKm)
-      const bd = fareBreakdown(durationMin, adjKm)
+      let price = (() => {
+        const cfg = fareConfig
+        if (cfg) {
+          const base = cfg.base
+          const distFee = adjKm * cfg.per_km
+          const timeFee = durationMin * cfg.per_min
+          const longFee = adjKm > cfg.long_threshold ? (adjKm - cfg.long_threshold) * cfg.long_rate : 0
+          return Math.round(base + distFee + timeFee + longFee)
+        }
+        return calculateFare(durationMin, adjKm)
+      })()
+      const bd = (() => {
+        const cfg = fareConfig
+        if (cfg) {
+          const distFee = Math.round(adjKm * cfg.per_km)
+          const timeFee = Math.round(durationMin * cfg.per_min)
+          const longFee = adjKm > cfg.long_threshold ? Math.round((adjKm - cfg.long_threshold) * cfg.long_rate) : 0
+          return { distanceFee: distFee, timeFee, longFee }
+        }
+        return fareBreakdown(durationMin, adjKm)
+      })()
       let storeFee = 0
       setIsLongTrip(adjKm > 40)
       try {
@@ -763,7 +798,8 @@ export default function PassengerHome() {
       
       // Update car type prices
       carTypes.forEach(carType => {
-        const carPrice = calculateFare(durationMin, adjKm)
+        const cfg = fareConfig
+        const carPrice = cfg ? Math.round(cfg.base + adjKm * cfg.per_km + durationMin * cfg.per_min + (adjKm > cfg.long_threshold ? (adjKm - cfg.long_threshold) * cfg.long_rate : 0)) : calculateFare(durationMin, adjKm)
         carType.price = carPrice
       })
       if (!useGoogle) setRoutePath(path || [])

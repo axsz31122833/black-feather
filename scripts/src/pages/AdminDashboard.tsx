@@ -380,6 +380,11 @@ export default function AdminDashboard() {
   const [pushBody, setPushBody] = useState('這是一則測試推播訊息')
   const [adminPickupAddress, setAdminPickupAddress] = useState('')
   const [adminDropoffAddress, setAdminDropoffAddress] = useState('')
+  const [fareBase, setFareBase] = useState<number>(70)
+  const [farePerKm, setFarePerKm] = useState<number>(15)
+  const [farePerMin, setFarePerMin] = useState<number>(3)
+  const [fareLongThreshold, setFareLongThreshold] = useState<number>(20)
+  const [fareLongRate, setFareLongRate] = useState<number>(10)
   useEffect(() => {
     const run = async () => {
       try {
@@ -409,6 +414,42 @@ export default function AdminDashboard() {
     const t = setTimeout(run, 200)
     return () => clearTimeout(t)
   }, [radiusCenter])
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data } = await supabase.from('fare_config').select('*').eq('id','global').single()
+        if (data) {
+          setFareBase(Number(data.base ?? 70))
+          setFarePerKm(Number(data.per_km ?? 15))
+          setFarePerMin(Number(data.per_min ?? 3))
+          setFareLongThreshold(Number(data.long_threshold ?? 20))
+          setFareLongRate(Number(data.long_rate ?? 10))
+        } else {
+          const s = localStorage.getItem('bf_fare_config')
+          if (s) {
+            const cfg = JSON.parse(s)
+            setFareBase(Number(cfg.base ?? 70))
+            setFarePerKm(Number(cfg.per_km ?? 15))
+            setFarePerMin(Number(cfg.per_min ?? 3))
+            setFareLongThreshold(Number(cfg.long_threshold ?? 20))
+            setFareLongRate(Number(cfg.long_rate ?? 10))
+          }
+        }
+      } catch {}
+    })()
+  }, [])
+  const saveFareConfig = async () => {
+    const payload = { id: 'global', base: fareBase, per_km: farePerKm, per_min: farePerMin, long_threshold: fareLongThreshold, long_rate: fareLongRate }
+    try {
+      await ensureAuth()
+      await supabase.from('fare_config').upsert(payload, { onConflict: 'id' } as any)
+      try { await supabase.from('ops_events').insert({ event_type: 'fare_config_updated', ref_id: 'global', payload }) } catch {}
+      try { localStorage.setItem('bf_fare_config', JSON.stringify(payload)) } catch {}
+      alert('費率設定已儲存並廣播')
+    } catch (e) {
+      alert(`儲存失敗：${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
 
   useEffect(() => {
     loadDashboardData()
@@ -2029,16 +2070,17 @@ export default function AdminDashboard() {
         )}
         {activeTab === 'pricing' && (
           <div className="grid grid-cols-1 gap-6">
-            <div className="bg-[#111] rounded-2xl p-6 border border-[#D4AF37]/40">
-              <div className="text-lg font-semibold mb-4" style={{ color:'#FFD700' }}>計價規則</div>
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
-                <input placeholder="基本費" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
-                <input placeholder="每公里" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
-                <input placeholder="每分鐘" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
-                <input placeholder="服務費" className="px-3 py-2 bg-[#1a1a1a] border border-[#D4AF37]/40 rounded-2xl" />
+            <div className="rounded-2xl p-6" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.1)' }}>
+              <div className="text-lg font-semibold mb-4" style={{ color:'#00FFFF' }}>費率即時設定</div>
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
+                <input type="number" value={fareBase} onChange={e=>setFareBase(Number(e.target.value||'0'))} placeholder="基礎費" className="px-3 py-2 rounded" style={{ background:'#121212', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.1)' }} />
+                <input type="number" value={farePerKm} onChange={e=>setFarePerKm(Number(e.target.value||'0'))} placeholder="每公里費率" className="px-3 py-2 rounded" style={{ background:'#121212', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.1)' }} />
+                <input type="number" value={farePerMin} onChange={e=>setFarePerMin(Number(e.target.value||'0'))} placeholder="每分鐘費率" className="px-3 py-2 rounded" style={{ background:'#121212', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.1)' }} />
+                <input type="number" value={fareLongThreshold} onChange={e=>setFareLongThreshold(Number(e.target.value||'0'))} placeholder="長途門檻(公里)" className="px-3 py-2 rounded" style={{ background:'#121212', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.1)' }} />
+                <input type="number" value={fareLongRate} onChange={e=>setFareLongRate(Number(e.target.value||'0'))} placeholder="長途加成(每公里)" className="px-3 py-2 rounded" style={{ background:'#121212', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.1)' }} />
               </div>
               <div className="mt-4">
-                <button className="px-4 py-2 rounded-2xl" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}>保存</button>
+                <button onClick={saveFareConfig} className="px-4 py-2 rounded" style={{ background:'#00FFFF', color:'#121212' }}>儲存</button>
               </div>
             </div>
           </div>
