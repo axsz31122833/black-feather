@@ -1281,27 +1281,15 @@ export default function PassengerHome() {
       </div> */}
 
       {/* Booking Panel */}
-      <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl p-6 max-h-96 overflow-y-auto z-20 bottom-sheet-elevate" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>
-        <h2 className="text-lg font-semibold text-gray-900 mb-4">預約行程</h2>
+      <div className="fixed bottom-0 left-0 right-0 rounded-t-2xl p-6 z-20 bottom-sheet-elevate" style={{ background:'#FFFFFF', border:'1px solid #e5e7eb', height:'40vh', overflowY:'auto' }}>
+        <div className="mb-3">
+          <div className="text-base font-bold" style={{ color:'#1A1A1A' }}>{pickupAddress || '請輸入上車地址'}</div>
+          <div className="text-base font-bold" style={{ color:'#1A1A1A' }}>{dropoffAddress || '請輸入目的地地址'}</div>
+        </div>
         
         {/* Pickup Location */}
         <div className="mb-4">
-          <div className="mb-2 flex items-center gap-2">
-          <button
-            onClick={() => setRideMode('immediate')}
-              className={`px-3 py-2 rounded-2xl ${rideMode==='immediate' ? 'text-black' : 'text-gray-700'}`}
-              style={{ backgroundImage: rideMode==='immediate' ? 'linear-gradient(to right, #D4AF37, #B8860B)' : 'none', border: '1px solid rgba(212,175,55,0.3)' }}
-            >
-              即時行程
-            </button>
-          <button
-            onClick={() => setRideMode('scheduled')}
-              className={`px-3 py-2 rounded-2xl ${rideMode==='scheduled' ? 'text-black' : 'text-gray-700'}`}
-              style={{ backgroundImage: rideMode==='scheduled' ? 'linear-gradient(to right, #D4AF37, #B8860B)' : 'none', border: '1px solid rgba(212,175,55,0.3)' }}
-            >
-              預約行程
-            </button>
-          </div>
+          
           <label className="block text-sm font-medium text-gray-700 mb-2">
             <MapPin className="w-4 h-4 inline mr-1 text-green-600" />
             上車地點
@@ -1313,7 +1301,7 @@ export default function PassengerHome() {
               onChange={(e) => setPickupAddress(e.target.value)}
               id="pickup-input"
               ref={pickupInputRef}
-              className="flex-1 px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-[#e5e7eb] bg-white text-[#1A1A1A] rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               disabled={lockPickup}
               placeholder="輸入上車地址"
             />
@@ -1372,7 +1360,7 @@ export default function PassengerHome() {
 
         {/* Dropoff Location */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700 mb-2">
+          <label className="block text-sm font-medium mb-2" style={{ color:'#666666' }}>
             <MapPin className="w-4 h-4 inline mr-1 text-red-600" />
             目的地
           </label>
@@ -1383,7 +1371,7 @@ export default function PassengerHome() {
               onChange={(e) => setDropoffAddress(e.target.value)}
               id="dropoff-input"
               ref={dropoffInputRef}
-              className="flex-1 px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
+              className="flex-1 px-3 py-2 border border-[#e5e7eb] bg-white text-[#1A1A1A] rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="輸入目的地地址"
             />
             <button onClick={()=>saveFavorite('dropoff')} className="px-3 rounded-2xl" style={{ border:'1px solid rgba(218,165,32,0.35)', color:'#DAA520' }}>⭐</button>
@@ -1400,18 +1388,7 @@ export default function PassengerHome() {
             )}
           </div>
         </div>
-        {rideMode === 'scheduled' && (
-          <div className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">日期</label>
-              <input type="date" value={scheduledDate} onChange={e=>setScheduledDate(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
-            </div>
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">時間</label>
-              <input type="time" value={scheduledClock} onChange={e=>setScheduledClock(e.target.value)} className="w-full px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" />
-            </div>
-          </div>
-        )}
+        
 
         {/* 查看預估路徑與金額 */}
         <div className="mb-4">
@@ -1427,49 +1404,33 @@ export default function PassengerHome() {
 
         {/* Trip Summary */}
         {showEstimate && distance > 0 && (
-          <div className="mb-6 p-4 bg-gray-50 rounded-lg">
-            <div className="mb-3">
-              <div className="text-sm font-medium text-gray-700 mb-1">單別</div>
-              <div className="flex items-center space-x-4">
-                <label className="flex items-center space-x-2">
-                  <input type="radio" checked={rideMode==='immediate'} onChange={()=>setRideMode('immediate')} />
-                  <span>即時單</span>
-                </label>
-                <label className="flex items-center space-x-2">
-                  <input type="radio" checked={rideMode==='scheduled'} onChange={()=>setRideMode('scheduled')} />
-                  <span>預約單</span>
-                </label>
-                {rideMode==='scheduled' && (
-                  <input type="datetime-local" value={scheduledTime} onChange={e=>setScheduledTime(e.target.value)} className="px-2 py-1 border border-gray-300 rounded" />
-                )}
-              </div>
-            </div>
+          <div className="mb-6 p-4 rounded-lg" style={{ background:'#FFFFFF' }}>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">
+              <span className="text-sm" style={{ color:'#666666' }}>
                 <Navigation className="w-4 h-4 inline mr-1" />
                 距離
               </span>
-              <span className="font-medium">{distance.toFixed(1)} 公里</span>
+              <span className="font-medium" style={{ color:'#1A1A1A' }}>{distance.toFixed(1)} 公里</span>
             </div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-600">
+              <span className="text-sm" style={{ color:'#666666' }}>
                 <Clock className="w-4 h-4 inline mr-1" />
                 預估時間
               </span>
-              <span className="font-medium">{estimatedTime}</span>
+              <span className="font-medium" style={{ color:'#1A1A1A' }}>{estimatedTime}</span>
             </div>
           <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-600">
+            <span className="text-sm" style={{ color:'#666666' }}>
               <DollarSign className="w-4 h-4 inline mr-1" />
               預估費用
             </span>
-            <span className="font-bold text-lg text-blue-600">${Math.round(estimatedPrice * surgeMultiplier)}</span>
+            <span className="font-extrabold text-2xl" style={{ color:'#1A1A1A' }}>${Math.round(estimatedPrice * surgeMultiplier)}</span>
           </div>
           {fareDetail && (
-            <div className="mt-2 text-xs text-gray-700">
-              <div>里程費：${fareDetail.distanceFee}</div>
-              <div>時間費：${fareDetail.timeFee}</div>
-              <div>長途費：${fareDetail.longFee}</div>
+            <div className="mt-2 text-xs" style={{ color:'#666666' }}>
+              <div>里程費 ${fareDetail.distanceFee}</div>
+              <div>時間費 ${fareDetail.timeFee}</div>
+              <div>長途費 ${fareDetail.longFee}</div>
               {fareDetail.storeFee ? <div>店家加價：${fareDetail.storeFee}</div> : null}
             </div>
           )}
@@ -1485,7 +1446,7 @@ export default function PassengerHome() {
                     if (showEstimate && pickupCoords && dropoffCoords) calculateRoute(pickupCoords, dropoffCoords)
                   }}
                 />
-                <span>行經高速/快速道路</span>
+                <span style={{ color:'#1A1A1A' }}>優先走高速/快速道路</span>
               </label>
               {driverArrivedAt && (
                 <span className="text-sm">司機已等候 {formatMMSS(((Date.now() - driverArrivedAt) / 1000))}</span>
