@@ -45,6 +45,7 @@ export default function PassengerHome() {
   const [routeInfoWindow, setRouteInfoWindow] = useState<google.maps.InfoWindow | null>(null)
   const [routePolyline, setRoutePolyline] = useState<google.maps.Polyline | null>(null)
   const directionsRendererRef = useRef<any>(null)
+  const directionsServiceRef = useRef<any>(null)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
   const createMarker = (mapInst: any, position: any, options?: any) => {
     return new google.maps.Marker({ position, map: mapInst, draggable: !!options?.gmpDraggable, title: options?.title })
@@ -400,6 +401,15 @@ export default function PassengerHome() {
   }, [arrivalSeconds])
 
   useEffect(() => {
+    try {
+      if (!useGoogle || !map) return
+      if (pickupCoords && dropoffCoords) {
+        calculateRoute(pickupCoords, dropoffCoords)
+      }
+    } catch {}
+  }, [useGoogle, map, pickupCoords?.lat, pickupCoords?.lng, dropoffCoords?.lat, dropoffCoords?.lng])
+
+  useEffect(() => {
     if (arrivalSeconds == null) return
     if (arrivalSeconds > 600) setSurgeMultiplier(1.5)
     else if (arrivalSeconds > 300) setSurgeMultiplier(1.2)
@@ -417,6 +427,7 @@ export default function PassengerHome() {
             if (mapRef.current) {
               const mapInstance = await createMap(mapRef.current, { center: coords, zoom: 15 })
               setMap(mapInstance)
+              directionsServiceRef.current = new (window as any).google.maps.DirectionsService()
               new google.maps.Marker({ position: coords as any, map: mapInstance, title: '您的位置' })
               gReverseGeocode(coords.lat, coords.lng).then(address => {
                 setPickupAddress(address)
@@ -435,6 +446,7 @@ export default function PassengerHome() {
                     const p = acPickup.getPlace()
                     if (p && p.geometry && p.geometry.location) {
                       const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                      try { console.log('pickup place_changed', loc) } catch {}
                       setPickupCoords(loc)
                       setPickupAddress(p.formatted_address || p.name || '')
                       mapInstance.setCenter(loc as any)
@@ -459,6 +471,7 @@ export default function PassengerHome() {
                     const p = acDrop.getPlace()
                     if (p && p.geometry && p.geometry.location) {
                       const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                      try { console.log('dropoff place_changed', loc) } catch {}
                       setDropoffCoords(loc)
                       setDropoffAddress(p.formatted_address || p.name || '')
                       mapInstance.setCenter(loc as any)
@@ -695,13 +708,14 @@ export default function PassengerHome() {
       if (useGoogle && map) {
         directionsRendererRef.current?.setMap(null)
         directionsRendererRef.current = null
-        const svc = new (window as any).google.maps.DirectionsService()
+        const svc = directionsServiceRef.current || new (window as any).google.maps.DirectionsService()
         const res: any = await svc.route({
           origin: pickup as any,
           destination: dropoff as any,
           travelMode: (window as any).google.maps.TravelMode.DRIVING,
           provideRouteAlternatives: false
         })
+        try { console.log('route result', res?.routes?.length || 0) } catch {}
         const leg = res?.routes?.[0]?.legs?.[0]
         if (leg?.distance?.value) distanceKm = (leg.distance.value as number) / 1000
         if (leg?.duration?.value) durationMin = Math.max(1, Math.round((leg.duration.value as number) / 60))
@@ -713,6 +727,12 @@ export default function PassengerHome() {
         dr.setDirections(res)
         directionsRendererRef.current = dr
       } else {
+        const r = await getRouteWithFallbacks(pickup, dropoff)
+        distanceKm = r.distanceKm
+        durationMin = r.durationMin
+        path = r.path
+      }
+      if (!distanceKm || !durationMin) {
         const r = await getRouteWithFallbacks(pickup, dropoff)
         distanceKm = r.distanceKm
         durationMin = r.durationMin
