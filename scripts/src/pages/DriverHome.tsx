@@ -661,38 +661,41 @@ export default function DriverHome() {
     return null
   }
   return (
-    <div className="h-screen bg-transparent relative">
+    <div className="h-screen relative" style={{ background:'#121212', color:'#e5e7eb' }}>
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 bg-[#1A1A1A] border-b border-[#DAA520]/40 p-4">
+      <div className="absolute top-0 left-0 right-0 z-10 p-4" style={{ background:'#121212', borderBottom:'1px solid rgba(0,255,255,0.15)' }}>
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold" style={{ color:'#DAA520' }}>司機控制台</h1>
+            <h1 className="text-xl font-bold" style={{ color:'#00FFFF' }}>司機儀表板</h1>
             <div className="flex items-center space-x-4">
               <button
                 onClick={() => navigate('/driver/trips')}
-                className="text-blue-600 hover:text-blue-800"
+                className="hover:opacity-80"
+                style={{ color:'#00FFFF' }}
               >
                 我的行程
               </button>
               <button
                 onClick={() => { try { window.open('mailto:support@blackfeather.com?subject=Driver%20Support','_blank') } catch {} }}
                 className="px-3 py-2 rounded-2xl"
-                style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)', color:'#111' }}
+                style={{ background:'#00FFFF', color:'#121212', border:'1px solid rgba(0,255,255,0.35)' }}
               >
                 聯繫客服
               </button>
               <div className="relative">
                 <button
                   onClick={() => setShowMenu(!showMenu)}
-                  className="flex items-center space-x-2 text-gray-700 hover:text-gray-900"
+                  className="flex items-center space-x-2 hover:opacity-80"
+                  style={{ color:'#e5e7eb' }}
                 >
                   <User className="w-5 h-5" />
                   <span className="text-sm">{user?.email}</span>
               </button>
               {showMenu && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-lg shadow-lg py-2">
+                <div className="absolute right-0 mt-2 w-48 rounded-lg shadow-lg py-2" style={{ background:'#1a1a1a', border:'1px solid rgba(0,255,255,0.25)' }}>
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    className="block w-full text-left px-4 py-2 text-sm hover:opacity-80"
+                    style={{ color:'#e5e7eb' }}
                   >
                     登出
                   </button>
@@ -704,7 +707,7 @@ export default function DriverHome() {
       </div>
 
       {/* Map */}
-      <div id="driver-map" style={{ height: '80vh', width: '100vw' }}>
+      <div id="driver-map" style={{ height: '60vh', width: '100vw', position:'relative' }}>
       <RideLeafletMap
         center={mapCenter}
         pickup={currentTrip?.pickup_location || undefined}
@@ -713,6 +716,12 @@ export default function DriverHome() {
         path={routePath}
         suggestions={[]}
       />
+      <div style={{ position:'absolute', inset:0, pointerEvents:'none' }}>
+        {/* 簡易推薦點覆蓋（示意熱力） */}
+        <div style={{ position:'absolute', left:'30%', top:'40%', width:36, height:36, borderRadius:'50%', background:'rgba(0,255,255,0.15)', border:'1px solid rgba(0,255,255,0.35)' }} />
+        <div style={{ position:'absolute', left:'60%', top:'50%', width:28, height:28, borderRadius:'50%', background:'rgba(0,255,255,0.12)', border:'1px solid rgba(0,255,255,0.25)' }} />
+        <div style={{ position:'absolute', left:'45%', top:'30%', width:42, height:42, borderRadius:'50%', background:'rgba(0,255,255,0.18)', border:'1px solid rgba(0,255,255,0.35)' }} />
+      </div>
       </div>
 
       {/* Support Chat */}
@@ -753,7 +762,7 @@ export default function DriverHome() {
       )}
 
         {/* Driver Status Panel */}
-        <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl shadow-lg p-6" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)' }}>
+        <div className="absolute bottom-0 left-0 right-0 rounded-t-2xl shadow-lg p-6" style={{ background:'#121212', border:'1px solid rgba(0,255,255,0.25)' }}>
         {/* Online Status Toggle */}
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -778,12 +787,15 @@ export default function DriverHome() {
 
         {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-blue-50 rounded-lg p-4">
+            <div className="rounded-lg p-4" style={{ background:'#0f172a', border:'1px solid rgba(0,255,255,0.15)' }}>
               <div className="flex items-center space-x-2 mb-2">
-                <DollarSign className="w-5 h-5 text-blue-600" />
-                <span className="text-sm font-medium text-blue-900">今日收入</span>
+                <DollarSign className="w-5 h-5" style={{ color:'#00FFFF' }} />
+                <span className="text-sm font-medium" style={{ color:'#e5e7eb' }}>今日收益</span>
               </div>
-              <p className="text-2xl font-bold text-blue-600">${todayEarnings}</p>
+              <p className="text-2xl font-bold" style={{ color:'#00FFFF' }}>${todayEarnings}</p>
+              <svg width="160" height="40">
+                <polyline points="0,30 20,25 40,28 60,20 80,22 100,18 120,24 140,12 160,16" fill="none" stroke="#00FFFF" strokeWidth="2" />
+              </svg>
             </div>
             <div className="bg-yellow-50 rounded-lg p-4 col-span-2">
               <div className="flex items-center justify-between">
@@ -855,8 +867,8 @@ export default function DriverHome() {
 
         {/* Current Trip */}
         {currentTrip && (
-          <div className="bg-gray-50 rounded-lg p-4 mb-6">
-            <h4 className="text-lg font-semibold text-gray-900 mb-4">當前訂單</h4>
+          <div className="rounded-lg p-4 mb-6" style={{ background:'#121212', border:'1px solid rgba(0,255,255,0.15)' }}>
+            <h4 className="text-lg font-semibold mb-4" style={{ color:'#e5e7eb' }}>當前訂單</h4>
             {currentTrip?.direct_payment_amount ? (
               <div className="mb-3 px-3 py-2 rounded-2xl" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
                 直收單：NT${currentTrip.direct_payment_amount}
@@ -865,31 +877,31 @@ export default function DriverHome() {
             
             <div className="space-y-3 mb-4">
               <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-green-600 mt-0.5" />
+                <MapPin className="w-5 h-5 mt-0.5" style={{ color:'#10B981' }} />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">上車地點</p>
-                  <p className="text-sm text-gray-600">{currentTrip.pickup_address}</p>
+                  <p className="text-sm font-medium" style={{ color:'#e5e7eb' }}>上車地點</p>
+                  <p className="text-sm" style={{ color:'#9ca3af' }}>{currentTrip.pickup_address}</p>
                 </div>
               </div>
               <div className="flex items-start space-x-3">
-                <MapPin className="w-5 h-5 text-red-600 mt-0.5" />
+                <MapPin className="w-5 h-5 mt-0.5" style={{ color:'#EF4444' }} />
                 <div>
-                  <p className="text-sm font-medium text-gray-900">目的地</p>
-                  <p className="text-sm text-gray-600">{currentTrip.dropoff_address}</p>
+                  <p className="text-sm font-medium" style={{ color:'#e5e7eb' }}>目的地</p>
+                  <p className="text-sm" style={{ color:'#9ca3af' }}>{currentTrip.dropoff_address}</p>
                 </div>
               </div>
             </div>
 
           <div className="flex items-center justify-between pt-3 border-t border-gray-200">
             <div className="flex items-center space-x-2">
-              <DollarSign className="w-4 h-4 text-gray-500" />
-              <span className="font-bold text-gray-900">
+              <DollarSign className="w-4 h-4" style={{ color:'#00FFFF' }} />
+              <span className="font-bold" style={{ color:'#e5e7eb' }}>
                 ${currentTrip.final_price || currentTrip.estimated_price}
               </span>
             </div>
             <div className="flex items-center space-x-2">
-              <Clock className="w-4 h-4 text-gray-500" />
-              <span className="text-sm text-gray-600">
+              <Clock className="w-4 h-4" style={{ color:'#e5e7eb' }} />
+              <span className="text-sm" style={{ color:'#9ca3af' }}>
                 {currentTrip.distance_km ? `${currentTrip.distance_km.toFixed(1)} 公里` : '計算中...'}
               </span>
             </div>
@@ -932,8 +944,8 @@ export default function DriverHome() {
                 </>
               )}
               {incomingOffer && offerCountdown > 0 && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
-              <div className="w-full max-w-lg rounded-2xl p-6" style={{ backgroundImage: 'linear-gradient(180deg, #FFD700 0%, #B8860B 100%)', color: '#111' }}>
+                <div className="absolute left-0 right-0 bottom-0 z-50">
+              <div className="w-full rounded-t-2xl p-6" style={{ background:'#121212', borderTop:'2px solid rgba(0,255,255,0.35)', color: '#e5e7eb' }}>
                 <div className="text-xl font-bold mb-1">{incomingOffer?.remain_min != null ? '順風單推薦' : '新訂單'}</div>
                 <div className="text-xs mb-3">倒數 {offerCountdown} 秒</div>
                 <div className="space-y-2 text-sm">
@@ -945,14 +957,17 @@ export default function DriverHome() {
                     <div>距離您結束當前行程僅剩 {incomingOffer.remain_min} 分鐘，是否接續下一單？</div>
                   )}
                   <div>預估車資：${incomingOffer.price}</div>
+                  <div>司機實收（扣佣10%）：${Math.round(incomingOffer.price * 0.9)}</div>
+                  {incomingOffer?.dist_km && <div>預計距離：{incomingOffer.dist_km.toFixed(1)} 公里</div>}
+                  {incomingOffer?.eta_min && <div>預計前往時間：{incomingOffer.eta_min} 分鐘</div>}
                 </div>
-                <div className="mt-4 flex justify-end space-x-2">
+                <div className="mt-4 flex justify-between space-x-2">
                   <button
                     onClick={async () => {
                           setIncomingOffer(null)
                           try { await supabase.from('ops_events').insert({ event_type: 'dispatch_reject', payload: { driver_id: user?.id } }) } catch {}
                         }}
-                        className="px-4 py-2 rounded-2xl" style={{ background: '#111', color: '#FFD700' }}
+                        className="px-4 py-2 rounded-2xl hover:opacity-80" style={{ background: '#374151', color: '#e5e7eb', border:'1px solid rgba(0,255,255,0.25)' }}
                       >
                         拒絕
                       </button>
@@ -966,9 +981,9 @@ export default function DriverHome() {
                             setIncomingOffer(null)
                           } catch { setIncomingOffer(null) }
                         }}
-                        className="px-4 py-2 rounded-2xl" style={{ background: '#111', color: '#FFD700' }}
+                        className="flex-1 px-6 py-4 rounded-2xl text-center font-bold hover:opacity-90" style={{ background: '#00FFFF', color: '#121212' }}
                       >
-                        接受{incomingOffer?.remain_min != null ? '疊單' : ''}
+                        點擊接單{incomingOffer?.remain_min != null ? '（疊單）' : ''}
                       </button>
                     </div>
                   </div>
