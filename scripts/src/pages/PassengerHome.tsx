@@ -788,7 +788,22 @@ export default function PassengerHome() {
   }
 
   const handleBookRide = async () => {
-    if (!pickupCoords || !dropoffCoords || !user) return
+    const minutes = (() => {
+      const m = (estimatedTime || '').match(/\d+/)
+      return m ? parseInt(m[0], 10) : Math.max(1, Math.round((distance / 30) * 60))
+    })()
+    const strictFare = calculateFare(minutes, distance || 0)
+    const orderData = {
+      pickup_address,
+      dropoff_address,
+      pickup_coords: pickupCoords,
+      dropoff_coords: dropoffCoords,
+      estimated_fare: strictFare,
+      distance_km: distance,
+      minutes
+    }
+    console.log('叫車按鈕被點擊了', orderData)
+    if (!pickupCoords || !dropoffCoords || !user) { alert('請先選定上車與目的地'); return }
     
     setIsLoading(true)
     
@@ -828,7 +843,8 @@ export default function PassengerHome() {
           pickup_address: pickupAddress,
           dropoff_address: dropoffAddress,
           car_type: selectedCarType,
-          estimated_price: estimatedPrice,
+          estimated_price: Math.max(strictFare, 70),
+          distance_km: distance || null,
           status: 'requested'
         })
         try {
@@ -857,6 +873,12 @@ export default function PassengerHome() {
               } catch {}
             } catch {}
           }
+          try {
+            const isAdmin = (user as any)?.user_type === 'admin'
+            if (tripId && isAdmin) {
+              await supabase.from('ops_events').insert({ event_type: 'admin_order', ref_id: tripId, payload: { override: true } })
+            }
+          } catch {}
           if (tripId && isLongTrip) {
             try { await supabase.from('ops_events').insert({ event_type: 'long_distance_request', ref_id: tripId, payload: { pickup: pickupCoords, threshold: 40 } }) } catch {}
           }
@@ -878,6 +900,7 @@ export default function PassengerHome() {
             const distKm = R * c
             return distKm <= 5
           }).slice(0, 5)
+          console.log('附近可派司機數量', within5km.length)
           const expiresAt = new Date(Date.now() + 30000).toISOString()
           for (const d of within5km) {
             try {
@@ -888,7 +911,7 @@ export default function PassengerHome() {
                   driver_id: d.id,
                   pickup: pickupCoords,
                   dropoff: dropoffCoords,
-                  price: estimatedPrice,
+                  price: Math.max(strictFare, 70),
                   expires_at: expiresAt
                 }
               })
@@ -1479,7 +1502,7 @@ export default function PassengerHome() {
           className="w-full py-4 px-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-black text-lg"
           style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
         >
-          {isLoading ? '預約中...' : '立即叫車'}
+          {isLoading ? '⏳ 叫車中...' : '立即叫車'}
         </button>
         {currentTrip && ['requested','accepted'].includes(currentTrip.status) && (
           <button
