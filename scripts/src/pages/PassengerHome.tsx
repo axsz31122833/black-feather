@@ -884,6 +884,7 @@ export default function PassengerHome() {
             .order('created_at', { ascending: false })
             .limit(1)
           const tripId = (latest && latest[0]?.id) || currentTrip?.id || null
+          try { console.log('tripId resolved', tripId) } catch {}
           if (tripId) {
             try {
               const noteText = `禁菸:${noteNoSmoking?'是':'否'}; 攜帶寵物:${notePets?'是':'否'}`
@@ -901,6 +902,7 @@ export default function PassengerHome() {
               } catch {}
             } catch {}
           }
+          // Admin override ops event should not break flow
           try {
             const isAdmin = (user as any)?.user_type === 'admin'
             if (tripId && isAdmin) {
@@ -908,10 +910,14 @@ export default function PassengerHome() {
             }
           } catch {}
           if (tripId && isLongTrip) {
-            try { await supabase.from('ops_events').insert({ event_type: 'long_distance_request', ref_id: tripId, payload: { pickup: pickupCoords, threshold: 40 } }) } catch {}
+            try {
+              await supabase.from('ops_events').insert({ event_type: 'long_distance_request', ref_id: tripId, payload: { pickup: pickupCoords, threshold: 40 } })
+            } catch {}
           }
           if (tripId && qrShopId) {
-            try { await supabase.from('ops_events').insert({ event_type: 'shop_order', ref_id: tripId, payload: { merchant_id: qrShopId } }) } catch {}
+            try {
+              await supabase.from('ops_events').insert({ event_type: 'shop_order', ref_id: tripId, payload: { merchant_id: qrShopId } })
+            } catch {}
           }
           const { data: drivers } = await supabase
             .from('drivers')
@@ -945,7 +951,9 @@ export default function PassengerHome() {
               })
             } catch {}
           }
-        } catch {}
+        } catch (e) {
+          try { console.warn('post-create orchestration failed', e) } catch {}
+        }
         try {
           const distKm = distance
           if (distKm > 30) {
@@ -967,7 +975,7 @@ export default function PassengerHome() {
       }
     } catch (error) {
       console.error('Error booking ride:', error)
-      alert('叫車失敗，請稍後再試')
+      alert(`叫車失敗：${error instanceof Error ? error.message : String(error)}`)
     } finally {
       setIsLoading(false)
     }
