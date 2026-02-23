@@ -93,8 +93,7 @@ export default function DispatchMapG({
       const next: any[] = []
       const add = (pos?: { lat: number; lng: number }, label?: string) => {
         if (!pos) return
-        const AM = (window as any).google.maps.marker?.AdvancedMarkerElement
-        const mk = AM ? new AM({ position: pos, map, title: label || '' }) : new (window as any).google.maps.Marker({ position: pos, map, title: label || '' })
+        const mk = new (window as any).google.maps.Marker({ position: pos, map, title: label || '' })
         next.push(mk)
       }
       add(pickup || undefined, '上車地點')
@@ -102,24 +101,11 @@ export default function DispatchMapG({
         .filter(d => typeof d.current_lat === 'number' && typeof d.current_lng === 'number')
         .slice(0, 50)
         .forEach(d => {
-          const AM = (window as any).google.maps.marker?.AdvancedMarkerElement
-          const pin = document.createElement('div')
-          pin.style.width = '12px'
-          pin.style.height = '12px'
-          pin.style.borderRadius = '50%'
-          pin.style.background = isCand(d.id) ? '#7c3aed' : colorFor(d)
-          const mk = AM
-            ? new AM({
-              position: { lat: d.current_lat as number, lng: d.current_lng as number },
-              map,
-              title: `${d.name || d.phone} ${d.plate_number || ''} ${d.car_model || ''} ${d.car_color || ''}`,
-              content: pin
-            })
-            : new (window as any).google.maps.Marker({
-              position: { lat: d.current_lat as number, lng: d.current_lng as number },
-              map,
-              title: `${d.name || d.phone} ${d.plate_number || ''} ${d.car_model || ''} ${d.car_color || ''}`
-            })
+          const mk = new (window as any).google.maps.Marker({
+            position: { lat: d.current_lat as number, lng: d.current_lng as number },
+            map,
+            title: `${d.name || d.phone} ${d.plate_number || ''} ${d.car_model || ''} ${d.car_color || ''}`
+          })
           mk.addListener('click', () => {
             try { onAssign(d.id) } catch {}
           })

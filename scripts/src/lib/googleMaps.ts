@@ -8,14 +8,13 @@ export async function loadGoogleMaps() {
   if (!loader) {
     loader = new Loader({
       apiKey: key || '',
-      libraries: ['places', 'marker'],
+      libraries: ['places'],
       authReferrerPolicy: 'origin'
     })
   }
   try {
     await loader!.importLibrary('maps')
     await loader!.importLibrary('places')
-    await loader!.importLibrary('marker')
     loaded = true
     return (window as any).google
   } catch (e) {

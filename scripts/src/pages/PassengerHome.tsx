@@ -46,10 +46,6 @@ export default function PassengerHome() {
   const [routePolyline, setRoutePolyline] = useState<google.maps.Polyline | null>(null)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
   const createMarker = (mapInst: any, position: any, options?: any) => {
-    try {
-      const AM = (google.maps as any).marker?.AdvancedMarkerElement
-      if (AM) return new AM({ position, map: mapInst, ...options })
-    } catch {}
     return new google.maps.Marker({ position, map: mapInst, draggable: !!options?.gmpDraggable, title: options?.title })
   }
   const removeMarker = (mk: any) => {
@@ -75,7 +71,7 @@ export default function PassengerHome() {
   const [scheduledTime, setScheduledTime] = useState('')
   const [scheduledDate, setScheduledDate] = useState('')
   const [scheduledClock, setScheduledClock] = useState('')
-  const useGoogle = false
+  const useGoogle = true
   const [mapCenter, setMapCenter] = useState<{ lat: number; lng: number }>({ lat: 25.033, lng: 121.565 })
   const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
   const [mapSuggestions, setMapSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>>([])
@@ -351,9 +347,7 @@ export default function PassengerHome() {
           if (typeof (driverMarker as any).setPosition === 'function') (driverMarker as any).setPosition(driverLocation as any)
           else (driverMarker as any).position = driverLocation as any
         } else {
-          const mk: any = (google.maps as any).marker?.AdvancedMarkerElement
-            ? new (google.maps as any).marker.AdvancedMarkerElement({ position: driverLocation as any, map, title: '司機位置' })
-            : new google.maps.Marker({ position: driverLocation as any, map, title: '司機位置' })
+          const mk: any = new google.maps.Marker({ position: driverLocation as any, map, title: '司機位置' })
           setDriverMarker(mk)
         }
       } catch {}
@@ -420,7 +414,7 @@ export default function PassengerHome() {
             if (mapRef.current) {
               const mapInstance = await createMap(mapRef.current, { center: coords, zoom: 15 })
               setMap(mapInstance)
-              new (google.maps as any).marker.AdvancedMarkerElement({ position: coords as any, map: mapInstance, title: '您的位置' })
+              new google.maps.Marker({ position: coords as any, map: mapInstance, title: '您的位置' })
               gReverseGeocode(coords.lat, coords.lng).then(address => {
                 setPickupAddress(address)
                 setPickupCoords(coords)
@@ -442,12 +436,11 @@ export default function PassengerHome() {
                     mapInstance.setCenter(loc as any)
                     mapInstance.setZoom(15)
                     if (pickupMarkerRef.current) { (pickupMarkerRef.current as any).map = null }
-                    const AdvancedMarkerElement = (google.maps as any).marker.AdvancedMarkerElement
-                    const m = new AdvancedMarkerElement({ position: loc as any, map: mapInstance, gmpDraggable: true })
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
                     m.addListener('dragend', async () => {
-                      const pos = (m as any).position
-                      const addr = await gReverseGeocode(pos.lat, pos.lng)
-                      setPickupCoords({ lat: pos.lat, lng: pos.lng })
+                      const pos = m.getPosition()!
+                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                      setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
                       setPickupAddress(addr)
                     })
                     pickupMarkerRef.current = m
@@ -464,12 +457,11 @@ export default function PassengerHome() {
                     mapInstance.setZoom(15)
                     if (pickupCoords) calculateRoute(pickupCoords, loc)
                     if (dropoffMarkerRef.current) { (dropoffMarkerRef.current as any).map = null }
-                    const AdvancedMarkerElement = (google.maps as any).marker.AdvancedMarkerElement
-                    const m = new AdvancedMarkerElement({ position: loc as any, map: mapInstance, gmpDraggable: true })
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
                     m.addListener('dragend', async () => {
-                      const pos = (m as any).position
-                      const addr = await gReverseGeocode(pos.lat, pos.lng)
-                      setDropoffCoords({ lat: pos.lat, lng: pos.lng })
+                      const pos = m.getPosition()!
+                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                      setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
                       setDropoffAddress(addr)
                     })
                     dropoffMarkerRef.current = m
@@ -485,12 +477,11 @@ export default function PassengerHome() {
                     mapInstance.setCenter(loc as any)
                     mapInstance.setZoom(15)
                     if (pickupMarkerRef.current) { (pickupMarkerRef.current as any).map = null }
-                    const AdvancedMarkerElement = (google.maps as any).marker.AdvancedMarkerElement
-                    const m = new AdvancedMarkerElement({ position: loc as any, map: mapInstance, gmpDraggable: true })
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
                     m.addListener('dragend', async () => {
-                      const pos = (m as any).position
-                      const a = await gReverseGeocode(pos.lat, pos.lng)
-                      setPickupCoords({ lat: pos.lat, lng: pos.lng })
+                      const pos = m.getPosition()!
+                      const a = await gReverseGeocode(pos.lat(), pos.lng())
+                      setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
                       setPickupAddress(a)
                     })
                     pickupMarkerRef.current = m
@@ -507,12 +498,11 @@ export default function PassengerHome() {
                     mapInstance.setZoom(15)
                     if (pickupCoords) calculateRoute(pickupCoords, loc)
                     if (dropoffMarkerRef.current) { (dropoffMarkerRef.current as any).map = null }
-                    const AdvancedMarkerElement = (google.maps as any).marker.AdvancedMarkerElement
-                    const m = new AdvancedMarkerElement({ position: loc as any, map: mapInstance, gmpDraggable: true })
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
                     m.addListener('dragend', async () => {
-                      const pos = (m as any).position
-                      const addr = await gReverseGeocode(pos.lat, pos.lng)
-                      setDropoffCoords({ lat: pos.lat, lng: pos.lng })
+                      const pos = m.getPosition()!
+                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                      setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
                       setDropoffAddress(addr)
                     })
                     dropoffMarkerRef.current = m
@@ -525,12 +515,11 @@ export default function PassengerHome() {
                     setPickupCoords(loc)
                     setPickupAddress(addr)
                     if (pickupMarkerRef.current) { (pickupMarkerRef.current as any).map = null }
-                    const AdvancedMarkerElement = (google.maps as any).marker.AdvancedMarkerElement
-                    const m = new AdvancedMarkerElement({ position: loc as any, map: mapInstance, gmpDraggable: true })
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
                     m.addListener('dragend', async () => {
-                      const pos = (m as any).position
-                      const a = await gReverseGeocode(pos.lat, pos.lng)
-                      setPickupCoords({ lat: pos.lat, lng: pos.lng })
+                      const pos = m.getPosition()!
+                      const a = await gReverseGeocode(pos.lat(), pos.lng())
+                      setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
                       setPickupAddress(a)
                     })
                     pickupMarkerRef.current = m
@@ -538,12 +527,11 @@ export default function PassengerHome() {
                     setDropoffCoords(loc)
                     setDropoffAddress(addr)
                     if (dropoffMarkerRef.current) { (dropoffMarkerRef.current as any).map = null }
-                    const AdvancedMarkerElement = (google.maps as any).marker.AdvancedMarkerElement
-                    const m = new AdvancedMarkerElement({ position: loc as any, map: mapInstance, gmpDraggable: true })
+                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
                     m.addListener('dragend', async () => {
-                      const pos = (m as any).position
-                      const a = await gReverseGeocode(pos.lat, pos.lng)
-                      setDropoffCoords({ lat: pos.lat, lng: pos.lng })
+                      const pos = m.getPosition()!
+                      const a = await gReverseGeocode(pos.lat(), pos.lng())
+                      setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
                       setDropoffAddress(a)
                     })
                     dropoffMarkerRef.current = m

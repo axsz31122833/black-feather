@@ -140,11 +140,10 @@ export const initGoogleMaps = async (): Promise<void> => {
       const loader = new Loader({
         apiKey,
         version: 'weekly',
-        libraries: ['places', 'marker']
+        libraries: ['places']
       })
       await loader.importLibrary('maps')
       await loader.importLibrary('places')
-      await loader.importLibrary('marker')
       return (window as any).google
     })()
   }
@@ -157,5 +156,13 @@ export const createMap = async (element?: HTMLElement, options?: google.maps.Map
   const opts = { ...options } as any
   if (mapId && !opts.mapId) opts.mapId = mapId
   return new (window as any).google.maps.Map(element, opts)
+}
+
+export const initAutocomplete = async (inputs: HTMLInputElement[]): Promise<void> => {
+  await initGoogleMaps()
+  const g = (window as any).google
+  inputs.filter(Boolean).forEach((input) => {
+    new g.maps.places.Autocomplete(input)
+  })
 }
 

@@ -13,9 +13,9 @@ console.log('URL:', import.meta.env.VITE_SUPABASE_URL, 'NEXT_PUBLIC_URL:', impor
 try {
   const len = supabaseAnonKey ? String(supabaseAnonKey).length : 0
   console.log('Supabase anon key length:', len)
-  if (!supabaseUrl || !supabaseAnonKey) console.error('ERROR: Supabase Key is missing!')
+  if (!supabaseUrl) console.error('ERROR: Supabase URL is missing!')
 } catch {}
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient(supabaseUrl, supabaseAnonKey || 'anon')
 export function getSupabaseAnonKey() { return supabaseAnonKey }
 export function getSupabaseHeaders() { return { apikey: supabaseAnonKey } }
 export function getSupabaseUrl() { return supabaseUrl }
