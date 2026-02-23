@@ -426,88 +426,100 @@ export default function PassengerHome() {
               setTimeout(() => { window.removeEventListener('resize', onResize) }, 60000)
               try {
                 const bounds = new google.maps.Circle({ center: coords as any, radius: 20000 }).getBounds()
-                const acPickup = new (google.maps as any).places.Autocomplete(document.getElementById('pickup-input') as HTMLInputElement, { bounds, strictBounds: true })
-                acPickup.addListener('place_changed', () => {
-                  const p = acPickup.getPlace()
-                  if (p && p.geometry && p.geometry.location) {
-                    const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
-                    setPickupCoords(loc)
-                    setPickupAddress(p.formatted_address || p.name || '')
-                    mapInstance.setCenter(loc as any)
-                    mapInstance.setZoom(15)
-                    if (pickupMarkerRef.current) { (pickupMarkerRef.current as any).map = null }
-                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
-                    m.addListener('dragend', async () => {
-                      const pos = m.getPosition()!
-                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
-                      setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
-                      setPickupAddress(addr)
-                    })
-                    pickupMarkerRef.current = m
-                  }
-                })
-                const acDrop = new (google.maps as any).places.Autocomplete(document.getElementById('dropoff-input') as HTMLInputElement, { bounds, strictBounds: true })
-                acDrop.addListener('place_changed', () => {
-                  const p = acDrop.getPlace()
-                  if (p && p.geometry && p.geometry.location) {
-                    const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
-                    setDropoffCoords(loc)
-                    setDropoffAddress(p.formatted_address || p.name || '')
-                    mapInstance.setCenter(loc as any)
-                    mapInstance.setZoom(15)
-                    if (pickupCoords) calculateRoute(pickupCoords, loc)
-                    if (dropoffMarkerRef.current) { (dropoffMarkerRef.current as any).map = null }
-                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
-                    m.addListener('dragend', async () => {
-                      const pos = m.getPosition()!
-                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
-                      setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
-                      setDropoffAddress(addr)
-                    })
-                    dropoffMarkerRef.current = m
-                  }
-                })
-                const acPickup2 = new (google.maps as any).places.Autocomplete(document.getElementById('pickup-input-ux') as HTMLInputElement, { bounds, strictBounds: true })
-                acPickup2.addListener('place_changed', () => {
-                  const p = acPickup2.getPlace()
-                  if (p && p.geometry && p.geometry.location) {
-                    const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
-                    setPickupCoords(loc)
-                    setPickupAddress(p.formatted_address || p.name || '')
-                    mapInstance.setCenter(loc as any)
-                    mapInstance.setZoom(15)
-                    if (pickupMarkerRef.current) { (pickupMarkerRef.current as any).map = null }
-                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
-                    m.addListener('dragend', async () => {
-                      const pos = m.getPosition()!
-                      const a = await gReverseGeocode(pos.lat(), pos.lng())
-                      setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
-                      setPickupAddress(a)
-                    })
-                    pickupMarkerRef.current = m
-                  }
-                })
-                const acDrop2 = new (google.maps as any).places.Autocomplete(document.getElementById('dropoff-input-ux') as HTMLInputElement, { bounds, strictBounds: true })
-                acDrop2.addListener('place_changed', () => {
-                  const p = acDrop2.getPlace()
-                  if (p && p.geometry && p.geometry.location) {
-                    const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
-                    setDropoffCoords(loc)
-                    setDropoffAddress(p.formatted_address || p.name || '')
-                    mapInstance.setCenter(loc as any)
-                    mapInstance.setZoom(15)
-                    if (pickupCoords) calculateRoute(pickupCoords, loc)
-                    if (dropoffMarkerRef.current) { (dropoffMarkerRef.current as any).map = null }
-                    const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
-                    m.addListener('dragend', async () => {
-                      const pos = m.getPosition()!
-                      const addr = await gReverseGeocode(pos.lat(), pos.lng())
-                      setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
-                      setDropoffAddress(addr)
-                    })
-                    dropoffMarkerRef.current = m
-                  }
-                })
+                const pickupEl = document.getElementById('pickup-input')
+                if (pickupEl && pickupEl instanceof HTMLInputElement) {
+                  const acPickup = new (google.maps as any).places.Autocomplete(pickupEl, { bounds, strictBounds: true })
+                  acPickup.addListener('place_changed', () => {
+                    const p = acPickup.getPlace()
+                    if (p && p.geometry && p.geometry.location) {
+                      const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                      setPickupCoords(loc)
+                      setPickupAddress(p.formatted_address || p.name || '')
+                      mapInstance.setCenter(loc as any)
+                      mapInstance.setZoom(15)
+                      if (pickupMarkerRef.current) { (pickupMarkerRef.current as any).map = null }
+                      const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                      m.addListener('dragend', async () => {
+                        const pos = m.getPosition()!
+                        const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                        setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
+                        setPickupAddress(addr)
+                      })
+                      pickupMarkerRef.current = m
+                    }
+                  })
+                }
+                const dropEl = document.getElementById('dropoff-input')
+                if (dropEl && dropEl instanceof HTMLInputElement) {
+                  const acDrop = new (google.maps as any).places.Autocomplete(dropEl, { bounds, strictBounds: true })
+                  acDrop.addListener('place_changed', () => {
+                    const p = acDrop.getPlace()
+                    if (p && p.geometry && p.geometry.location) {
+                      const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                      setDropoffCoords(loc)
+                      setDropoffAddress(p.formatted_address || p.name || '')
+                      mapInstance.setCenter(loc as any)
+                      mapInstance.setZoom(15)
+                      if (pickupCoords) calculateRoute(pickupCoords, loc)
+                      if (dropoffMarkerRef.current) { (dropoffMarkerRef.current as any).map = null }
+                      const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                      m.addListener('dragend', async () => {
+                        const pos = m.getPosition()!
+                        const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                        setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
+                        setDropoffAddress(addr)
+                      })
+                      dropoffMarkerRef.current = m
+                    }
+                  })
+                }
+                const pickupEl2 = document.getElementById('pickup-input-ux')
+                if (pickupEl2 && pickupEl2 instanceof HTMLInputElement) {
+                  const acPickup2 = new (google.maps as any).places.Autocomplete(pickupEl2, { bounds, strictBounds: true })
+                  acPickup2.addListener('place_changed', () => {
+                    const p = acPickup2.getPlace()
+                    if (p && p.geometry && p.geometry.location) {
+                      const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                      setPickupCoords(loc)
+                      setPickupAddress(p.formatted_address || p.name || '')
+                      mapInstance.setCenter(loc as any)
+                      mapInstance.setZoom(15)
+                      if (pickupMarkerRef.current) { (pickupMarkerRef.current as any).map = null }
+                      const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                      m.addListener('dragend', async () => {
+                        const pos = m.getPosition()!
+                        const a = await gReverseGeocode(pos.lat(), pos.lng())
+                        setPickupCoords({ lat: pos.lat(), lng: pos.lng() })
+                        setPickupAddress(a)
+                      })
+                      pickupMarkerRef.current = m
+                    }
+                  })
+                }
+                const dropEl2 = document.getElementById('dropoff-input-ux')
+                if (dropEl2 && dropEl2 instanceof HTMLInputElement) {
+                  const acDrop2 = new (google.maps as any).places.Autocomplete(dropEl2, { bounds, strictBounds: true })
+                  acDrop2.addListener('place_changed', () => {
+                    const p = acDrop2.getPlace()
+                    if (p && p.geometry && p.geometry.location) {
+                      const loc = { lat: p.geometry.location.lat(), lng: p.geometry.location.lng() }
+                      setDropoffCoords(loc)
+                      setDropoffAddress(p.formatted_address || p.name || '')
+                      mapInstance.setCenter(loc as any)
+                      mapInstance.setZoom(15)
+                      if (pickupCoords) calculateRoute(pickupCoords, loc)
+                      if (dropoffMarkerRef.current) { (dropoffMarkerRef.current as any).map = null }
+                      const m = new google.maps.Marker({ position: loc as any, map: mapInstance, draggable: true })
+                      m.addListener('dragend', async () => {
+                        const pos = m.getPosition()!
+                        const addr = await gReverseGeocode(pos.lat(), pos.lng())
+                        setDropoffCoords({ lat: pos.lat(), lng: pos.lng() })
+                        setDropoffAddress(addr)
+                      })
+                      dropoffMarkerRef.current = m
+                    }
+                  })
+                }
                 mapInstance.addListener('click', async (e: any) => {
                   const loc = { lat: e.latLng.lat(), lng: e.latLng.lng() }
                   const addr = await gReverseGeocode(loc.lat, loc.lng)
