@@ -78,6 +78,8 @@ export default function PassengerHome() {
   const [preferHighway, setPreferHighway] = useState(false)
   const [activeField, setActiveField] = useState<'pickup' | 'dropoff'>('pickup')
   const pickupMarkerRef = useRef<google.maps.Marker | null>(null)
+  const pickupInputRef = useRef<HTMLInputElement>(null)
+  const dropoffInputRef = useRef<HTMLInputElement>(null)
   const dropoffMarkerRef = useRef<google.maps.Marker | null>(null)
   const [showHighwayAlert, setShowHighwayAlert] = useState(false)
   const [placePredPickup, setPlacePredPickup] = useState<Array<{ description: string; place_id: string }>>([])
@@ -425,9 +427,9 @@ export default function PassengerHome() {
               window.addEventListener('resize', onResize)
               setTimeout(() => { window.removeEventListener('resize', onResize) }, 60000)
               try {
-                const pickupEl = document.getElementById('pickup-input')
-                if (pickupEl && pickupEl instanceof HTMLInputElement) {
-                  const acPickup = new (google.maps as any).places.Autocomplete(pickupEl, {})
+                const pickupEl = pickupInputRef.current
+                if (pickupEl) {
+                  const acPickup = new (google.maps as any).places.Autocomplete(pickupEl as HTMLInputElement, {})
                   acPickup.addListener('place_changed', () => {
                     const p = acPickup.getPlace()
                     if (p && p.geometry && p.geometry.location) {
@@ -448,9 +450,9 @@ export default function PassengerHome() {
                     }
                   })
                 }
-                const dropEl = document.getElementById('dropoff-input')
-                if (dropEl && dropEl instanceof HTMLInputElement) {
-                  const acDrop = new (google.maps as any).places.Autocomplete(dropEl, {})
+                const dropEl = dropoffInputRef.current
+                if (dropEl) {
+                  const acDrop = new (google.maps as any).places.Autocomplete(dropEl as HTMLInputElement, {})
                   acDrop.addListener('place_changed', () => {
                     const p = acDrop.getPlace()
                     if (p && p.geometry && p.geometry.location) {
@@ -1267,6 +1269,7 @@ export default function PassengerHome() {
               value={pickupAddress}
               onChange={(e) => setPickupAddress(e.target.value)}
               id="pickup-input"
+              ref={pickupInputRef}
               className="flex-1 px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               disabled={lockPickup}
               placeholder="輸入上車地址"
@@ -1336,6 +1339,7 @@ export default function PassengerHome() {
               value={dropoffAddress}
               onChange={(e) => setDropoffAddress(e.target.value)}
               id="dropoff-input"
+              ref={dropoffInputRef}
               className="flex-1 px-3 py-2 border border-[#D4AF37]/30 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent"
               placeholder="輸入目的地地址"
             />

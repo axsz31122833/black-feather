@@ -26,16 +26,16 @@ export default function RideLeafletMap({
     let clickListener: google.maps.MapsEventListener | null = null
     ;(async () => {
       try {
-        const { loadGoogleMaps } = await import('../lib/googleMaps')
-        const g = await loadGoogleMaps()
+        const { initGoogleMaps, createMap } = await import('../utils/maps')
+        await initGoogleMaps()
         if (!divRef.current) return
-        const map = new g.maps.Map(divRef.current, {
+        const map = await createMap(divRef.current, {
           center,
           zoom: 13,
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false
-        })
+        } as any)
         clickListener = map.addListener('click', (ev: any) => {
           try {
             const lat = ev.latLng.lat()

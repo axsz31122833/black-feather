@@ -131,19 +131,22 @@ export const getPickupSuggestions = async (
 
 let _gmapsReady: Promise<typeof google> | null = null
 export const initGoogleMaps = async (): Promise<void> => {
-  if (typeof window !== 'undefined' && (window as any).google?.maps?.places) return
+  const w = typeof window !== 'undefined' ? (window as any) : null
+  if (w?.google?.maps?.places) return
   if (!_gmapsReady) {
     _gmapsReady = (async () => {
-      const { Loader } = await import('@googlemaps/js-api-loader')
       const { getMapsKey } = await import('../config/env')
       const apiKey = getMapsKey()
-      const loader = new Loader({
-        apiKey,
-        version: 'weekly',
-        libraries: ['places']
+      await new Promise<void>((resolve, reject) => {
+        if (w?.google?.maps?.places) return resolve()
+        const s = document.createElement('script')
+        s.src = `https://maps.googleapis.com/maps/api/js?key=${apiKey}&libraries=places&v=weekly`
+        s.async = true
+        s.defer = true
+        s.onload = () => resolve()
+        s.onerror = (e) => reject(e)
+        document.head.appendChild(s)
       })
-      await loader.importLibrary('maps')
-      await loader.importLibrary('places')
       return (window as any).google
     })()
   }

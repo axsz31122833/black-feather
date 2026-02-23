@@ -41,18 +41,18 @@ export default function DispatchMapG({
   React.useEffect(() => {
     ;(async () => {
       try {
-        const { loadGoogleMaps } = await import('../lib/googleMaps')
+        const { initGoogleMaps, createMap } = await import('../utils/maps')
         const { getMapId } = await import('../config/env')
-        const g = await loadGoogleMaps()
+        await initGoogleMaps()
         if (!divRef.current) return
-        const m = new g.maps.Map(divRef.current, {
+        const m = await createMap(divRef.current, {
           center: defaultCenter,
           zoom: 13,
           mapId: getMapId(),
           mapTypeControl: false,
           streetViewControl: false,
           fullscreenControl: false
-        })
+        } as any)
         setMap(m)
       } catch {}
     })()
