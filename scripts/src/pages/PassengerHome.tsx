@@ -795,6 +795,18 @@ export default function PassengerHome() {
     const strictFare = calculateFare(minutes, distance || 0)
     const destinationAddress = dropoffAddress
     if (!pickupAddress || !destinationAddress) { alert('請先選擇起訖點'); return }
+    if (!pickupCoords && pickupAddress) {
+      try {
+        const p = await gGeocode(pickupAddress)
+        if (p) setPickupCoords(p)
+      } catch {}
+    }
+    if (!dropoffCoords && destinationAddress) {
+      try {
+        const d = await gGeocode(destinationAddress)
+        if (d) setDropoffCoords(d)
+      } catch {}
+    }
     const orderData = {
       pickupAddress,
       destinationAddress,
@@ -805,7 +817,7 @@ export default function PassengerHome() {
       minutes
     }
     console.log('叫車按鈕被點擊了', orderData)
-    if (!pickupCoords || !dropoffCoords || !user) { alert('請先選定上車與目的地'); return }
+    if (!user) { alert('請先登入'); return }
     
     setIsLoading(true)
     
@@ -1500,8 +1512,8 @@ export default function PassengerHome() {
         {/* Book Button */}
         <button
           onClick={handleBookRide}
-          disabled={!pickupCoords || !dropoffCoords || isLoading}
-          className="w-full py-4 px-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text-black text-lg"
+          disabled={!pickupAddress || !dropoffAddress || isLoading}
+          className="w-full py-4 px-4 rounded-2xl disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-bold text黑 text-lg"
           style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}
         >
           {isLoading ? '⏳ 叫車中...' : '立即叫車'}
