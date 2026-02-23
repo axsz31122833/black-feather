@@ -21,7 +21,7 @@ interface CarType {
 
 export default function PassengerHome() {
   const navigate = useNavigate()
-  const { user, signOut } = useAuthStore()
+  const { user, signOut, setUser, userType } = useAuthStore()
   const { createTrip, currentTrip, getCurrentTrip, subscribeToDriverLocation, driverLocation, processTripPayment } = useTripStore()
   
   const mapRef = useRef<HTMLDivElement>(null)
@@ -58,6 +58,14 @@ export default function PassengerHome() {
       else mk.map = null
     } catch {}
   }
+  useEffect(() => {
+    try {
+      if (!user) {
+        const role = localStorage.getItem('bf_role')
+        if (role) setUser({ user_type: role as any })
+      }
+    } catch {}
+  }, [user])
   const [showPaymentModal, setShowPaymentModal] = useState(false)
   const [showRatingModal, setShowRatingModal] = useState(false)
   const [ratingScore, setRatingScore] = useState(5)
@@ -823,6 +831,12 @@ export default function PassengerHome() {
     
     try {
       await ensureAuth()
+      if (!user) {
+        try {
+          const role = localStorage.getItem('bf_role') || 'admin'
+          setUser({ user_type: role as any })
+        } catch {}
+      }
       if (rideMode === 'scheduled') {
         if (!scheduledDate || !scheduledClock) {
           alert('請輸入預約日期與時間')
