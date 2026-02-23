@@ -44,6 +44,7 @@ export default function PassengerHome() {
   const [suggestionMarkers, setSuggestionMarkers] = useState<google.maps.Marker[]>([])
   const [routeInfoWindow, setRouteInfoWindow] = useState<google.maps.InfoWindow | null>(null)
   const [routePolyline, setRoutePolyline] = useState<google.maps.Polyline | null>(null)
+  const directionsRendererRef = useRef<any>(null)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
   const createMarker = (mapInst: any, position: any, options?: any) => {
     return new google.maps.Marker({ position, map: mapInst, draggable: !!options?.gmpDraggable, title: options?.title })
@@ -447,6 +448,7 @@ export default function PassengerHome() {
                         setPickupAddress(addr)
                       })
                       pickupMarkerRef.current = m
+                      if (dropoffCoords) calculateRoute(loc, dropoffCoords)
                     }
                   })
                 }
@@ -687,10 +689,38 @@ export default function PassengerHome() {
 
   const calculateRoute = async (pickup: { lat: number; lng: number }, dropoff: { lat: number; lng: number }) => {
     try {
-      const r = await getRouteWithFallbacks(pickup, dropoff)
-      const adjKm = preferHighway ? r.distanceKm * 1.1 : r.distanceKm
-      let price = calculateFare(r.durationMin, adjKm)
-      const bd = fareBreakdown(r.durationMin, adjKm)
+      let distanceKm = 0
+      let durationMin = 0
+      let path: Array<{ lat: number; lng: number }> | undefined
+      if (useGoogle && map) {
+        directionsRendererRef.current?.setMap(null)
+        directionsRendererRef.current = null
+        const svc = new (window as any).google.maps.DirectionsService()
+        const res: any = await svc.route({
+          origin: pickup as any,
+          destination: dropoff as any,
+          travelMode: (window as any).google.maps.TravelMode.DRIVING,
+          provideRouteAlternatives: false
+        })
+        const leg = res?.routes?.[0]?.legs?.[0]
+        if (leg?.distance?.value) distanceKm = (leg.distance.value as number) / 1000
+        if (leg?.duration?.value) durationMin = Math.max(1, Math.round((leg.duration.value as number) / 60))
+        const dr = new (window as any).google.maps.DirectionsRenderer({
+          suppressMarkers: true,
+          preserveViewport: false
+        })
+        dr.setMap(map)
+        dr.setDirections(res)
+        directionsRendererRef.current = dr
+      } else {
+        const r = await getRouteWithFallbacks(pickup, dropoff)
+        distanceKm = r.distanceKm
+        durationMin = r.durationMin
+        path = r.path
+      }
+      const adjKm = preferHighway ? distanceKm * 1.1 : distanceKm
+      let price = calculateFare(durationMin, adjKm)
+      const bd = fareBreakdown(durationMin, adjKm)
       let storeFee = 0
       setIsLongTrip(adjKm > 40)
       try {
@@ -702,20 +732,17 @@ export default function PassengerHome() {
           price = Math.max(100, Math.round((price + storeFee) / 10) * 10)
         }
       } catch {}
-      
-      setDistance(r.distanceKm)
-      setEstimatedTime(`${r.durationMin} 分鐘`)
+      setDistance(distanceKm)
+      setEstimatedTime(`${durationMin} 分鐘`)
       setEstimatedPrice(price)
       setFareDetail({ distanceFee: bd.distanceFee, timeFee: bd.timeFee, longFee: bd.longFee, storeFee })
       
       // Update car type prices
       carTypes.forEach(carType => {
-        const carPrice = calculateFare(r.durationMin, adjKm)
+        const carPrice = calculateFare(durationMin, adjKm)
         carType.price = carPrice
       })
-      if (!useGoogle) {
-        setRoutePath(r.path || [])
-      }
+      if (!useGoogle) setRoutePath(path || [])
     } catch (error) {
       console.error('Error calculating route:', error)
     }
