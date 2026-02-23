@@ -912,6 +912,7 @@ export default function PassengerHome() {
           }
         } catch {}
         alert('叫車成功！正在為您尋找附近的司機...')
+        try { navigate('/passenger/home') } catch {}
       }
     } catch (error) {
       console.error('Error booking ride:', error)
