@@ -793,13 +793,15 @@ export default function PassengerHome() {
       return m ? parseInt(m[0], 10) : Math.max(1, Math.round((distance / 30) * 60))
     })()
     const strictFare = calculateFare(minutes, distance || 0)
+    const destinationAddress = dropoffAddress
+    if (!pickupAddress || !destinationAddress) { alert('請先選擇起訖點'); return }
     const orderData = {
-      pickup_address,
-      dropoff_address,
-      pickup_coords: pickupCoords,
-      dropoff_coords: dropoffCoords,
-      estimated_fare: strictFare,
-      distance_km: distance,
+      pickupAddress,
+      destinationAddress,
+      pickupCoords,
+      dropoffCoords,
+      estimatedFare: strictFare,
+      distanceKm: distance,
       minutes
     }
     console.log('叫車按鈕被點擊了', orderData)
