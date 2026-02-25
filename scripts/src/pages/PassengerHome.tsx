@@ -22,7 +22,7 @@ interface CarType {
 export default function PassengerHome() {
   const navigate = useNavigate()
   const { user, signOut, setUser, userType } = useAuthStore()
-  const { createTrip, currentTrip, getCurrentTrip, subscribeToDriverLocation, driverLocation, processTripPayment } = useTripStore()
+  const { createTrip, currentTrip, getCurrentTrip, subscribeToDriverLocation, subscribeToTrips, driverLocation, processTripPayment } = useTripStore()
   
   const mapRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<google.maps.Map | null>(null)
@@ -49,6 +49,8 @@ export default function PassengerHome() {
   const [showEstimate, setShowEstimate] = useState(false)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
   const [fareConfig, setFareConfig] = useState<{ base: number; per_km: number; per_min: number; long_threshold: number; long_rate: number } | null>(null)
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false)
+  const [nearbyDriversCount, setNearbyDriversCount] = useState<number | null>(null)
   const createMarker = (mapInst: any, position: any, options?: any) => {
     return new google.maps.Marker({ position, map: mapInst, draggable: !!options?.gmpDraggable, title: options?.title })
   }
@@ -307,6 +309,13 @@ export default function PassengerHome() {
       getCurrentTrip(user.id, 'passenger')
     }
   }, [user])
+  useEffect(() => {
+    if (!user) return
+    try {
+      const unsubscribe = subscribeToTrips(user.id, 'passenger')
+      return unsubscribe
+    } catch {}
+  }, [user?.id])
 
   useEffect(() => {
     if (currentTrip && currentTrip.status === 'accepted') {
@@ -978,7 +987,7 @@ export default function PassengerHome() {
           }
           const { data: drivers } = await supabase
             .from('drivers')
-            .select('id,name,phone,is_online,current_lat,current_lng,status,last_seen_at')
+            .select('*')
           const within5km = (drivers || []).filter(d => {
             if (!d?.is_online || d?.status === 'on_trip') return false
             if (typeof d?.current_lat !== 'number' || typeof d?.current_lng !== 'number') return false
@@ -992,6 +1001,7 @@ export default function PassengerHome() {
             return distKm <= 5
           }).slice(0, 5)
           console.log('附近可派司機數量', within5km.length)
+          try { setNearbyDriversCount(within5km.length) } catch {}
           const expiresAt = new Date(Date.now() + 30000).toISOString()
           for (const d of within5km) {
             try {
@@ -1132,6 +1142,9 @@ export default function PassengerHome() {
             {currentTrip.status === 'accepted' && '司機正在前往您的上車地點'}
             {currentTrip.status === 'in_progress' && '祝您旅途愉快！'}
           </p>
+          {currentTrip.status === 'requested' && (nearbyDriversCount === 0) && (
+            <div className="text-xs mb-3" style={{ color:'#93c5fd' }}>測試模式：正在模擬司機接單</div>
+          )}
           <div className="space-y-3">
             <button
               onClick={() => navigate('/trips')}
