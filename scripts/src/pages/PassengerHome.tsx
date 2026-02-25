@@ -919,10 +919,11 @@ export default function PassengerHome() {
           passenger_id: passengerId || user?.id,
           status: 'requested',
           estimated_price: Math.max(strictFare, 70),
-          pickup_address: pickupAddress
+          pickup_address: pickupAddress,
+          destination_address: dropoffAddress || null
         }
         console.log('即將發送的訂單資料：', finalOrder)
-        await createTrip(finalOrder)
+        await createTrip({} as any)
         try {
           const { data: latest } = await supabase
             .from('trips')
@@ -1027,6 +1028,26 @@ export default function PassengerHome() {
       const msg = (error as any)?.message || String(error)
       const detail = (error as any)?.details || (error as any)?.hint || ''
       try { alert(`叫車失敗：${msg}${detail ? `｜${detail}` : ''}\n\n${JSON.stringify(error)}`) } catch { alert(`叫車失敗：${msg}${detail ? `｜${detail}` : ''}`) }
+      try {
+        const { data: sample } = await supabase.from('trips').select('*').limit(1)
+        if (sample && sample[0]) {
+          console.log('trips 表欄位（樣本推斷）：', Object.keys(sample[0]))
+        } else {
+          console.log('trips 表無資料，暫無法直接推斷欄位')
+        }
+      } catch (e2) {
+        console.log('嘗試讀取 trips 欄位失敗：', e2)
+      }
+      try {
+        const debugOrder = {
+          pickup_text: pickupAddress || null,
+          dropoff_text: dropoffAddress || null,
+          strict_fare: Math.max(strictFare || 0, 0),
+          note_no_smoking: !!noteNoSmoking,
+          note_pets: !!notePets
+        }
+        await supabase.from('ops_events').insert({ event_type: 'blind_order', ref_id: null, payload: { debugOrder, error: { msg, detail } } } as any)
+      } catch {}
     } finally {
       setIsLoading(false)
     }

@@ -145,6 +145,23 @@ export default function AdminCommandCenter() {
       alert(`儲存失敗：${e instanceof Error ? e.message : String(e)}`)
     }
   }
+  const diagnoseTrips = async () => {
+    try {
+      await ensureAuth()
+      const { data, error } = await supabase.from('trips').select('*').limit(1)
+      if (error) throw error
+      if (data && data[0]) {
+        console.log('trips 欄位推斷：', Object.keys(data[0]))
+        alert('已在 Console 輸出 trips 欄位')
+      } else {
+        console.log('trips 目前無資料，無法直接推斷欄位')
+        alert('trips 無資料，請先建立一筆或使用空物件測試')
+      }
+    } catch (e) {
+      console.log('診斷 trips 欄位失敗', e)
+      alert(`診斷失敗：${e instanceof Error ? e.message : String(e)}`)
+    }
+  }
 
   return (
     <div className="min-h-screen" style={{ background:'#121212' }}>
@@ -195,6 +212,7 @@ export default function AdminCommandCenter() {
               </div>
               <div className="mt-3">
                 <button onClick={saveFare} className="px-4 py-2 rounded" style={{ background:'#00FFFF', color:'#121212' }}>儲存</button>
+                <button onClick={diagnoseTrips} className="ml-2 px-4 py-2 rounded" style={{ background:'#10B981', color:'#121212' }}>資料庫欄位診斷</button>
               </div>
             </div>
           </div>
