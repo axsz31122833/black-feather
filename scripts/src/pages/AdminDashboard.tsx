@@ -522,22 +522,7 @@ export default function AdminDashboard() {
 
       const tripsArr = tripsError ? [] : (tripsData || [])
       setTrips(tripsArr)
-      try {
-        const reqIds = tripsArr.filter(t => t.status === 'requested').map(t => t.id)
-        if (reqIds.length) {
-          const { data: statuses } = await supabase.from('trip_status').select('trip_id,notes,created_at').in('trip_id', reqIds).order('created_at', { ascending: false })
-          const tags: Record<string, { noSmoking: boolean; pets: boolean }> = {};
-          (statuses || []).forEach((s: any) => {
-            const notes = String(s?.notes || '')
-            const ns = /禁菸[:：]\s*是/.test(notes)
-            const ps = /攜帶寵物[:：]\s*是/.test(notes)
-            if (tags[s.trip_id] == null) tags[s.trip_id] = { noSmoking: ns, pets: ps }
-          })
-          setRequestedTags(tags)
-        } else {
-          setRequestedTags({})
-        }
-      } catch { setRequestedTags({}) }
+      try { setRequestedTags({}) } catch {}
 
       const { data: driversData } = await supabase
         .from('drivers')
@@ -941,7 +926,7 @@ export default function AdminDashboard() {
           const val = window.prompt(`此單距離約 ${distKm.toFixed(1)} 公里。是否直收？請輸入金額（空白略過）`, '')
           if (val && /^\d+(\.\d+)?$/.test(val)) {
             const amt = Math.round(parseFloat(val))
-            try { await supabase.from('rides').update({ direct_payment_amount: amt, direct_payment: true }).eq('id', dispatchRideId) } catch {}
+            try { await supabase.from('ops_events').insert({ event_type:'direct_payment', ref_id: dispatchRideId, payload:{ amount: amt } }) } catch {}
           }
         }
       }

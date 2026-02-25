@@ -187,61 +187,32 @@ export const useTripStore = create<TripState>((set, get) => ({
     try {
       set({ isLoading: true, error: null })
       await ensureAuth()
-      
-      const { error } = await supabase
-        .from('trip_status')
-        .upsert({
-          trip_id: tripId,
-          driver_lat: lat,
-          driver_lng: lng,
-          updated_at: new Date().toISOString()
-        })
-
+      const { error } = await supabase.from('ops_events').insert({ event_type: 'driver_location', ref_id: tripId, payload: { lat, lng, at: new Date().toISOString() } } as any)
       if (error) throw error
-
-      set({ 
-        driverLocation: { lat, lng },
-        isLoading: false 
-      })
+      set({ driverLocation: { lat, lng }, isLoading: false })
     } catch (error) {
-      set({ 
-        error: error instanceof Error ? error.message : 'Failed to update driver location',
-        isLoading: false 
-      })
+      set({ error: error instanceof Error ? error.message : 'Failed to update driver location', isLoading: false })
       throw error
     }
   },
 
   subscribeToDriverLocation: (tripId: string) => {
     const subscription = supabase
-      .channel('driver-location-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'trip_status',
-          filter: `trip_id=eq.${tripId}`,
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const status = payload.new as TripStatus
-            if (status.driver_lat && status.driver_lng) {
-              set({ 
-                driverLocation: { 
-                  lat: status.driver_lat, 
-                  lng: status.driver_lng 
-                }
-              })
+      .channel('driver-location-ops')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter: `ref_id=eq.${tripId}` }, (payload: any) => {
+        try {
+          const ev = payload.new
+          if (!ev) return
+          if (ev.event_type === 'driver_location') {
+            const p = ev.payload || {}
+            if (typeof p.lat === 'number' && typeof p.lng === 'number') {
+              set({ driverLocation: { lat: p.lat, lng: p.lng } })
             }
           }
-        }
-      )
+        } catch {}
+      })
       .subscribe()
-
-    return () => {
-      subscription.unsubscribe()
-    }
+    return () => { subscription.unsubscribe() }
   },
 
   processTripPayment: async (tripId: string, amount: number, paymentMethod: PaymentMethod): Promise<PaymentResult> => {
