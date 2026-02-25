@@ -334,6 +334,11 @@ export default function PassengerHome() {
           if (ev.ref_id === currentTrip?.id && ev.event_type === 'driver_arrived') {
             setDriverArrivedAt(Date.now())
           }
+          if (ev.ref_id === currentTrip?.id && ev.event_type === 'external_assign') {
+            try {
+              alert(`本單由外部車隊支援：${ev?.payload?.plate || ''} ${ev?.payload?.color || ''} ${ev?.payload?.phone || ''}`.trim())
+            } catch {}
+          }
           if (ev.ref_id === currentTrip?.id && ev.event_type === 'chat') {
             // TripChat component will reflect realtime; no-op here
           }

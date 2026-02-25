@@ -37,6 +37,8 @@ export default function AdminCommandCenter() {
   const [usersDrivers, setUsersDrivers] = useState<any[]>([])
   const [usersAdmins, setUsersAdmins] = useState<any[]>([])
   const [vehicleEdit, setVehicleEdit] = useState<Record<string, { plate?: string; model?: string; color?: string }>>({})
+  const [activeLeft, setActiveLeft] = useState<'overview'|'users'|'support'>('overview')
+  const [chatSummaries, setChatSummaries] = useState<Array<{ trip_id: string; last_text: string; at: string; unread: number }>>([])
 
   useEffect(() => {
     ;(async () => {
@@ -132,8 +134,24 @@ export default function AdminCommandCenter() {
         if (!g?.maps) return
         if (!mapElRef.current) return
         if (!mapRef.current) {
-          const center = { lat: 25.0418, lng: 121.5651 }
-          mapRef.current = new g.maps.Map(mapElRef.current, { center, zoom: 11 })
+          let center = { lat: 25.0418, lng: 121.5651 }
+          let zoom = 11
+          try {
+            const s = localStorage.getItem('bf_admin_map_state')
+            if (s) {
+              const st = JSON.parse(s)
+              if (typeof st.lat === 'number' && typeof st.lng === 'number') center = { lat: st.lat, lng: st.lng }
+              if (typeof st.zoom === 'number') zoom = st.zoom
+            }
+          } catch {}
+          mapRef.current = new g.maps.Map(mapElRef.current, { center, zoom })
+          g.maps.event.addListener(mapRef.current, 'idle', () => {
+            try {
+              const c = mapRef.current!.getCenter()
+              const z = mapRef.current!.getZoom()
+              localStorage.setItem('bf_admin_map_state', JSON.stringify({ lat: c.lat(), lng: c.lng(), zoom: z }))
+            } catch {}
+          })
         }
       } catch {}
     })()
@@ -193,6 +211,40 @@ export default function AdminCommandCenter() {
       setSelectedTrip(t)
     } catch {}
   }
+  useEffect(() => {
+    try {
+      const ch = supabase
+        .channel('admin-cc-chat')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
+          const row = p.new
+          if (!row?.trip_id) return
+          const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
+          const lastSeen = JSON.parse(lastSeenRaw)
+          const unread = lastSeen[row.trip_id] && new Date(row.created_at) <= new Date(lastSeen[row.trip_id]) ? 0 : 1
+          setChatSummaries(prev => [{ trip_id: row.trip_id, last_text: row.text || '', at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.trip_id)])
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter:'event_type=eq.chat' }, (p:any)=>{
+          const row = p.new
+          if (!row?.ref_id) return
+          const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
+          const lastSeen = JSON.parse(lastSeenRaw)
+          const unread = lastSeen[row.ref_id] && new Date(row.created_at) <= new Date(lastSeen[row.ref_id]) ? 0 : 1
+          const text = (row.payload && row.payload.text) || '(系統)'
+          setChatSummaries(prev => [{ trip_id: row.ref_id, last_text: text, at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.ref_id)])
+        })
+        .subscribe()
+      return () => { ch.unsubscribe() }
+    } catch {}
+  }, [])
+  const markChatRead = (tripId: string) => {
+    try {
+      const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
+      const lastSeen = JSON.parse(lastSeenRaw)
+      lastSeen[tripId] = new Date().toISOString()
+      localStorage.setItem('bf_admin_chat_seen', JSON.stringify(lastSeen))
+      setChatSummaries(prev => prev.map(x => x.trip_id === tripId ? { ...x, unread: 0 } : x))
+    } catch {}
+  }
   const assignToDriver = async (tripId: string, driverId: string) => {
     try {
       await supabase.from('trips').update({ driver_id: driverId, status: 'accepted' }).eq('id', tripId)
@@ -246,6 +298,13 @@ export default function AdminCommandCenter() {
         <aside className={`min-h-screen p-4 ${menuOpen ? 'block' : 'hidden md:block'}`} style={{ width:256, background:'#121212', borderRight:'1px solid rgba(255,255,255,0.08)' }}>
           <div className="text-xl font-bold mb-4" style={{ color:'#00FFFF' }}>指揮中心</div>
           <div className="space-y-2">
+            <button onClick={()=>setActiveLeft('overview')} className="w-full text-left px-3 py-2 rounded" style={{ color: activeLeft==='overview' ? '#00FFFF' : '#e5e7eb' }}>總覽</button>
+            <button onClick={()=>setActiveLeft('users')} className="w-full text-left px-3 py-2 rounded" style={{ color: activeLeft==='users' ? '#00FFFF' : '#e5e7eb' }}>人員管理</button>
+            <button onClick={()=>setActiveLeft('support')} className="w-full text-left px-3 py-2 rounded flex items-center gap-2" style={{ color: activeLeft==='support' ? '#00FFFF' : '#e5e7eb' }}>
+              <span>客服中心</span>
+              {chatSummaries.some(x=>x.unread>0) && <span style={{ width:8, height:8, borderRadius:'50%', background:'#ef4444', display:'inline-block' }} />}
+            </button>
+            <hr style={{ borderColor:'rgba(255,255,255,0.08)' }} />
             <button onClick={()=>navigate('/passenger')} className="w-full text-left px-3 py-2 rounded" style={{ color:'#e5e7eb' }}>乘客視角</button>
             <button onClick={()=>navigate('/driver')} className="w-full text-left px-3 py-2 rounded" style={{ color:'#e5e7eb' }}>司機視角</button>
             <button onClick={async ()=>{ await signOut(); navigate('/admin/login') }} className="w-full text-left px-3 py-2 rounded" style={{ color:'#e5e7eb' }}>登出</button>
@@ -256,7 +315,7 @@ export default function AdminCommandCenter() {
             <button onClick={()=>setMenuOpen(v=>!v)} className="px-3 py-2 rounded" style={{ border:'1px solid rgba(255,255,255,0.15)', color:'#e5e7eb' }}>☰</button>
             <div className="text-sm" style={{ color:'#9ca3af' }}>管理儀表板</div>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" style={{ display: activeLeft==='overview' ? 'grid' : 'none' }}>
             <div className="rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(0,255,255,0.2)' }}>
               <div className="text-sm" style={{ color:'#9ca3af' }}>今日營收</div>
               <div className="text-3xl font-bold" style={{ color:'#00FFFF' }}>${revenueToday}</div>
@@ -274,7 +333,7 @@ export default function AdminCommandCenter() {
               <div className="text-3xl font-bold" style={{ color:'#EF4444' }}>{pendingCount}</div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-6">
+          <div className="grid grid-cols-3 gap-6" style={{ display: activeLeft==='overview' ? 'grid' : 'none' }}>
             <div className="col-span-2 rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)' }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="text-sm" style={{ color:'#9ca3af' }}>全域即時地圖</div>
@@ -312,7 +371,7 @@ export default function AdminCommandCenter() {
             </div>
           </div>
           {/* User Management */}
-          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4" style={{ display: activeLeft==='users' ? 'grid' : 'none' }}>
             <div className="rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)' }}>
               <div className="text-sm font-semibold mb-2" style={{ color:'#e5e7eb' }}>乘客</div>
               <div className="space-y-2 max-h-64 overflow-y-auto">
@@ -351,6 +410,26 @@ export default function AdminCommandCenter() {
                   </div>
                 ))}
               </div>
+            </div>
+          </div>
+          {/* Support Center */}
+          <div className="rounded-lg p-4" style={{ display: activeLeft==='support' ? 'block' : 'none', background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
+            <div className="text-sm mb-3">客服中心</div>
+            <div className="space-y-2">
+              {chatSummaries.length === 0 ? (
+                <div className="text-xs" style={{ color:'#9ca3af' }}>尚無對話</div>
+              ) : chatSummaries.map(c => (
+                <div key={c.trip_id} className="p-2 rounded border flex items-center justify-between" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
+                  <div>
+                    <div className="text-sm">{c.trip_id}</div>
+                    <div className="text-xs" style={{ color:'#9ca3af' }}>{new Date(c.at).toLocaleString('zh-TW')}</div>
+                    <div className="text-xs" style={{ color:'#e5e7eb' }}>{c.last_text}</div>
+                  </div>
+                  <button onClick={()=>markChatRead(c.trip_id)} className="px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>
+                    {c.unread>0 ? `標為已讀 (${c.unread})` : '已讀'}
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
           {/* Order Detail Modal */}
