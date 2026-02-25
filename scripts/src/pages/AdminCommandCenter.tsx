@@ -468,27 +468,43 @@ export default function AdminCommandCenter() {
                   return '—'
                 })()} km</div>
                 <div className="mt-2">
-                  <div className="text-sm mb-1" style={{ color:'#9ca3af' }}>手動派單</div>
-                  <div className="flex items-center space-x-2 mb-2">
-                    <select id="assign-driver" className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>
-                      {onlineDrivers.map(d => (<option key={d.id} value={d.id}>{d.name || d.phone || d.id}</option>))}
-                    </select>
-                    <button onClick={()=>{
-                      const el = document.getElementById('assign-driver') as HTMLSelectElement
-                      if (el && el.value) assignToDriver(selectedTrip.id, el.value)
-                    }} className="px-3 py-1 rounded text-xs bg-indigo-600 text-white">指派在線司機</button>
-                  </div>
-                  <div className="grid grid-cols-3 gap-2 mb-2">
-                    <input id="ext-plate" placeholder="車牌" className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
-                    <input id="ext-color" placeholder="車色" className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
-                    <input id="ext-phone" placeholder="電話" className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
-                  </div>
+                <div className="text-sm mb-1" style={{ color:'#9ca3af' }}>手動派單</div>
+                <div className="flex items-center space-x-2 mb-2">
+                  <select id="assign-driver" className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>
+                    {onlineDrivers.map(d => (<option key={d.id} value={d.id}>{d.name || d.phone || d.id}</option>))}
+                  </select>
                   <button onClick={()=>{
-                    const plate = (document.getElementById('ext-plate') as HTMLInputElement)?.value || ''
-                    const color = (document.getElementById('ext-color') as HTMLInputElement)?.value || ''
-                    const phone = (document.getElementById('ext-phone') as HTMLInputElement)?.value || ''
-                    pushExternalAssign(selectedTrip.id, { plate, color, phone })
-                  }} className="px-3 py-2 rounded text-xs bg-emerald-600 text-white">外部車隊派單</button>
+                    const el = document.getElementById('assign-driver') as HTMLSelectElement
+                    if (el && el.value) assignToDriver(selectedTrip.id, el.value)
+                  }} className="px-3 py-1 rounded text-xs bg-indigo-600 text-white">指派在線司機</button>
+                </div>
+                <div className="grid grid-cols-3 gap-2 mb-2">
+                  <input id="ext-plate" placeholder="車牌" className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
+                  <input id="ext-color" placeholder="車色" className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
+                  <input id="ext-phone" placeholder="電話" className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
+                </div>
+                <button onClick={()=>{
+                  const plate = (document.getElementById('ext-plate') as HTMLInputElement)?.value || ''
+                  const color = (document.getElementById('ext-color') as HTMLInputElement)?.value || ''
+                  const phone = (document.getElementById('ext-phone') as HTMLInputElement)?.value || ''
+                  pushExternalAssign(selectedTrip.id, { plate, color, phone })
+                }} className="px-3 py-2 rounded text-xs bg-emerald-600 text-white">外部車隊派單</button>
+                <div className="mt-2 text-xs" style={{ color: '#f59e0b' }}>
+                  {(() => {
+                    try {
+                      const a = selectedTrip?.pickup_location, b = selectedTrip?.dropoff_location
+                      if (a && b && typeof a.lat === 'number' && typeof a.lng === 'number' && typeof b.lat === 'number' && typeof b.lng === 'number') {
+                        const R=6371, toRad=(v:number)=>(v*Math.PI)/180
+                        const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng)
+                        const h=Math.sin(dLat/2)**2+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2
+                        const dist=2*R*Math.asin(Math.sqrt(h))
+                        if (dist >= 50) return '長途議價：金額顯示為「管理員核定/直收」'
+                        if (dist >= 30) return '大單預警：建議由管理員手動指派'
+                      }
+                    } catch {}
+                    return ''
+                  })()}
+                </div>
                   <div className="mt-3 flex items-center justify-between">
                     <button onClick={async ()=>{ try { await supabase.from('trips').update({ status:'closed' }).eq('id', selectedTrip.id); alert('已關閉訂單'); setSelectedTrip(null) } catch { alert('關閉失敗') } }} className="px-3 py-2 rounded text-xs bg-red-600 text-white">關閉訂單</button>
                     <button onClick={async ()=>{ try { await supabase.from('trips').delete().eq('id', selectedTrip.id); alert('已刪除訂單'); setSelectedTrip(null) } catch { alert('刪除失敗') } }} className="px-3 py-2 rounded text-xs" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>刪除</button>

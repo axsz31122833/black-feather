@@ -50,6 +50,7 @@ export default function DriverHome() {
   const [pendingRequestedTrip, setPendingRequestedTrip] = useState<any>(null)
   const [broadcastConnected, setBroadcastConnected] = useState(false)
   const [opsConnected, setOpsConnected] = useState(false)
+  const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null)
 
   useEffect(() => {
     if (user) {
@@ -62,12 +63,48 @@ export default function DriverHome() {
         .channel('any')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trips' }, (payload: any) => {
           const nv = payload?.new
-          if (nv && nv.status === 'requested') setPendingRequestedTrip(nv)
+          if (nv && nv.status === 'requested') {
+            try {
+              const pick = nv?.pickup_location
+              if (pick && typeof pick.lat === 'number' && typeof pick.lng === 'number' && currentPos) {
+                const toRad = (v: number) => (v * Math.PI) / 180
+                const R = 6371
+                const dLat = toRad(pick.lat - currentPos.lat)
+                const dLng = toRad(pick.lng - currentPos.lng)
+                const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(currentPos.lat)) * Math.cos(toRad(pick.lat)) * Math.sin(dLng / 2) ** 2
+                const distKm = 2 * R * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))
+                if (distKm >= 30) {
+                  try { supabase.from('ops_events').insert({ event_type: 'big_order', ref_id: nv.id, payload: { distance_km: Number(distKm.toFixed(1)) } } as any) } catch {}
+                  return
+                }
+                if (distKm < 5) {
+                  setPendingRequestedTrip(nv)
+                  try { 
+                    if (navigator?.vibrate) navigator.vibrate([200,100,200]) 
+                    const audio = new Audio('data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA//////////////////////////////8AAABhTEFNRTMuMTAwA8MAAAAAAAAAAAAAAA==')
+                    audio.volume = 1
+                    audio.play().catch(()=>{})
+                    if ('Notification' in window) {
+                      if (Notification.permission === 'granted') {
+                        new Notification('新訂單：附近 5km 內', { body: (nv.pickup_location?.address || '') + ' → ' + (nv.dropoff_location?.address || '') })
+                      } else if (Notification.permission !== 'denied') {
+                        Notification.requestPermission().then(p => { if (p === 'granted') new Notification('新訂單', { body: '有新的乘客在附近' }) })
+                      }
+                    }
+                  } catch {}
+                }
+              } else {
+                setPendingRequestedTrip(nv)
+              }
+            } catch {
+              setPendingRequestedTrip(nv)
+            }
+          }
         })
       ch.subscribe((status: any) => { if (status === 'SUBSCRIBED') setBroadcastConnected(true) })
       return () => { ch.unsubscribe() }
     } catch {}
-  }, [])
+  }, [currentPos])
   useEffect(() => {
     try {
       const ch2 = supabase
@@ -504,6 +541,7 @@ export default function DriverHome() {
         if (driverMarker) {
           driverMarker.setPosition(coords)
         }
+        setCurrentPos(coords)
         
         // Update driver location in database if on a trip
         if (currentTrip) {
@@ -771,7 +809,7 @@ export default function DriverHome() {
       )}
 
       {pendingRequestedTrip && !currentTrip && (
-        <div style={{ position:'fixed', top:56, left:12, right:12, zIndex:9999 }}>
+        <div style={{ position:'fixed', top:56, left:12, right:12, zIndex:11000, pointerEvents:'auto' }}>
           <div className="rounded-2xl p-4" style={{ background:'#111', border:'1px solid rgba(0,255,255,0.25)', color:'#e5e7eb' }}>
             <div className="text-sm mb-1" style={{ color:'#00FFFF' }}>新訂單（全域廣播）</div>
             <div className="text-xs mb-2" style={{ color:'#9ca3af' }}>
@@ -787,6 +825,7 @@ export default function DriverHome() {
                   } catch { alert('接單失敗') }
                 }}
                 className="px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700"
+                style={{ position:'relative', zIndex:12000 }}
               >接單</button>
               <button onClick={()=>setPendingRequestedTrip(null)} className="px-4 py-2 rounded-2xl bg-gray-700 text-white hover:bg-gray-600">忽略</button>
             </div>
