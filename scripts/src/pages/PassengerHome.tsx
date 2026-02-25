@@ -899,21 +899,36 @@ export default function PassengerHome() {
           alert('預約已建立，系統將於預約時間前指派司機')
         }
       } else {
-        await createTrip({
-          passenger_id: user.id,
-          passenger_name: user.email,
-          pickup_location: pickupCoords,
-          dropoff_location: dropoffCoords,
+        let passengerId = user?.id || null as any
+        if (!passengerId) {
+          try {
+            const raw = localStorage.getItem('bf_user_profile')
+            if (raw) {
+              const prof = JSON.parse(raw)
+              if (prof?.id) passengerId = prof.id
+            }
+          } catch {}
+        }
+        if (!passengerId) {
+          try {
+            const { data: oneAdmin } = await supabase.from('users').select('id').eq('user_type','admin').order('created_at',{ ascending:false }).limit(1).single()
+            if (oneAdmin?.id) passengerId = oneAdmin.id
+          } catch {}
+        }
+        const finalOrder: any = {
+          passenger_id: passengerId || user?.id,
           pickup_address: pickupAddress,
-          dropoff_address: dropoffAddress,
+          destination_address: dropoffAddress,
           estimated_price: Math.max(strictFare, 70),
           status: 'requested'
-        })
+        }
+        console.log('即將發送的訂單資料：', finalOrder)
+        await createTrip(finalOrder)
         try {
           const { data: latest } = await supabase
             .from('trips')
             .select('id,created_at')
-            .eq('passenger_id', user.id)
+            .eq('passenger_id', passengerId || user.id)
             .eq('status', 'requested')
             .order('created_at', { ascending: false })
             .limit(1)

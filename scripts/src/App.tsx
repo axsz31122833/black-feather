@@ -90,7 +90,10 @@ function App() {
       <BrowserRouter>
         <header className="app-header">
           {/* deploy trigger: 2026-01-29 */}
-          <div className="brand" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>Black Feather 車隊</div>
+          <div className="brand flex items-center gap-3" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
+            Black Feather 車隊
+            <span style={{ fontSize: 12, color:'#93c5fd', opacity: 0.9 }}>v1.0.1-fix-db</span>
+          </div>
           {isAuthenticated && userType && (userType === 'admin' || userType === 'driver') && !window.location.pathname.startsWith('/passenger') && (
             <nav className="nav flex items-center gap-12" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
               <Link to="/passenger" className="hover:text-white">乘客</Link>
