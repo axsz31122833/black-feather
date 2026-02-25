@@ -51,6 +51,7 @@ export default function PassengerHome() {
   const [fareConfig, setFareConfig] = useState<{ base: number; per_km: number; per_min: number; long_threshold: number; long_rate: number } | null>(null)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [nearbyDriversCount, setNearbyDriversCount] = useState<number | null>(null)
+  const [showTripDetail, setShowTripDetail] = useState(false)
   const createMarker = (mapInst: any, position: any, options?: any) => {
     return new google.maps.Marker({ position, map: mapInst, draggable: !!options?.gmpDraggable, title: options?.title })
   }
@@ -818,23 +819,13 @@ export default function PassengerHome() {
   }
 
   const handleCancelTrip = async () => {
-    if (!currentTrip || !user) return
+    if (!currentTrip) return
     try {
-      const waitedMs = driverArrivedAt ? (Date.now() - driverArrivedAt) : 0
-      const waitedMin = Math.floor(waitedMs / 60000)
-      if (waitedMin >= 5) {
-        const ok = window.confirm('司機已等候超過 5 分鐘，取消需支付 $100 取消費。是否確認取消？')
-        if (!ok) return
-        await supabase.from('trips').update({ status: 'cancelled_with_fee' }).eq('id', currentTrip.id)
-        try { await supabase.from('ops_events').insert({ event_type: 'cancelled_with_fee', ref_id: currentTrip.id, payload: { fee: 100 } }) } catch {}
-        alert('已取消行程（需支付 $100 取消費）')
-      } else {
-        const ok = window.confirm('確認取消行程？')
-        if (!ok) return
-        await supabase.from('trips').update({ status: 'cancelled' }).eq('id', currentTrip.id)
-        try { await supabase.from('ops_events').insert({ event_type: 'cancelled', ref_id: currentTrip.id }) } catch {}
-        alert('已取消行程')
-      }
+      const ok = window.confirm('確認取消行程？')
+      if (!ok) return
+      await supabase.from('trips').update({ status: 'cancelled' }).eq('id', currentTrip.id)
+      try { await supabase.from('ops_events').insert({ event_type: 'cancelled', ref_id: currentTrip.id }) } catch {}
+      alert('已取消行程')
     } catch {
       alert('取消失敗，請稍後再試')
     }
@@ -951,23 +942,7 @@ export default function PassengerHome() {
             .limit(1)
           const tripId = (latest && latest[0]?.id) || currentTrip?.id || null
           try { console.log('tripId resolved', tripId) } catch {}
-          if (tripId) {
-            try {
-              const noteText = `禁菸:${noteNoSmoking?'是':'否'}; 攜帶寵物:${notePets?'是':'否'}`
-              await supabase.from('trip_status').insert({ trip_id: tripId, status: 'requested', location: pickupCoords as any, notes: noteText })
-              try {
-                await supabase.from('rides').insert({
-                  passenger_id: user.id,
-                  pickup_lat: pickupCoords?.lat,
-                  pickup_lng: pickupCoords?.lng,
-                  dropoff_lat: dropoffCoords?.lat ?? null,
-                  dropoff_lng: dropoffCoords?.lng ?? null,
-                  status: 'requested',
-                  notes: noteText
-                } as any)
-              } catch {}
-            } catch {}
-          }
+          // 取消 trip_status / rides 依賴，統一以 trips 表為主
           // Admin override ops event should not break flow
           try {
             const isAdmin = (user as any)?.user_type === 'admin'
@@ -1147,7 +1122,7 @@ export default function PassengerHome() {
           )}
           <div className="space-y-3">
             <button
-              onClick={() => navigate('/trips')}
+              onClick={() => setShowTripDetail(true)}
               className="w-full bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 transition-colors"
             >
               查看行程詳情
@@ -1222,6 +1197,19 @@ export default function PassengerHome() {
                 >
                   {isLoading ? '處理中...' : '確認付款'}
                 </button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showTripDetail && currentTrip && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+              <div className="text-lg font-semibold mb-2" style={{ color:'#DAA520' }}>行程詳情</div>
+              <div className="text-sm mb-1">上車：{(currentTrip as any).pickup_location?.address || '—'}</div>
+              <div className="text-sm mb-1">目的地：{(currentTrip as any).dropoff_location?.address || '—'}</div>
+              <div className="text-sm mb-3">預估金額：${(currentTrip as any).estimated_price ?? '—'}</div>
+              <div className="flex space-x-3">
+                <button onClick={()=>setShowTripDetail(false)} className="flex-1 px-4 py-2 rounded-lg hover:bg-[#333]" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>關閉</button>
               </div>
             </div>
           </div>
