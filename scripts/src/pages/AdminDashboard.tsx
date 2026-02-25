@@ -33,8 +33,8 @@ interface Trip {
   id: string
   passenger_id: string
   driver_id: string
-  pickup_address: string
-  dropoff_address: string
+  pickup_location?: { address?: string; lat?: number; lng?: number }
+  dropoff_location?: { address?: string; lat?: number; lng?: number }
   status: string
   estimated_price: number
   final_price: number
@@ -1189,7 +1189,7 @@ export default function AdminDashboard() {
     })
   }
   const copyTripAddress = async (trip: any) => {
-    const text = `${trip.pickup_address || ''} ${trip.dropoff_address || ''}`.trim()
+    const text = `${(trip as any).pickup_location?.address || ''} ${(trip as any).dropoff_location?.address || ''}`.trim()
     try { await navigator.clipboard.writeText(text); alert('已複製地址到剪貼簿') } catch { alert(text) }
   }
   const [manualForm, setManualForm] = useState<Record<string, { plate?: string; model?: string; etaMin?: number }>>({})
@@ -1656,7 +1656,7 @@ export default function AdminDashboard() {
                     <div className="flex items-center space-x-4">
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-5 h-5" />
-                        <span className="text-sm">{trip.pickup_address}</span>
+                        <span className="text-sm">{(trip as any).pickup_location?.address || ''}</span>
                       </div>
                       <div className="flex items-center space-x-2">
                         <MapPin className="w-5 h-5" />
@@ -1865,7 +1865,7 @@ export default function AdminDashboard() {
                           <div className="space-y-2">
                             <div className="flex items-center space-x-2">
                               <MapPin className="w-4 h-4 text-green-600" />
-                              <span className="text-sm text-gray-900">{trip.pickup_address}</span>
+                              <span className="text-sm text-gray-900">{(trip as any).pickup_location?.address || ''}</span>
                               <button onClick={()=>copyTripAddress(trip)} className="ml-2 px-2 py-1 text-xs rounded bg-gray-200">複製</button>
                             </div>
                             <div className="flex items-center space-x-2">
@@ -2096,7 +2096,7 @@ export default function AdminDashboard() {
                   <div key={t.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
                     <div>
                       <div className="text-sm font-medium text-gray-900">{t.id}</div>
-                      <div className="text-xs text-gray-600">{t.pickup_address} → {t.dropoff_address}</div>
+                      <div className="text-xs text-gray-600">{(t as any).pickup_location?.address || ''} → {(t as any).dropoff_location?.address || ''}</div>
                     </div>
                     <button
                       onClick={() => setDispatchRideId(t.id)}
@@ -2326,7 +2326,7 @@ export default function AdminDashboard() {
                           {(trips || []).filter(t => t.status==='requested').slice(0,20).map((t)=>(
                             <div key={t.id} className="p-2 rounded-2xl bg-[#111] border border-[#D4AF37]/20">
                           <div className="text-xs text-gray-400 mb-1">{new Date(t.created_at).toLocaleString('zh-TW')}</div>
-                          <div className="text-sm text-gray-100">{t.pickup_address}</div>
+                          <div className="text-sm text-gray-100">{(t as any).pickup_location?.address || ''}</div>
                           <div className="text-xs text-gray-400">→ {t.dropoff_address}</div>
                               {(() => {
                                 const tag = requestedTags[t.id]

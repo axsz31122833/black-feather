@@ -918,12 +918,20 @@ export default function PassengerHome() {
         const finalOrder: any = {
           passenger_id: passengerId || user?.id,
           status: 'requested',
-          estimated_price: Math.max(strictFare, 70),
-          pickup_address: pickupAddress,
-          destination_address: dropoffAddress || null
+          estimated_price: Math.round(Math.max(strictFare, 70)),
+          pickup_location: {
+            address: pickupAddress || '',
+            lat: pickupCoords?.lat ?? null,
+            lng: pickupCoords?.lng ?? null
+          },
+          dropoff_location: {
+            address: dropoffAddress || '',
+            lat: dropoffCoords?.lat ?? null,
+            lng: dropoffCoords?.lng ?? null
+          }
         }
         console.log('即將發送的訂單資料：', finalOrder)
-        await createTrip({} as any)
+        await createTrip(finalOrder)
         try {
           const { data: latest } = await supabase
             .from('trips')
@@ -1604,7 +1612,7 @@ export default function PassengerHome() {
         )}
 
         {/* Debug Version Text */}
-        <div className="text-xs mb-1" style={{ color:'#93c5fd' }}>Debug: v1.0.2 - 欄位對齊測試</div>
+        <div className="text-xs mb-1" style={{ color:'#93c5fd' }}>Debug: v1.0.3-Schema-Matched</div>
         {/* Book Button */}
         <button
           onClick={handleBookRide}
