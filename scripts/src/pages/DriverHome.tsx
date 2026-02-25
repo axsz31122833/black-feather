@@ -48,6 +48,8 @@ export default function DriverHome() {
   const [adminUntil, setAdminUntil] = useState<number | null>(null)
   const [showSupportChat, setShowSupportChat] = useState(false)
   const [pendingRequestedTrip, setPendingRequestedTrip] = useState<any>(null)
+  const [broadcastConnected, setBroadcastConnected] = useState(false)
+  const [opsConnected, setOpsConnected] = useState(false)
 
   useEffect(() => {
     if (user) {
@@ -57,15 +59,22 @@ export default function DriverHome() {
   useEffect(() => {
     try {
       const ch = supabase
-        .channel('trips-global-requested')
-        .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, (payload: any) => {
+        .channel('any')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trips' }, (payload: any) => {
           const nv = payload?.new
-          if (nv && nv.status === 'requested') {
-            setPendingRequestedTrip(nv)
-          }
+          if (nv && nv.status === 'requested') setPendingRequestedTrip(nv)
         })
-        .subscribe()
+      ch.subscribe((status: any) => { if (status === 'SUBSCRIBED') setBroadcastConnected(true) })
       return () => { ch.unsubscribe() }
+    } catch {}
+  }, [])
+  useEffect(() => {
+    try {
+      const ch2 = supabase
+        .channel('ops-broadcast')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter: 'event_type=eq.big_order' }, (_p:any)=>{})
+      ch2.subscribe((status:any)=>{ if (status==='SUBSCRIBED') setOpsConnected(true) })
+      return () => { ch2.unsubscribe() }
     } catch {}
   }, [])
 
@@ -784,6 +793,17 @@ export default function DriverHome() {
           </div>
         </div>
       )}
+
+      <div style={{ position:'fixed', left:12, bottom:12, zIndex:9999, display:'flex', alignItems:'center', gap:12, padding:'6px 10px', borderRadius:10, background:'rgba(0,0,0,0.4)', border:'1px solid rgba(147,197,253,0.4)' }}>
+        <span style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ width:10, height:10, borderRadius:'50%', background: broadcastConnected ? '#10B981' : '#ef4444' }} />
+          <span style={{ fontSize:12, color:'#e5e7eb' }}>{broadcastConnected ? 'trips 廣播' : 'trips 未連線'}</span>
+        </span>
+        <span style={{ display:'flex', alignItems:'center', gap:6 }}>
+          <span style={{ width:10, height:10, borderRadius:'50%', background: opsConnected ? '#10B981' : '#ef4444' }} />
+          <span style={{ fontSize:12, color:'#e5e7eb' }}>{opsConnected ? 'ops 廣播' : 'ops 未連線'}</span>
+        </span>
+      </div>
 
       <button
         onClick={handleToggleOnline}

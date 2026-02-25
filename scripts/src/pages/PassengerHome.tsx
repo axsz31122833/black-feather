@@ -1621,7 +1621,7 @@ export default function PassengerHome() {
         )}
 
         {/* Debug Version Text */}
-        <div className="text-xs mb-1" style={{ color:'#93c5fd' }}>Debug: v1.0.3-Schema-Matched</div>
+        <div className="text-xs mb-1" style={{ color:'#93c5fd' }}>Debug: v1.2.0-Final-Link-Verified</div>
         {/* Book Button */}
         <button
           onClick={handleBookRide}

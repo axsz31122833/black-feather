@@ -191,7 +191,7 @@ function App() {
           </Suspense>
           <GlobalMonitor />
           <div style={{ position:'fixed', right:12, bottom:10, fontSize:12, color:'#93c5fd', opacity:0.9, background:'rgba(0,0,0,0.35)', padding:'4px 8px', borderRadius:8, border:'1px solid rgba(147,197,253,0.4)' }}>
-            v1.1.0-Full-Link-Ready
+            v1.2.0-Final-Link-Verified
           </div>
         </main>
       </BrowserRouter>

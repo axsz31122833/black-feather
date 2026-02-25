@@ -36,6 +36,7 @@ export default function AdminCommandCenter() {
   const [usersPassengers, setUsersPassengers] = useState<any[]>([])
   const [usersDrivers, setUsersDrivers] = useState<any[]>([])
   const [usersAdmins, setUsersAdmins] = useState<any[]>([])
+  const [profilesMap, setProfilesMap] = useState<Record<string, any>>({})
   const [vehicleEdit, setVehicleEdit] = useState<Record<string, { plate?: string; model?: string; color?: string }>>({})
   const [activeLeft, setActiveLeft] = useState<'overview'|'users'|'support'>('overview')
   const [chatSummaries, setChatSummaries] = useState<Array<{ trip_id: string; last_text: string; at: string; unread: number }>>([])
@@ -69,9 +70,19 @@ export default function AdminCommandCenter() {
       } catch {}
       try {
         const { data: users } = await supabase.from('users').select('id,phone,name,user_type')
-        setUsersPassengers((users || []).filter((u:any)=>u.user_type==='passenger'))
-        setUsersDrivers((users || []).filter((u:any)=>u.user_type==='driver'))
-        setUsersAdmins((users || []).filter((u:any)=>u.user_type==='admin'))
+        const { data: profs } = await supabase.from('profiles').select('user_id,full_name,phone,recommended_by_phone,role')
+        const pmap: Record<string, any> = {}
+        ;(profs || []).forEach((p:any)=>{ if (p?.user_id) pmap[p.user_id] = p })
+        setProfilesMap(pmap)
+        const list = (users || []).map((u:any)=>({
+          ...u,
+          full_name: pmap[u.id]?.full_name || u.name || '',
+          phone: u.phone || pmap[u.id]?.phone || '',
+          recommended_by_phone: pmap[u.id]?.recommended_by_phone || ''
+        }))
+        setUsersPassengers(list.filter((u:any)=>u.user_type==='passenger'))
+        setUsersDrivers(list.filter((u:any)=>u.user_type==='driver'))
+        setUsersAdmins(list.filter((u:any)=>u.user_type==='admin'))
       } catch {}
       try {
         const { data } = await supabase.from('fare_config').select('*').eq('id','global').single()
@@ -333,29 +344,29 @@ export default function AdminCommandCenter() {
               <div className="text-3xl font-bold" style={{ color:'#EF4444' }}>{pendingCount}</div>
             </div>
           </div>
-          <div className="grid grid-cols-3 gap-6" style={{ display: activeLeft==='overview' ? 'grid' : 'none' }}>
-            <div className="col-span-2 rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6" style={{ display: activeLeft==='overview' ? 'grid' : 'none' }}>
+            <div className="lg:col-span-2 rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)' }}>
               <div className="flex items-center justify-between mb-3">
                 <div className="text-sm" style={{ color:'#9ca3af' }}>全域即時地圖</div>
               </div>
-              <div ref={mapElRef} style={{ height:'55vh', width:'100%' }} />
+              <div ref={mapElRef} style={{ height:'40vh', width:'100%' }} />
               <div className="mt-2 text-xs" style={{ color:'#9ca3af' }}>空車：綠色點；載客中：紅色點</div>
             </div>
             <div className="rounded-lg p-4 space-y-4" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)' }}>
               <div>
-                <div className="text-sm mb-2" style={{ color:'#e5e7eb' }}>即時訂單監控（待派 Requested）</div>
-                <div className="space-y-2 max-h-64 overflow-y-auto">
-                  {requestedTrips.length === 0 ? (
-                    <div className="text-xs" style={{ color:'#9ca3af' }}>目前無待派訂單</div>
-                  ) : requestedTrips.map(t => (
+              <div className="text-sm mb-2" style={{ color:'#e5e7eb' }}>即時訂單監控（待派 Requested）</div>
+              <div className="space-y-2 max-h-64 overflow-y-auto">
+                {requestedTrips.length === 0 ? (
+                  <div className="text-xs" style={{ color:'#9ca3af' }}>目前無待派訂單</div>
+                ) : requestedTrips.map(t => (
                     <button key={t.id} onClick={()=>focusTrip(t)} className="w-full text-left px-3 py-2 rounded-md hover:bg-[#2A2A2A]" style={{ border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
                       <div className="text-xs" style={{ color:'#9ca3af' }}>{new Date(t.created_at || '').toLocaleString('zh-TW')}</div>
                       <div className="text-sm truncate">{(t as any).pickup_location?.address || '—'}</div>
                       <div className="text-xs" style={{ color:'#9ca3af' }}>{t.estimated_price ? `$${t.estimated_price}` : ''}</div>
                     </button>
                   ))}
-                </div>
               </div>
+            </div>
               <div className="text-sm mb-2" style={{ color:'#e5e7eb' }}>費率即時設定</div>
               <div className="grid grid-cols-2 gap-2">
                 <input type="number" value={fareBase} onChange={e=>setFareBase(Number(e.target.value||'0'))} placeholder="基礎費" className="px-2 py-2 rounded" style={{ background:'#121212', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.1)' }} />
@@ -367,6 +378,9 @@ export default function AdminCommandCenter() {
               <div className="mt-3">
                 <button onClick={saveFare} className="px-4 py-2 rounded" style={{ background:'#00FFFF', color:'#121212' }}>儲存</button>
                 <button onClick={diagnoseTrips} className="ml-2 px-4 py-2 rounded" style={{ background:'#10B981', color:'#121212' }}>資料庫欄位診斷</button>
+                <button onClick={async ()=>{
+                  try { await supabase.from('ops_events').insert({ event_type:'big_order', ref_id:null, payload:{ ts: Date.now() } } as any); alert('已推送大單') } catch { alert('推送失敗') }
+                }} className="ml-2 px-4 py-2 rounded" style={{ background:'#ef4444', color:'#121212' }}>推送大單</button>
               </div>
             </div>
           </div>
@@ -377,7 +391,8 @@ export default function AdminCommandCenter() {
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {usersPassengers.map(u=>(
                   <div key={u.id} className="p-2 rounded border" style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
-                    <div className="text-sm">{u.name || '—'} · {u.phone || '—'}</div>
+                    <div className="text-sm">{u.full_name || u.name || '—'} · {u.phone || '—'}</div>
+                    <div className="text-xs" style={{ color:'#9ca3af' }}>推薦人：{u.recommended_by_phone || '—'}</div>
                     <div className="mt-1">
                       <button onClick={()=>promoteToDriver(u.id)} className="px-2 py-1 text-xs bg-indigo-600 text-white rounded">升等為司機</button>
                     </div>
@@ -390,7 +405,7 @@ export default function AdminCommandCenter() {
               <div className="space-y-2 max-h-64 overflow-y-auto">
                 {usersDrivers.map(u=>(
                   <div key={u.id} className="p-2 rounded border space-y-2" style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
-                    <div className="text-sm">{u.name || '—'} · {u.phone || '—'}</div>
+                    <div className="text-sm">{u.full_name || u.name || '—'} · {u.phone || '—'}</div>
                     <div className="grid grid-cols-3 gap-2">
                       <input placeholder="車牌" value={vehicleEdit[u.id]?.plate || ''} onChange={e=>setVehicleEdit(v=>({ ...v, [u.id]: { ...v[u.id], plate:e.target.value } }))} className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
                       <input placeholder="車型" value={vehicleEdit[u.id]?.model || ''} onChange={e=>setVehicleEdit(v=>({ ...v, [u.id]: { ...v[u.id], model:e.target.value } }))} className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
@@ -474,6 +489,10 @@ export default function AdminCommandCenter() {
                     const phone = (document.getElementById('ext-phone') as HTMLInputElement)?.value || ''
                     pushExternalAssign(selectedTrip.id, { plate, color, phone })
                   }} className="px-3 py-2 rounded text-xs bg-emerald-600 text-white">外部車隊派單</button>
+                  <div className="mt-3 flex items-center justify-between">
+                    <button onClick={async ()=>{ try { await supabase.from('trips').update({ status:'closed' }).eq('id', selectedTrip.id); alert('已關閉訂單'); setSelectedTrip(null) } catch { alert('關閉失敗') } }} className="px-3 py-2 rounded text-xs bg-red-600 text-white">關閉訂單</button>
+                    <button onClick={async ()=>{ try { await supabase.from('trips').delete().eq('id', selectedTrip.id); alert('已刪除訂單'); setSelectedTrip(null) } catch { alert('刪除失敗') } }} className="px-3 py-2 rounded text-xs" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>刪除</button>
+                  </div>
                 </div>
                 <div className="mt-4 text-right">
                   <button onClick={()=>setSelectedTrip(null)} className="px-3 py-2 rounded text-xs" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>關閉</button>

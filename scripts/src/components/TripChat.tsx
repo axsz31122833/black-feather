@@ -18,24 +18,12 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
   const listRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    try {
-      const arr = JSON.parse(localStorage.getItem(`bf_msgs_${tripId}`) || '[]')
-      const ms: Msg[] = (arr || []).map((x: any, i: number) => ({ id: `local-${i}-${x.time}`, type: x.type === 'chat' ? 'chat' : 'notify', text: x.text, from: x.type === 'chat' ? (x.from || 'system') : 'system', time: x.time, eventType: x.type }))
-      if (ms.length) setMessages(prev => [...prev, ...ms])
-    } catch {}
     const ch = supabase
-      .channel('ops-chat-' + tripId)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'ops_events', filter: `ref_id=eq.${tripId}` }, (payload: any) => {
-        const ev = payload.new
-        if (!ev) return
-        const t = ev.event_type as string
-        if (t === 'chat') {
-          const txt = (ev.payload && ev.payload.text) || ''
-          const from = (ev.payload && ev.payload.from_role) || 'system'
-          setMessages(prev => [...prev, { id: ev.id, type: 'chat', text: txt, from, time: ev.created_at, eventType: 'chat' }])
-        } else {
-          setMessages(prev => [...prev, { id: ev.id, type: 'notify', text: t, from: 'system', time: ev.created_at, eventType: t }])
-        }
+      .channel('trip-chat-' + tripId)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${tripId}` }, (payload: any) => {
+        const row = payload.new
+        if (!row) return
+        setMessages(prev => [...prev, { id: row.id, type: 'chat', text: row.text || '', from: row.role || 'system', time: row.created_at, eventType: 'chat' }])
       })
       .subscribe()
     return () => { ch.unsubscribe() }
@@ -51,21 +39,12 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     const v = text.trim()
     if (!v) return
     setText('')
-    try {
-      const { error } = await supabase.from('trip_messages').insert({
-        trip_id: tripId,
-        user_id: userId,
-        role,
-        text: v
-      } as any)
-      if (error) throw error
-    } catch {
-      await supabase.from('ops_events').insert({
-        event_type: 'chat',
-        ref_id: tripId,
-        payload: { text: v, from_role: role, from_user_id: userId }
-      } as any)
-    }
+    await supabase.from('trip_messages').insert({
+      trip_id: tripId,
+      user_id: userId,
+      role,
+      text: v
+    } as any)
   }
 
   return (
