@@ -9,7 +9,7 @@ const PassengerHome = lazy(() => import('./pages/PassengerHome'))
 // const PassengerRidePage = lazy(() => import('./pages/PassengerRidePage'))
 const DriverHome = lazy(() => import('./pages/DriverHome'))
 // const DriverRidePage = lazy(() => import('./pages/DriverRidePage'))
-const AdminDashboard = lazy(() => import('./pages/AdminDashboard'))
+const AdminDashboard = lazy(() => import('./pages/AdminCommandCenter'))
 const DevBypass = lazy(() => import('./pages/DevBypass'))
 import AppSelector from './AppSelector.jsx'
 import PassengerApp from './PassengerApp/index.jsx'

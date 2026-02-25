@@ -906,7 +906,6 @@ export default function PassengerHome() {
           dropoff_location: dropoffCoords,
           pickup_address: pickupAddress,
           dropoff_address: dropoffAddress,
-          car_type: selectedCarType,
           estimated_price: Math.max(strictFare, 70),
           distance_km: distance || null,
           status: 'requested'
