@@ -821,11 +821,17 @@ export default function PassengerHome() {
   const handleCancelTrip = async () => {
     if (!currentTrip) return
     try {
-      const ok = window.confirm('確認取消行程？')
-      if (!ok) return
-      await supabase.from('trips').update({ status: 'cancelled' }).eq('id', currentTrip.id)
-      try { await supabase.from('ops_events').insert({ event_type: 'cancelled', ref_id: currentTrip.id }) } catch {}
-      alert('已取消行程')
+      if (currentTrip.status === 'accepted') {
+        const ok = window.confirm('司機已接單，取消將收取 $100 手續費，是否確認？')
+        if (!ok) return
+        await supabase.from('trips').update({ status: 'cancelled_with_fee' }).eq('id', currentTrip.id)
+        try { await supabase.from('ops_events').insert({ event_type: 'cancelled_with_fee', ref_id: currentTrip.id, payload:{ fee:100 } }) } catch {}
+        alert('已取消（需支付 $100 手續費）')
+      } else {
+        await supabase.from('trips').update({ status: 'cancelled' }).eq('id', currentTrip.id)
+        try { await supabase.from('ops_events').insert({ event_type: 'cancelled', ref_id: currentTrip.id }) } catch {}
+        alert('已取消')
+      }
     } catch {
       alert('取消失敗，請稍後再試')
     }

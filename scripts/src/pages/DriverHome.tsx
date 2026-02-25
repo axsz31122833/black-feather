@@ -47,12 +47,27 @@ export default function DriverHome() {
   const [lockUntil, setLockUntil] = useState<number | null>(null)
   const [adminUntil, setAdminUntil] = useState<number | null>(null)
   const [showSupportChat, setShowSupportChat] = useState(false)
+  const [pendingRequestedTrip, setPendingRequestedTrip] = useState<any>(null)
 
   useEffect(() => {
     if (user) {
       subscribeToTrips(user.id, 'driver')
     }
   }, [user])
+  useEffect(() => {
+    try {
+      const ch = supabase
+        .channel('trips-global-requested')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, (payload: any) => {
+          const nv = payload?.new
+          if (nv && nv.status === 'requested') {
+            setPendingRequestedTrip(nv)
+          }
+        })
+        .subscribe()
+      return () => { ch.unsubscribe() }
+    } catch {}
+  }, [])
 
   useEffect(() => {
     if (currentTrip) {
@@ -742,6 +757,30 @@ export default function DriverHome() {
               <button onClick={()=>setShowSupportChat(false)} className="px-2 py-1 rounded" style={{ background:'#2A2A2A', color:'#e5e7eb' }}>關閉</button>
             </div>
             <TripChat tripId={`support_driver_${user.id}`} userId={user.id} role="driver" />
+          </div>
+        </div>
+      )}
+
+      {pendingRequestedTrip && !currentTrip && (
+        <div style={{ position:'fixed', top:56, left:12, right:12, zIndex:9999 }}>
+          <div className="rounded-2xl p-4" style={{ background:'#111', border:'1px solid rgba(0,255,255,0.25)', color:'#e5e7eb' }}>
+            <div className="text-sm mb-1" style={{ color:'#00FFFF' }}>新訂單（全域廣播）</div>
+            <div className="text-xs mb-2" style={{ color:'#9ca3af' }}>
+              {(pendingRequestedTrip as any).pickup_location?.address || '—'} → {(pendingRequestedTrip as any).dropoff_location?.address || '—'}
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={async () => {
+                  try {
+                    if (!user?.id) return
+                    await supabase.from('trips').update({ driver_id: user.id, status: 'accepted' }).eq('id', pendingRequestedTrip.id)
+                    setPendingRequestedTrip(null)
+                  } catch { alert('接單失敗') }
+                }}
+                className="px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700"
+              >接單</button>
+              <button onClick={()=>setPendingRequestedTrip(null)} className="px-4 py-2 rounded-2xl bg-gray-700 text-white hover:bg-gray-600">忽略</button>
+            </div>
           </div>
         </div>
       )}
