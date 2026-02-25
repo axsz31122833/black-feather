@@ -917,10 +917,9 @@ export default function PassengerHome() {
         }
         const finalOrder: any = {
           passenger_id: passengerId || user?.id,
-          pickup_address: pickupAddress,
-          destination_address: dropoffAddress,
+          status: 'requested',
           estimated_price: Math.max(strictFare, 70),
-          status: 'requested'
+          pickup_address: pickupAddress
         }
         console.log('即將發送的訂單資料：', finalOrder)
         await createTrip(finalOrder)
@@ -1024,9 +1023,10 @@ export default function PassengerHome() {
       }
     } catch (error) {
       console.error('Error booking ride:', error)
+      console.log('當前資料庫可用欄位可能不包含 destination_address')
       const msg = (error as any)?.message || String(error)
       const detail = (error as any)?.details || (error as any)?.hint || ''
-      alert(`叫車失敗：${msg}${detail ? `｜${detail}` : ''}`)
+      try { alert(`叫車失敗：${msg}${detail ? `｜${detail}` : ''}\n\n${JSON.stringify(error)}`) } catch { alert(`叫車失敗：${msg}${detail ? `｜${detail}` : ''}`) }
     } finally {
       setIsLoading(false)
     }
@@ -1582,6 +1582,8 @@ export default function PassengerHome() {
           </div>
         )}
 
+        {/* Debug Version Text */}
+        <div className="text-xs mb-1" style={{ color:'#93c5fd' }}>Debug: v1.0.2 - 欄位對齊測試</div>
         {/* Book Button */}
         <button
           onClick={handleBookRide}
