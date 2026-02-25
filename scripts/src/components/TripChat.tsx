@@ -51,11 +51,21 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     const v = text.trim()
     if (!v) return
     setText('')
-    await supabase.from('ops_events').insert({
-      event_type: 'chat',
-      ref_id: tripId,
-      payload: { text: v, from_role: role, from_user_id: userId }
-    })
+    try {
+      const { error } = await supabase.from('trip_messages').insert({
+        trip_id: tripId,
+        user_id: userId,
+        role,
+        text: v
+      } as any)
+      if (error) throw error
+    } catch {
+      await supabase.from('ops_events').insert({
+        event_type: 'chat',
+        ref_id: tripId,
+        payload: { text: v, from_role: role, from_user_id: userId }
+      } as any)
+    }
   }
 
   return (

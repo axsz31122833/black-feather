@@ -27,7 +27,9 @@ export default function AdminCommandCenter() {
   const [longRate, setLongRate] = useState<number>(10)
   const mapRef = useRef<any>(null)
   const markersRef = useRef<Record<string, any>>({})
+  const orderMarkerRef = useRef<any>(null)
   const mapElRef = useRef<HTMLDivElement | null>(null)
+  const [requestedTrips, setRequestedTrips] = useState<Array<{ id: string; pickup_location?: { address?: string; lat?: number; lng?: number }; estimated_price?: number; passenger_id?: string; created_at?: string }>>([])
 
   useEffect(() => {
     ;(async () => {
@@ -39,6 +41,10 @@ export default function AdminCommandCenter() {
         const { data: tripsData } = await supabase.from('trips').select('id,final_price,status,created_at').gte('created_at', startIso)
         setTripsToday((tripsData || []).length)
         setRevenueToday((tripsData || []).filter(t=>t.status==='completed').reduce((s: number, t:any)=> s + Number(t.final_price||0), 0))
+      } catch {}
+      try {
+        const { data: req } = await supabase.from('trips').select('id,pickup_location,estimated_price,passenger_id,created_at').eq('status','requested').order('created_at',{ ascending:false }).limit(100)
+        setRequestedTrips(req || [])
       } catch {}
       try {
         const { data: profs } = await supabase.from('driver_profiles').select('id').eq('status','pending')
@@ -94,6 +100,9 @@ export default function AdminCommandCenter() {
           setTripsToday(arr.length)
           setRevenueToday(arr.filter((t:any)=>t.status==='completed').reduce((s:number,t:any)=>s+Number(t.final_price||0),0))
         })
+        supabase.from('trips').select('id,pickup_location,estimated_price,passenger_id,created_at').eq('status','requested').order('created_at',{ ascending:false }).limit(100).then((res:any)=>{
+          setRequestedTrips(res.data || [])
+        })
       }).subscribe()
     return () => { ch1.unsubscribe(); ch2.unsubscribe() }
   }, [])
@@ -144,6 +153,26 @@ export default function AdminCommandCenter() {
     } catch (e) {
       alert(`儲存失敗：${e instanceof Error ? e.message : String(e)}`)
     }
+  }
+  const focusTrip = (t: any) => {
+    try {
+      const g: any = (window as any).google
+      if (!g || !mapRef.current) return
+      const pick = t?.pickup_location
+      if (!pick || typeof pick.lat !== 'number' || typeof pick.lng !== 'number') return
+      mapRef.current.setCenter({ lat: pick.lat, lng: pick.lng })
+      mapRef.current.setZoom(14)
+      if (orderMarkerRef.current) {
+        try { orderMarkerRef.current.setMap(null) } catch {}
+        orderMarkerRef.current = null
+      }
+      orderMarkerRef.current = new g.maps.Marker({
+        position: { lat: pick.lat, lng: pick.lng },
+        map: mapRef.current,
+        icon: { path: g.maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale: 5, fillColor: '#60a5fa', fillOpacity: 1, strokeColor: '#60a5fa', strokeWeight: 1 },
+        title: (t?.pickup_location?.address || '待派訂單') + (t?.estimated_price ? ` · $${t.estimated_price}` : '')
+      })
+    } catch {}
   }
   const diagnoseTrips = async () => {
     try {
@@ -201,7 +230,21 @@ export default function AdminCommandCenter() {
               <div ref={mapElRef} style={{ height:'55vh', width:'100%' }} />
               <div className="mt-2 text-xs" style={{ color:'#9ca3af' }}>空車：綠色點；載客中：紅色點</div>
             </div>
-            <div className="rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)' }}>
+            <div className="rounded-lg p-4 space-y-4" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)' }}>
+              <div>
+                <div className="text-sm mb-2" style={{ color:'#e5e7eb' }}>即時訂單監控（待派 Requested）</div>
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {requestedTrips.length === 0 ? (
+                    <div className="text-xs" style={{ color:'#9ca3af' }}>目前無待派訂單</div>
+                  ) : requestedTrips.map(t => (
+                    <button key={t.id} onClick={()=>focusTrip(t)} className="w-full text-left px-3 py-2 rounded-md hover:bg-[#2A2A2A]" style={{ border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
+                      <div className="text-xs" style={{ color:'#9ca3af' }}>{new Date(t.created_at || '').toLocaleString('zh-TW')}</div>
+                      <div className="text-sm truncate">{(t as any).pickup_location?.address || '—'}</div>
+                      <div className="text-xs" style={{ color:'#9ca3af' }}>{t.estimated_price ? `$${t.estimated_price}` : ''}</div>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <div className="text-sm mb-2" style={{ color:'#e5e7eb' }}>費率即時設定</div>
               <div className="grid grid-cols-2 gap-2">
                 <input type="number" value={fareBase} onChange={e=>setFareBase(Number(e.target.value||'0'))} placeholder="基礎費" className="px-2 py-2 rounded" style={{ background:'#121212', color:'#e5e7eb', border:'1px solid rgba(255,255,255,0.1)' }} />
