@@ -907,7 +907,6 @@ export default function PassengerHome() {
           pickup_address: pickupAddress,
           dropoff_address: dropoffAddress,
           estimated_price: Math.max(strictFare, 70),
-          distance_km: distance || null,
           status: 'requested'
         })
         try {
@@ -1010,7 +1009,9 @@ export default function PassengerHome() {
       }
     } catch (error) {
       console.error('Error booking ride:', error)
-      alert(`叫車失敗：${error instanceof Error ? error.message : String(error)}`)
+      const msg = (error as any)?.message || String(error)
+      const detail = (error as any)?.details || (error as any)?.hint || ''
+      alert(`叫車失敗：${msg}${detail ? `｜${detail}` : ''}`)
     } finally {
       setIsLoading(false)
     }
