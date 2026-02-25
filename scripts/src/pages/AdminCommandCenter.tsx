@@ -16,6 +16,7 @@ type DriverRow = {
 export default function AdminCommandCenter() {
   const navigate = useNavigate()
   const { user, signOut } = useAuthStore()
+  const [menuOpen, setMenuOpen] = useState(false)
   const [drivers, setDrivers] = useState<DriverRow[]>([])
   const [tripsToday, setTripsToday] = useState(0)
   const [revenueToday, setRevenueToday] = useState(0)
@@ -195,7 +196,7 @@ export default function AdminCommandCenter() {
   return (
     <div className="min-h-screen" style={{ background:'#121212' }}>
       <div className="flex">
-        <aside className="w-64 min-h-screen p-4" style={{ background:'#121212', borderRight:'1px solid rgba(255,255,255,0.08)' }}>
+        <aside className={`min-h-screen p-4 ${menuOpen ? 'block' : 'hidden md:block'}`} style={{ width:256, background:'#121212', borderRight:'1px solid rgba(255,255,255,0.08)' }}>
           <div className="text-xl font-bold mb-4" style={{ color:'#00FFFF' }}>指揮中心</div>
           <div className="space-y-2">
             <button onClick={()=>navigate('/passenger')} className="w-full text-left px-3 py-2 rounded" style={{ color:'#e5e7eb' }}>乘客視角</button>
@@ -203,8 +204,12 @@ export default function AdminCommandCenter() {
             <button onClick={async ()=>{ await signOut(); navigate('/admin/login') }} className="w-full text-left px-3 py-2 rounded" style={{ color:'#e5e7eb' }}>登出</button>
           </div>
         </aside>
-        <main className="flex-1 p-6">
-          <div className="grid grid-cols-4 gap-4 mb-6">
+        <main className="flex-1 p-4 md:p-6">
+          <div className="md:hidden flex items-center justify-between mb-3">
+            <button onClick={()=>setMenuOpen(v=>!v)} className="px-3 py-2 rounded" style={{ border:'1px solid rgba(255,255,255,0.15)', color:'#e5e7eb' }}>☰</button>
+            <div className="text-sm" style={{ color:'#9ca3af' }}>管理儀表板</div>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
             <div className="rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(0,255,255,0.2)' }}>
               <div className="text-sm" style={{ color:'#9ca3af' }}>今日營收</div>
               <div className="text-3xl font-bold" style={{ color:'#00FFFF' }}>${revenueToday}</div>

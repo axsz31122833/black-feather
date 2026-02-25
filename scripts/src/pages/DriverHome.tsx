@@ -746,6 +746,12 @@ export default function DriverHome() {
         </div>
       )}
 
+      <button
+        onClick={handleToggleOnline}
+        style={{ position:'fixed', top:12, right:12, zIndex:11000, borderRadius:9999, padding:'10px 14px', boxShadow:'0 6px 20px rgba(0,0,0,0.35)', background: isOnline ? '#10B981' : '#4B5563', color:'#fff' }}
+      >
+        {isOnline ? '上線中' : '離線'}
+      </button>
       {showBidOverlay && (
         <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.6)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center' }}>
           <div style={{ background:'#111', border:'1px solid rgba(212,175,55,0.35)', borderRadius:14, padding:16, width:'92%', maxWidth:460, textAlign:'center' }}>
@@ -786,7 +792,7 @@ export default function DriverHome() {
         </div>
 
         {/* Stats */}
-          <div className="grid grid-cols-2 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-6">
             <div className="rounded-lg p-4" style={{ background:'#0f172a', border:'1px solid rgba(0,255,255,0.15)' }}>
               <div className="flex items-center space-x-2 mb-2">
                 <DollarSign className="w-5 h-5" style={{ color:'#00FFFF' }} />
@@ -797,7 +803,7 @@ export default function DriverHome() {
                 <polyline points="0,30 20,25 40,28 60,20 80,22 100,18 120,24 140,12 160,16" fill="none" stroke="#00FFFF" strokeWidth="2" />
               </svg>
             </div>
-            <div className="bg-yellow-50 rounded-lg p-4 col-span-2">
+            <div className="bg-yellow-50 rounded-lg p-4 sm:col-span-2 col-span-1">
               <div className="flex items-center justify-between">
                 <div className="text-sm font-medium text-yellow-900">預約單專區</div>
                 <button onClick={loadScheduled} className="px-3 py-1 text-xs bg-yellow-600 text-white rounded hover:bg-yellow-700">刷新</button>
@@ -832,7 +838,7 @@ export default function DriverHome() {
               </div>
               <p className="text-2xl font-bold text-green-600">{todayTrips}</p>
             </div>
-            <div className="bg-purple-50 rounded-lg p-4 col-span-2">
+            <div className="bg-purple-50 rounded-lg p-4 sm:col-span-2 col-span-1">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2">
                   <TrendingUp className="w-5 h-5 text-purple-600" />

@@ -1268,7 +1268,7 @@ export default function PassengerHome() {
           </div>
         )}
         {showCancelConfirm && currentTrip && (
-          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center" style={{ zIndex:10000 }}>
             <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
               <div className="text-sm mb-3" style={{ color:'#DAA520' }}>
                 司機已接單，現在取消將產生 NT$100 手續費
@@ -1278,11 +1278,8 @@ export default function PassengerHome() {
                 <button
                   onClick={async ()=>{
                     try {
-                      const { cancelRide } = await import('../lib/rideApi.js')
-                      await cancelRide({ ride_id: currentTrip.id, reason: 'passenger_cancel' })
-                      alert('已取消行程，將收取 NT$100 手續費')
+                      await handleCancelTrip()
                       setShowCancelConfirm(false)
-                      navigate('/trips')
                     } catch { alert('取消失敗') }
                   }}
                   className="flex-1 px-4 py-2 rounded-lg"
@@ -1422,7 +1419,7 @@ export default function PassengerHome() {
       </div> */}
 
       {/* Booking Panel */}
-      <div className="fixed bottom-0 left-0 right-0 rounded-t-2xl p-6 z-20 bottom-sheet-elevate" style={{ background:'#FFFFFF', border:'1px solid #e5e7eb', height:'40vh', overflowY:'auto' }}>
+      <div className="fixed bottom-0 left-0 right-0 rounded-t-2xl p-6 z-20 bottom-sheet-elevate" style={{ background:'#FFFFFF', border:'1px solid #e5e7eb', height:'42vh', overflowY:'auto', paddingBottom: '72px' }}>
         <div className="mb-3">
           <div className="text-base font-bold" style={{ color:'#1A1A1A' }}>{pickupAddress || '請輸入上車地址'}</div>
           <div className="text-base font-bold" style={{ color:'#1A1A1A' }}>{dropoffAddress || '請輸入目的地地址'}</div>
@@ -1435,7 +1432,7 @@ export default function PassengerHome() {
             <MapPin className="w-4 h-4 inline mr-1 text-green-600" />
             上車地點
           </label>
-          <div className="flex space-x-2">
+          <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
             <input
               type="text"
               value={pickupAddress}
@@ -1505,7 +1502,7 @@ export default function PassengerHome() {
             <MapPin className="w-4 h-4 inline mr-1 text-red-600" />
             目的地
           </label>
-          <div className="flex space-x-2">
+          <div className="flex flex-col md:flex-row md:space-x-2 space-y-2 md:space-y-0">
             <input
               type="text"
               value={dropoffAddress}
