@@ -40,6 +40,9 @@ export default function AdminCommandCenter() {
   const [vehicleEdit, setVehicleEdit] = useState<Record<string, { plate?: string; model?: string; color?: string }>>({})
   const [activeLeft, setActiveLeft] = useState<'overview'|'users'|'support'>('overview')
   const [chatSummaries, setChatSummaries] = useState<Array<{ trip_id: string; last_text: string; at: string; unread: number }>>([])
+  const [activeChat, setActiveChat] = useState<string | null>(null)
+  const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: string; text: string; created_at: string }>>([])
+  const [chatText, setChatText] = useState('')
 
   useEffect(() => {
     ;(async () => {
@@ -256,6 +259,30 @@ export default function AdminCommandCenter() {
       setChatSummaries(prev => prev.map(x => x.trip_id === tripId ? { ...x, unread: 0 } : x))
     } catch {}
   }
+  useEffect(() => {
+    if (!activeChat) return
+    ;(async () => {
+      try {
+        const { data } = await supabase.from('trip_messages').select('*').eq('trip_id', activeChat).order('created_at', { ascending: true })
+        setChatMessages(data || [])
+      } catch { setChatMessages([]) }
+    })()
+    const ch = supabase
+      .channel('admin-chat-thread')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${activeChat}` }, (p:any)=>{
+        const row = p.new
+        if (!row) return
+        setChatMessages(prev => [...prev, row])
+      })
+      .subscribe()
+    return () => { ch.unsubscribe() }
+  }, [activeChat])
+  const sendAdminMessage = async () => {
+    const v = chatText.trim()
+    if (!v || !activeChat) return
+    setChatText('')
+    await supabase.from('trip_messages').insert({ trip_id: activeChat, user_id: user?.id || null, role: 'admin', text: v } as any)
+  }
   const assignToDriver = async (tripId: string, driverId: string) => {
     try {
       await supabase.from('trips').update({ driver_id: driverId, status: 'accepted' }).eq('id', tripId)
@@ -337,7 +364,7 @@ export default function AdminCommandCenter() {
             </div>
             <div className="rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(16,185,129,0.25)' }}>
               <div className="text-sm" style={{ color:'#9ca3af' }}>在線司機</div>
-              <div className="text-3xl font-bold" style={{ color:'#10B981' }}>{drivers.filter(d => d.status !== 'offline').length}</div>
+              <div className="text-3xl font-bold" style={{ color:'#10B981' }}>{onlineDrivers.length}</div>
             </div>
             <div className="rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(239,68,68,0.25)' }}>
               <div className="text-sm" style={{ color:'#9ca3af' }}>待審核身分</div>
@@ -428,24 +455,41 @@ export default function AdminCommandCenter() {
             </div>
           </div>
           {/* Support Center */}
-          <div className="rounded-lg p-4" style={{ display: activeLeft==='support' ? 'block' : 'none', background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
-            <div className="text-sm mb-3">客服中心</div>
+          <div className="rounded-lg p-4 space-y-3" style={{ display: activeLeft==='support' ? 'block' : 'none', background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
+            <div className="text-sm">客服中心</div>
             <div className="space-y-2">
               {chatSummaries.length === 0 ? (
                 <div className="text-xs" style={{ color:'#9ca3af' }}>尚無對話</div>
               ) : chatSummaries.map(c => (
-                <div key={c.trip_id} className="p-2 rounded border flex items-center justify-between" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
-                  <div>
-                    <div className="text-sm">{c.trip_id}</div>
-                    <div className="text-xs" style={{ color:'#9ca3af' }}>{new Date(c.at).toLocaleString('zh-TW')}</div>
-                    <div className="text-xs" style={{ color:'#e5e7eb' }}>{c.last_text}</div>
+                <button key={c.trip_id} onClick={()=>{ setActiveChat(c.trip_id); markChatRead(c.trip_id) }} className="w-full text-left p-2 rounded border" style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm">Trip {c.trip_id.slice(0,6)}…</div>
+                    {c.unread>0 && <span style={{ width:8, height:8, borderRadius:'50%', background:'#ef4444', display:'inline-block' }} />}
                   </div>
-                  <button onClick={()=>markChatRead(c.trip_id)} className="px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>
-                    {c.unread>0 ? `標為已讀 (${c.unread})` : '已讀'}
-                  </button>
-                </div>
+                  <div className="text-xs" style={{ color:'#9ca3af' }}>{new Date(c.at).toLocaleString('zh-TW')}</div>
+                  <div className="text-xs" style={{ color:'#e5e7eb' }}>{c.last_text}</div>
+                </button>
               ))}
             </div>
+            {activeChat && (
+              <div className="rounded p-3 border" style={{ borderColor:'rgba(255,255,255,0.08)' }}>
+                <div className="text-xs mb-2" style={{ color:'#9ca3af' }}>對話：{activeChat}</div>
+                <div className="space-y-1 max-h-48 overflow-y-auto mb-2">
+                  {chatMessages.map(m=>(
+                    <div key={m.id} className="text-sm" style={{ color: m.role==='admin' ? '#60a5fa' : (m.role==='driver' ? '#34d399' : '#e5e7eb') }}>
+                      <span style={{ fontWeight:600 }}>{m.role}</span>
+                      <span className="mx-1">·</span>
+                      <span>{m.text}</span>
+                    </div>
+                  ))}
+                  {chatMessages.length===0 && <div className="text-xs" style={{ color:'#9ca3af' }}>尚無訊息</div>}
+                </div>
+                <div className="flex items-center gap-2">
+                  <input value={chatText} onChange={e=>setChatText(e.target.value)} placeholder="輸入訊息…" className="flex-1 px-2 py-2 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
+                  <button onClick={sendAdminMessage} className="px-3 py-2 text-xs rounded bg-indigo-600 text-white">發送</button>
+                </div>
+              </div>
+            )}
           </div>
           {/* Order Detail Modal */}
           {selectedTrip && (
