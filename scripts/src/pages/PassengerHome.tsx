@@ -108,6 +108,7 @@ export default function PassengerHome() {
   const [routePath, setRoutePath] = useState<Array<{ lat: number; lng: number }>>([])
   const [mapSuggestions, setMapSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number }; etaMin?: number }>>([])
   const [preferHighway, setPreferHighway] = useState(false)
+  const [avoidTolls, setAvoidTolls] = useState(false)
   const [activeField, setActiveField] = useState<'pickup' | 'dropoff'>('pickup')
   const pickupMarkerRef = useRef<google.maps.Marker | null>(null)
   const pickupInputRef = useRef<HTMLInputElement>(null)
@@ -797,23 +798,30 @@ export default function PassengerHome() {
         durationMin = r.durationMin
         path = r.path
       }
-      const adjKm = preferHighway ? distanceKm * 1.1 : distanceKm
+      let adjKm = preferHighway ? distanceKm * 1.1 : distanceKm
+      if (avoidTolls) adjKm *= 1.05
+      const adjMin = (() => {
+        let m = durationMin
+        if (preferHighway) m = Math.max(1, Math.round(m * 0.8))
+        if (avoidTolls) m = Math.max(1, Math.round(m * 1.1))
+        return m
+      })()
       let price = (() => {
         const cfg = fareConfig
         if (cfg) {
           const base = cfg.base
           const distFee = adjKm * cfg.per_km
-          const timeFee = durationMin * cfg.per_min
+          const timeFee = adjMin * cfg.per_min
           const longFee = adjKm > cfg.long_threshold ? (adjKm - cfg.long_threshold) * cfg.long_rate : 0
           return Math.round(base + distFee + timeFee + longFee)
         }
-        return calculateFare(durationMin, adjKm)
+        return calculateFare(adjMin, adjKm)
       })()
       const bd = (() => {
         const cfg = fareConfig
         if (cfg) {
           const distFee = Math.round(adjKm * cfg.per_km)
-          const timeFee = Math.round(durationMin * cfg.per_min)
+          const timeFee = Math.round(adjMin * cfg.per_min)
           const longFee = adjKm > cfg.long_threshold ? Math.round((adjKm - cfg.long_threshold) * cfg.long_rate) : 0
           return { distanceFee: distFee, timeFee, longFee }
         }
@@ -1647,6 +1655,18 @@ export default function PassengerHome() {
                   }}
                 />
                 <span style={{ color:'#1A1A1A' }}>優先走高速/快速道路</span>
+              </label>
+              <label className="flex items-center space-x-2">
+                <input
+                  type="checkbox"
+                  checked={avoidTolls}
+                  onChange={(e) => {
+                    const v = e.target.checked
+                    setAvoidTolls(v)
+                    if (showEstimate && pickupCoords && dropoffCoords) calculateRoute(pickupCoords, dropoffCoords)
+                  }}
+                />
+                <span style={{ color:'#1A1A1A' }}>避開收費路段</span>
               </label>
               {driverArrivedAt && (
                 <span className="text-sm">司機已等候 {formatMMSS(((Date.now() - driverArrivedAt) / 1000))}</span>
