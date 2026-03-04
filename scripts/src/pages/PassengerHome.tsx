@@ -52,6 +52,8 @@ export default function PassengerHome() {
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [nearbyDriversCount, setNearbyDriversCount] = useState<number | null>(null)
   const [showTripDetail, setShowTripDetail] = useState(false)
+  const [driverProfile, setDriverProfile] = useState<any>(null)
+  const [showLongConsent, setShowLongConsent] = useState(false)
   const createMarker = (mapInst: any, position: any, options?: any) => {
     return new google.maps.Marker({ position, map: mapInst, draggable: !!options?.gmpDraggable, title: options?.title })
   }
@@ -317,6 +319,28 @@ export default function PassengerHome() {
       return unsubscribe
     } catch {}
   }, [user?.id])
+  useEffect(() => {
+    if (!currentTrip?.driver_id) { setDriverProfile(null); return }
+    ;(async ()=>{
+      try {
+        const { data } = await supabase.from('driver_profiles').select('user_id,name,phone,car_plate,car_model,car_color').eq('user_id', currentTrip.driver_id).single()
+        setDriverProfile(data || null)
+      } catch { setDriverProfile(null) }
+    })()
+  }, [currentTrip?.driver_id])
+  useEffect(() => {
+    try {
+      const a = (currentTrip as any)?.pickup_location, b = (currentTrip as any)?.dropoff_location
+      if (!currentTrip || !a || !b) return
+      const R=6371, toRad=(v:number)=>(v*Math.PI)/180
+      const dLat=toRad(b.lat-a.lat), dLng=toRad(b.lng-a.lng)
+      const h=Math.sin(dLat/2)**2+Math.cos(toRad(a.lat))*Math.cos(toRad(b.lat))*Math.sin(dLng/2)**2
+      const dist=2*R*Math.asin(Math.sqrt(h))
+      const key = `ldc_${currentTrip.id}`
+      const consented = localStorage.getItem(key)==='yes'
+      if (dist >= 50 && !consented) setShowLongConsent(true)
+    } catch {}
+  }, [currentTrip?.id])
 
   useEffect(() => {
     if (currentTrip && currentTrip.status === 'accepted') {
@@ -1214,13 +1238,47 @@ export default function PassengerHome() {
         )}
         {showTripDetail && currentTrip && (
           <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-            <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+            <div className="rounded-2xl p-6 max-w-sm w全 mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
               <div className="text-lg font-semibold mb-2" style={{ color:'#DAA520' }}>行程詳情</div>
               <div className="text-sm mb-1">上車：{(currentTrip as any).pickup_location?.address || '—'}</div>
               <div className="text-sm mb-1">目的地：{(currentTrip as any).dropoff_location?.address || '—'}</div>
               <div className="text-sm mb-3">預估金額：${(currentTrip as any).estimated_price ?? '—'}</div>
+              {driverProfile && (
+                <div className="rounded p-3 mb-3" style={{ border:'1px solid rgba(218,165,32,0.35)' }}>
+                  <div className="text-sm mb-1" style={{ color:'#9ca3af' }}>司機資訊</div>
+                  <div className="text-sm">姓名：{driverProfile.name || '—'}</div>
+                  <div className="text-sm">電話：{driverProfile.phone ? <a href={`tel:${driverProfile.phone}`} style={{ color:'#60a5fa' }}>{driverProfile.phone}</a> : '—'}</div>
+                  <div className="text-sm">車牌：{driverProfile.car_plate || '—'}</div>
+                  <div className="text-sm">車型：{driverProfile.car_model || '—'}</div>
+                  <div className="text-sm">車色：{driverProfile.car_color || '—'}</div>
+                </div>
+              )}
               <div className="flex space-x-3">
                 <button onClick={()=>setShowTripDetail(false)} className="flex-1 px-4 py-2 rounded-lg hover:bg-[#333]" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>關閉</button>
+              </div>
+            </div>
+          </div>
+        )}
+        {showLongConsent && currentTrip && (
+          <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+            <div className="rounded-2xl p-6 max-w-sm w全 mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+              <div className="text-lg font-semibold mb-2" style={{ color:'#DAA520' }}>長途直收/議價條款</div>
+              <div className="text-sm mb-3" style={{ color:'#9ca3af' }}>本行程里程 ≥ 50 公里，費用將由管理員核定或與司機議價。若您同意，請點擊「同意條款」繼續。</div>
+              <div className="flex space-x-3">
+                <button onClick={()=>setShowLongConsent(false)} className="flex-1 px-4 py-2 rounded-lg hover:bg-[#333]" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>稍後</button>
+                <button
+                  onClick={async ()=>{
+                    try {
+                      const key = `ldc_${currentTrip.id}`
+                      localStorage.setItem(key, 'yes')
+                      await supabase.from('ops_events').insert({ event_type:'long_distance_consent', ref_id: currentTrip.id, payload:{ agreed:true } } as any)
+                      setShowLongConsent(false)
+                      alert('已記錄同意長途條款')
+                    } catch { alert('記錄失敗') }
+                  }}
+                  className="flex-1 px-4 py-2 rounded-lg"
+                  style={{ backgroundImage:'linear-gradient(to right, #22c55e, #16a34a)', color:'#111' }}
+                >同意條款</button>
               </div>
             </div>
           </div>
@@ -1621,7 +1679,7 @@ export default function PassengerHome() {
         )}
 
         {/* Debug Version Text */}
-        <div className="text-xs mb-1" style={{ color:'#93c5fd' }}>Debug: v1.2.0-Final-Link-Verified</div>
+        <div className="text-xs mb-1" style={{ color:'#93c5fd' }}>Debug: v1.4.0-Commercial-Ready</div>
         {/* Book Button */}
         <button
           onClick={handleBookRide}

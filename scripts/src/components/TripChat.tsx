@@ -16,6 +16,8 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
   const [text, setText] = useState('')
   const [filter, setFilter] = useState<'all' | 'chat' | 'arrived' | 'picked_up' | 'started' | 'completed' | 'payment_confirmed'>('all')
   const listRef = useRef<HTMLDivElement>(null)
+  const [unread, setUnread] = useState(0)
+  const lastSeenKey = `bf_chat_seen_${tripId}_${role}`
 
   useEffect(() => {
     const ch = supabase
@@ -34,6 +36,21 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
       listRef.current.scrollTop = listRef.current.scrollHeight
     }
   }, [messages])
+  useEffect(() => {
+    try {
+      const lastSeenStr = localStorage.getItem(lastSeenKey)
+      const lastSeen = lastSeenStr ? new Date(lastSeenStr).getTime() : 0
+      const count = messages.filter(m => m.type === 'chat' && m.from !== role && new Date(m.time).getTime() > lastSeen).length
+      setUnread(count)
+    } catch { setUnread(0) }
+  }, [messages, role, lastSeenKey])
+  const markRead = () => {
+    try {
+      const latest = messages.length ? messages[messages.length - 1].time : new Date().toISOString()
+      localStorage.setItem(lastSeenKey, latest)
+      setUnread(0)
+    } catch {}
+  }
 
   const send = async () => {
     const v = text.trim()
@@ -53,10 +70,12 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
         <div className="flex items-center space-x-2">
           <MessageCircle className="w-4 h-4" style={{ color:'#9ca3af' }} />
           <span className="text-sm font-medium" style={{ color:'#DAA520' }}>聊天</span>
+          {unread > 0 && <span style={{ minWidth:16, height:16, borderRadius:8, background:'#ef4444', color:'#fff', fontSize:10, lineHeight:'16px', textAlign:'center', padding:'0 4px' }}>{unread}</span>}
         </div>
         <div className="flex items-center space-x-1 text-xs" style={{ color:'#9ca3af' }}>
           <Bell className="w-3 h-3" />
           <span>系統通知同步</span>
+          <button onClick={markRead} className="ml-2 px-2 py-0.5 rounded" style={{ border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>已讀</button>
         </div>
       </div>
       <div className="px-3 py-2 flex items-center space-x-2" style={{ background:'#1A1A1A', borderBottom:'1px solid rgba(218,165,32,0.35)' }}>

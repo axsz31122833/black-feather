@@ -36,13 +36,13 @@ export default function AdminCommandCenter() {
   const [usersPassengers, setUsersPassengers] = useState<any[]>([])
   const [usersDrivers, setUsersDrivers] = useState<any[]>([])
   const [usersAdmins, setUsersAdmins] = useState<any[]>([])
-  const [profilesMap, setProfilesMap] = useState<Record<string, any>>({})
   const [vehicleEdit, setVehicleEdit] = useState<Record<string, { plate?: string; model?: string; color?: string }>>({})
   const [activeLeft, setActiveLeft] = useState<'overview'|'users'|'support'>('overview')
   const [chatSummaries, setChatSummaries] = useState<Array<{ trip_id: string; last_text: string; at: string; unread: number }>>([])
   const [activeChat, setActiveChat] = useState<string | null>(null)
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: string; text: string; created_at: string }>>([])
   const [chatText, setChatText] = useState('')
+  const [focusedDriver, setFocusedDriver] = useState<any>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -184,9 +184,16 @@ export default function AdminCommandCenter() {
         const color = d.status === 'on_trip' ? '#EF4444' : '#10B981'
         if (mk[key]) {
           try { mk[key].setPosition(pos) } catch {}
-          try { mk[key].setIcon({ path: g.maps.SymbolPath.CIRCLE, scale: 6, fillColor: color, fillOpacity: 1, strokeColor: color, strokeWeight: 1 }) } catch {}
+          try { mk[key].setIcon({ path: 'M12 2 L2 9 L2 14 L22 14 L22 9 L12 2 Z', scale: 1, fillColor: color, fillOpacity: 1, strokeColor: color, strokeWeight: 1 }) } catch {}
         } else {
-          mk[key] = new g.maps.Marker({ position: pos, map: m, icon: { path: g.maps.SymbolPath.CIRCLE, scale: 6, fillColor: color, fillOpacity: 1, strokeColor: color, strokeWeight: 1 } })
+          mk[key] = new g.maps.Marker({ position: pos, map: m, icon: { path: 'M12 2 L2 9 L2 14 L22 14 L22 9 L12 2 Z', scale: 1, fillColor: color, fillOpacity: 1, strokeColor: color, strokeWeight: 1 } })
+          mk[key].addListener('click', () => {
+            try {
+              const drv = drivers.find(x => x.id === d.id)
+              ;(window as any).__focusDriver = drv
+              setFocusedDriver(drv || null)
+            } catch {}
+          })
         }
       })
     } catch {}
@@ -454,6 +461,21 @@ export default function AdminCommandCenter() {
               </div>
             </div>
           </div>
+          {/* Focused Driver Quick Assign */}
+          {focusedDriver && (
+            <div className="fixed right-4 bottom-20 rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
+              <div className="text-sm mb-1">司機：{focusedDriver?.name || focusedDriver?.phone || focusedDriver?.id}</div>
+              <div className="text-xs mb-2" style={{ color:'#9ca3af' }}>狀態：{focusedDriver?.status || '—'}</div>
+              <div className="flex items-center gap-2">
+                <button onClick={()=>setFocusedDriver(null)} className="px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>關閉</button>
+                {selectedTrip ? (
+                  <button onClick={()=>assignToDriver(selectedTrip.id, focusedDriver.id)} className="px-2 py-1 text-xs rounded bg-indigo-600 text-white">指派給他</button>
+                ) : (
+                  <span className="text-xs" style={{ color:'#9ca3af' }}>右側選擇訂單後可快速指派</span>
+                )}
+              </div>
+            </div>
+          )}
           {/* Support Center */}
           <div className="rounded-lg p-4 space-y-3" style={{ display: activeLeft==='support' ? 'block' : 'none', background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
             <div className="text-sm">客服中心</div>
