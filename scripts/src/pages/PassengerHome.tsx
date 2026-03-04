@@ -98,6 +98,7 @@ export default function PassengerHome() {
   const [searchInfoModal, setSearchInfoModal] = useState<{ show: boolean; type: 'far' | 'timeout' }>({ show:false, type:'far' })
   const [homeFavorite, setHomeFavorite] = useState<{ address: string; lat: number; lng: number } | null>(null)
   const [workFavorite, setWorkFavorite] = useState<{ address: string; lat: number; lng: number } | null>(null)
+  const [favorites, setFavorites] = useState<Array<{ id?: string; label?: string; address: string; lat: number; lng: number }>>([])
   const [surgeMultiplier, setSurgeMultiplier] = useState(1)
   const [rideMode, setRideMode] = useState<'immediate' | 'scheduled'>('immediate')
   const [scheduledTime, setScheduledTime] = useState('')
@@ -381,6 +382,7 @@ export default function PassengerHome() {
     try {
       const h = localStorage.getItem('bf_fav_home')
       const w = localStorage.getItem('bf_fav_work')
+      const list = localStorage.getItem('bf_fav_list')
       if (h) {
         const p = JSON.parse(h)
         setHomeFavorite(p)
@@ -388,6 +390,10 @@ export default function PassengerHome() {
       if (w) {
         const p = JSON.parse(w)
         setWorkFavorite(p)
+      }
+      if (list) {
+        const arr = JSON.parse(list)
+        if (Array.isArray(arr)) setFavorites(arr)
       }
     } catch {}
   }, [])
@@ -1116,6 +1122,29 @@ export default function PassengerHome() {
     setDropoffCoords({ lat: workFavorite.lat, lng: workFavorite.lng })
     if (map) map.setCenter({ lat: workFavorite.lat, lng: workFavorite.lng })
   }
+  const saveFavorite = async (type: 'pickup' | 'dropoff') => {
+    const coords = type==='pickup' ? pickupCoords : dropoffCoords
+    const address = type==='pickup' ? pickupAddress : dropoffAddress
+    if (!coords || !address) return
+    const fav = { address, lat: coords.lat, lng: coords.lng }
+    const label = window.prompt('為此收藏取個標籤（例如：學校、捷運站）', '') || ''
+    const item = { ...fav, label: label || undefined }
+    const next = [item, ...favorites].slice(0, 12)
+    setFavorites(next)
+    try { localStorage.setItem('bf_fav_list', JSON.stringify(next)) } catch {}
+    try {
+      await supabase.from('user_favorites').insert({ user_id: user?.id || null, label: item.label || null, address: item.address, lat: item.lat, lng: item.lng } as any)
+    } catch {}
+  }
+  const applyFavorite = (fav: { address: string; lat: number; lng: number }, target: 'pickup'|'dropoff') => {
+    if (target==='pickup') {
+      setPickupAddress(fav.address); setPickupCoords({ lat: fav.lat, lng: fav.lng })
+      if (map) map.setCenter({ lat: fav.lat, lng: fav.lng })
+    } else {
+      setDropoffAddress(fav.address); setDropoffCoords({ lat: fav.lat, lng: fav.lng })
+      if (map) map.setCenter({ lat: fav.lat, lng: fav.lng })
+    }
+  }
 
   const handleLogout = async () => {
     await signOut()
@@ -1602,6 +1631,22 @@ export default function PassengerHome() {
               <button onClick={useWorkAsDropoff} className="px-3 py-2 bg-gray-200 rounded">公司一鍵設為目的地</button>
             )}
           </div>
+          {favorites.length > 0 && (
+            <div className="mt-3">
+              <div className="text-xs font-semibold text-gray-700 mb-1">收藏地點</div>
+              <div className="grid grid-cols-2 gap-2">
+                {favorites.map((f, idx)=>(
+                  <div key={`${f.lat}-${f.lng}-${idx}`} className="p-2 bg-gray-50 rounded border border-gray-200">
+                    <div className="text-xs text-gray-600 truncate">{f.label || f.address}</div>
+                    <div className="mt-1 flex items-center gap-2">
+                      <button onClick={()=>applyFavorite(f,'pickup')} className="px-2 py-1 text-xs bg-blue-600 text-white rounded">上車</button>
+                      <button onClick={()=>applyFavorite(f,'dropoff')} className="px-2 py-1 text-xs bg-green-600 text-white rounded">目的地</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         
 

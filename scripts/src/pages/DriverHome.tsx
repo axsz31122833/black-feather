@@ -51,6 +51,7 @@ export default function DriverHome() {
   const [broadcastConnected, setBroadcastConnected] = useState(false)
   const [opsConnected, setOpsConnected] = useState(false)
   const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null)
+  const [nextQueue, setNextQueue] = useState<any[]>([])
 
   useEffect(() => {
     if (user) {
@@ -78,6 +79,16 @@ export default function DriverHome() {
                   return
                 }
                 if (distKm < 5) {
+                  if (currentTrip && currentTrip.status === 'in_progress') {
+                    setNextQueue(prev => {
+                      const exists = prev.some(x => x.id === nv.id)
+                      return exists ? prev : [...prev, nv]
+                    })
+                    try { 
+                      if (navigator?.vibrate) navigator.vibrate([150,80,150]) 
+                    } catch {}
+                    return
+                  }
                   setPendingRequestedTrip(nv)
                   try { 
                     if (navigator?.vibrate) navigator.vibrate([200,100,200]) 
@@ -1225,6 +1236,35 @@ export default function DriverHome() {
             </div>
             <div className="mt-4">
               {user && currentTrip && <TripChat tripId={currentTrip.id} userId={user.id} role="driver" />}
+            </div>
+          </div>
+        )}
+        {/* Next Queue */}
+        {currentTrip && nextQueue.length > 0 && (
+          <div className="rounded-lg p-4 mb-6" style={{ background:'#0f172a', border:'1px solid rgba(0,255,255,0.15)' }}>
+            <h4 className="text-lg font-semibold mb-2" style={{ color:'#e5e7eb' }}>待執行佇列</h4>
+            <div className="space-y-2 max-h-40 overflow-y-auto">
+              {nextQueue.map(q => (
+                <div key={q.id} className="flex items-center justify-between p-2 rounded border" style={{ borderColor:'rgba(0,255,255,0.15)', color:'#e5e7eb' }}>
+                  <div className="text-xs">
+                    <div>上車：{q?.pickup_location?.address || '—'}</div>
+                    <div>下車：{q?.dropoff_location?.address || '—'}</div>
+                  </div>
+                  <button
+                    onClick={async () => {
+                      try {
+                        if (!user?.id) return
+                        await supabase.from('trips').update({ driver_id: user.id, status: 'accepted' }).eq('id', q.id)
+                        setNextQueue(prev => prev.filter(x => x.id !== q.id))
+                        alert('已接下一單，完成當前行程後續接續')
+                      } catch { alert('接單失敗') }
+                    }}
+                    className="px-2 py-1 text-xs rounded bg-indigo-600 text-white"
+                  >
+                    接下一單
+                  </button>
+                </div>
+              ))}
             </div>
           </div>
         )}
