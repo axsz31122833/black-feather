@@ -25,7 +25,7 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${tripId}` }, (payload: any) => {
         const row = payload.new
         if (!row) return
-        setMessages(prev => [...prev, { id: row.id, type: 'chat', text: row.text || '', from: row.role || 'system', time: row.created_at, eventType: 'chat' }])
+        setMessages(prev => [...prev, { id: row.id, type: 'chat', text: row.content || row.text || '', from: row.role || 'system', time: row.created_at, eventType: 'chat' }])
       })
       .subscribe()
     return () => { ch.unsubscribe() }
@@ -58,9 +58,9 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     setText('')
     await supabase.from('trip_messages').insert({
       trip_id: tripId,
-      user_id: userId,
+      sender_id: userId,
       role,
-      text: v
+      content: v
     } as any)
   }
 
