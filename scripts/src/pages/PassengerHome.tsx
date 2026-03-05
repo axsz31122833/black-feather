@@ -10,6 +10,7 @@ import { recordPayment } from '../utils/payments'
 import { supabase, ensureAuth } from '../lib/supabaseClient'
 import { MapPin, Search, Car, Clock, DollarSign, Navigation, Menu, User } from 'lucide-react'
 import TripChat from '../components/TripChat'
+import BottomNav from '../components/BottomNav'
 
 interface CarType {
   id: 'economy' | 'comfort' | 'business'
@@ -1439,6 +1440,18 @@ export default function PassengerHome() {
             </div>
           </div>
         </div>
+        {homeFavorite && workFavorite && (
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            <button onClick={()=>{
+              applyFavorite(homeFavorite,'pickup'); applyFavorite(workFavorite,'dropoff');
+              if (pickupCoords && dropoffCoords) handleEstimate()
+            }} className="px-3 py-2 rounded text-xs" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>家 → 公司 一鍵叫車</button>
+            <button onClick={()=>{
+              applyFavorite(workFavorite,'pickup'); applyFavorite(homeFavorite,'dropoff');
+              if (pickupCoords && dropoffCoords) handleEstimate()
+            }} className="px-3 py-2 rounded text-xs" style={{ background:'#2A2A2A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>公司 → 家 一鍵叫車</button>
+          </div>
+        )}
       </div>
 
       {/* Map */}
@@ -1721,9 +1734,9 @@ export default function PassengerHome() {
               <div className="mt-1 text-xs text-yellow-700">動態加價 x{surgeMultiplier.toFixed(1)}（依司機供給與抵達時間）</div>
             )}
           {currentTrip && currentTrip.status === 'accepted' && arrivalSeconds != null && (
-            <div className="mt-3 flex items-center justify-between">
-              <span className="text-sm text-gray-600">司機抵達倒數</span>
-              <span className="font-medium">{Math.floor(arrivalSeconds / 60)} 分 {arrivalSeconds % 60} 秒</span>
+            <div className="mt-3 p-3 rounded-lg flex items-center justify-between" style={{ background:'#111', border:'1px solid rgba(218,165,32,0.35)' }}>
+              <span className="text-sm" style={{ color:'#DAA520' }}>司機預計抵達倒數</span>
+              <span className="font-extrabold text-2xl" style={{ color:'#e5e7eb' }}>{Math.floor(arrivalSeconds / 60)} 分 {arrivalSeconds % 60} 秒</span>
             </div>
           )}
           {currentTrip && currentTrip.status === 'accepted' && (
@@ -1790,6 +1803,7 @@ export default function PassengerHome() {
         </button>
       )}
     </div>
+    <BottomNav role="passenger" />
     {showSupportModal && (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
         <div className="bg-[#1a1a1a] border border-[#D4AF37]/30 rounded-2xl p-6 w-full max-w-md text-white">

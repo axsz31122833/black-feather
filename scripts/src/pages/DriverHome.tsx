@@ -7,6 +7,7 @@ import { getRouteWithFallbacks } from '../utils/maps'
 import { supabase } from '../lib/supabaseClient'
 import { MapPin, Navigation, DollarSign, Clock, User, Power, Menu, Car, TrendingUp } from 'lucide-react'
 import TripChat from '../components/TripChat'
+import BottomNav from '../components/BottomNav'
 import { confirmPaymentRPC, recordPayment } from '../utils/payments'
 import { sendOpsEvent } from '../utils/ops'
 import { env } from '../config/env'
@@ -87,6 +88,11 @@ export default function DriverHome() {
                     try { 
                       if (navigator?.vibrate) navigator.vibrate([150,80,150]) 
                     } catch {}
+                    try {
+                      const u = new SpeechSynthesisUtterance(`新疊單已加入佇列：${nv?.pickup_location?.address || '未知上車地點'}`)
+                      u.lang = 'zh-TW'
+                      window.speechSynthesis.speak(u)
+                    } catch {}
                     return
                   }
                   setPendingRequestedTrip(nv)
@@ -95,6 +101,11 @@ export default function DriverHome() {
                     const audio = new Audio('data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQCA//////////////////////////////8AAABhTEFNRTMuMTAwA8MAAAAAAAAAAAAAAA==')
                     audio.volume = 1
                     audio.play().catch(()=>{})
+                    try {
+                      const u = new SpeechSynthesisUtterance(`新訂單：${nv?.pickup_location?.address || '未知上車地點'}`)
+                      u.lang = 'zh-TW'
+                      window.speechSynthesis.speak(u)
+                    } catch {}
                     if ('Notification' in window) {
                       if (Notification.permission === 'granted') {
                         new Notification('新訂單：附近 5km 內', { body: (nv.pickup_location?.address || '') + ' → ' + (nv.dropoff_location?.address || '') })
@@ -820,13 +831,13 @@ export default function DriverHome() {
       )}
 
       {pendingRequestedTrip && !currentTrip && (
-        <div style={{ position:'fixed', top:56, left:12, right:12, zIndex:11000, pointerEvents:'auto' }}>
-          <div className="rounded-2xl p-4" style={{ background:'#111', border:'1px solid rgba(0,255,255,0.25)', color:'#e5e7eb' }}>
-            <div className="text-sm mb-1" style={{ color:'#00FFFF' }}>新訂單（全域廣播）</div>
-            <div className="text-xs mb-2" style={{ color:'#9ca3af' }}>
+        <div style={{ position:'fixed', inset:0, zIndex:12000, background:'rgba(0,0,0,0.85)', display:'flex', alignItems:'center', justifyContent:'center' }}>
+          <div className="text-center p-6" style={{ color:'#e5e7eb' }}>
+            <div style={{ fontSize:28, fontWeight:900, color:'#00FFFF', marginBottom:8 }}>新訂單來了</div>
+            <div style={{ fontSize:16, marginBottom:18 }}>
               {(pendingRequestedTrip as any).pickup_location?.address || '—'} → {(pendingRequestedTrip as any).dropoff_location?.address || '—'}
             </div>
-            <div className="flex space-x-2">
+            <div className="flex items-center justify-center space-x-3">
               <button
                 onClick={async () => {
                   try {
@@ -835,10 +846,12 @@ export default function DriverHome() {
                     setPendingRequestedTrip(null)
                   } catch { alert('接單失敗') }
                 }}
-                className="px-4 py-2 rounded-2xl bg-green-600 text-white hover:bg-green-700"
-                style={{ position:'relative', zIndex:12000 }}
-              >接單</button>
-              <button onClick={()=>setPendingRequestedTrip(null)} className="px-4 py-2 rounded-2xl bg-gray-700 text-white hover:bg-gray-600">忽略</button>
+                className="px-6 py-3 rounded-2xl text-black font-bold"
+                style={{ backgroundImage:'linear-gradient(to right, #00FFFF, #34d399)' }}
+              >
+                立刻接單
+              </button>
+              <button onClick={()=>setPendingRequestedTrip(null)} className="px-6 py-3 rounded-2xl" style={{ border:'1px solid rgba(255,255,255,0.25)', color:'#e5e7eb' }}>略過</button>
             </div>
           </div>
         </div>
@@ -1281,8 +1294,8 @@ export default function DriverHome() {
         )}
       </div>
       {showAccept && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white rounded-lg p-6 w-full max-w-md mx-4">
+        <div className="fixed inset-0 bg黑 bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg白 rounded-lg p-6 w全 max-w-md mx-4">
             <h3 className="text-lg font-semibold text-gray-900 mb-3">新訂單</h3>
             <div className="space-y-2 text-sm text-gray-700 mb-4">
               <div>上車：{currentTrip?.pickup_address || '計算中...'}</div>
@@ -1296,6 +1309,7 @@ export default function DriverHome() {
           </div>
         </div>
       )}
+      <BottomNav role="driver" />
     </div>
     
   )

@@ -43,6 +43,9 @@ export default function AdminCommandCenter() {
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: string; text: string; created_at: string }>>([])
   const [chatText, setChatText] = useState('')
   const [focusedDriver, setFocusedDriver] = useState<any>(null)
+  const [overdueRequested, setOverdueRequested] = useState<any[]>([])
+  const [showOverdueAlert, setShowOverdueAlert] = useState(false)
+  const [driverSummary, setDriverSummary] = useState<{ id?: string; trips: number; revenue: number } | null>(null)
 
   useEffect(() => {
     ;(async () => {
@@ -198,6 +201,14 @@ export default function AdminCommandCenter() {
       })
     } catch {}
   }, [drivers])
+  useEffect(() => {
+    try {
+      const now = Date.now()
+      const list = (requestedTrips || []).filter((t:any)=> t.created_at && (now - new Date(t.created_at).getTime()) > 120000)
+      setOverdueRequested(list)
+      setShowOverdueAlert(list.length > 0)
+    } catch {}
+  }, [requestedTrips])
 
   const saveFare = async () => {
     const payload = { id: 'global', base: fareBase, per_km: farePerKm, per_min: farePerMin, long_threshold: longThreshold, long_rate: longRate }
@@ -356,10 +367,20 @@ export default function AdminCommandCenter() {
           </div>
         </aside>
         <main className="flex-1 p-4 md:p-6">
-          <div className="md:hidden flex items-center justify-between mb-3">
+          <div className="md:hidden flex items中心 justify-between mb-3">
             <button onClick={()=>setMenuOpen(v=>!v)} className="px-3 py-2 rounded" style={{ border:'1px solid rgba(255,255,255,0.15)', color:'#e5e7eb' }}>☰</button>
             <div className="text-sm" style={{ color:'#9ca3af' }}>管理儀表板</div>
           </div>
+          {showOverdueAlert && (
+            <div className="mb-3 p-3 rounded-lg" style={{ background:'#7f1d1d', color:'#fff', border:'1px solid rgba(255,255,255,0.2)' }}>
+              <div className="font-semibold mb-1">逾時未接警示</div>
+              <div className="text-xs">超過 120 秒未接：{overdueRequested.length} 筆</div>
+              <div className="mt-2">
+                <button onClick={()=>{ if (overdueRequested[0]) focusTrip(overdueRequested[0]) }} className="px-3 py-1 text-xs rounded" style={{ background:'#ef4444', color:'#fff' }}>聚焦最新逾時</button>
+                <button onClick={()=>setShowOverdueAlert(false)} className="ml-2 px-3 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.2)', color:'#fff' }}>忽略</button>
+              </div>
+            </div>
+          )}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6" style={{ display: activeLeft==='overview' ? 'grid' : 'none' }}>
             <div className="rounded-lg p-4" style={{ background:'#1E1E1E', border:'1px solid rgba(0,255,255,0.2)' }}>
               <div className="text-sm" style={{ color:'#9ca3af' }}>今日營收</div>
@@ -473,6 +494,28 @@ export default function AdminCommandCenter() {
                 ) : (
                   <span className="text-xs" style={{ color:'#9ca3af' }}>右側選擇訂單後可快速指派</span>
                 )}
+                <button onClick={async ()=>{
+                  try {
+                    const startIso = new Date(new Date().toISOString().slice(0,10) + 'T00:00:00Z').toISOString()
+                    const { data } = await supabase.from('trips').select('final_price,status,created_at').eq('driver_id', focusedDriver.id).gte('created_at', startIso)
+                    const arr = data || []
+                    const revenue = arr.filter((t:any)=>t.status==='completed').reduce((s:number,t:any)=> s + Number(t.final_price||0), 0)
+                    setDriverSummary({ id: focusedDriver.id, trips: arr.length, revenue })
+                  } catch { setDriverSummary({ id: focusedDriver.id, trips: 0, revenue: 0 }) }
+                }} className="px-2 py-1 text-xs rounded bg-green-600 text-white">今日清算</button>
+              </div>
+            </div>
+          )}
+          {driverSummary && (
+            <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50">
+              <div className="rounded-2xl p-6 w-full max-w-sm" style={{ background:'#1E1E1E', border:'1px solid rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
+                <div className="text-sm font-semibold mb-2">司機日結單</div>
+                <div className="text-xs mb-1" style={{ color:'#9ca3af' }}>司機：{driverSummary.id}</div>
+                <div className="text-sm">今日單數：{driverSummary.trips}</div>
+                <div className="text-sm">今日收入：${driverSummary.revenue}</div>
+                <div className="mt-3 text-right">
+                  <button onClick={()=>setDriverSummary(null)} className="px-3 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>關閉</button>
+                </div>
               </div>
             </div>
           )}
@@ -583,6 +626,9 @@ export default function AdminCommandCenter() {
             </div>
           )}
         </main>
+        <div style={{ position:'fixed', left:0, right:0, bottom:0 }}>
+          {React.createElement(require('../components/BottomNav').default, { role:'admin' })}
+        </div>
       </div>
     </div>
   )
