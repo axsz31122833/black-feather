@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, ensureAuth } from '../lib/supabaseClient'
 import { useAuthStore } from '../stores/auth'
+import BottomNav from '../components/BottomNav'
 
 type DriverRow = {
   id: string
@@ -627,7 +628,7 @@ export default function AdminCommandCenter() {
           )}
         </main>
         <div style={{ position:'fixed', left:0, right:0, bottom:0 }}>
-          {React.createElement(require('../components/BottomNav').default, { role:'admin' })}
+          <BottomNav role="admin" />
         </div>
       </div>
     </div>
