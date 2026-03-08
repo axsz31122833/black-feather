@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { supabase } from '../lib/supabaseClient'
-import { MessageCircle, Send, Bell } from 'lucide-react'
+import { MessageCircle, Send, Bell, Image as ImageIcon, MapPin } from 'lucide-react'
 
 interface Msg {
   id: string
@@ -9,6 +9,8 @@ interface Msg {
   from: string
   time: string
   eventType?: string
+  imageUrl?: string
+  loc?: { lat: number; lng: number } | null
 }
 
 export default function TripChat({ tripId, userId, role }: { tripId: string; userId: string; role: 'passenger' | 'driver' }) {
@@ -18,6 +20,8 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
   const listRef = useRef<HTMLDivElement>(null)
   const [unread, setUnread] = useState(0)
   const lastSeenKey = `bf_chat_seen_${tripId}_${role}`
+  const fileRef = useRef<HTMLInputElement>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
 
   useEffect(() => {
     const ch = supabase
@@ -25,7 +29,7 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${tripId}` }, (payload: any) => {
         const row = payload.new
         if (!row) return
-        setMessages(prev => [...prev, { id: row.id, type: 'chat', text: row.content || row.text || '', from: row.role || 'system', time: row.created_at, eventType: 'chat' }])
+        setMessages(prev => [...prev, { id: row.id, type: 'chat', text: row.message_content || row.content || row.text || '', from: (row.role || 'unknown'), time: row.created_at, eventType: 'chat', imageUrl: row.image_url || null, loc: row.location_data || null }])
       })
       .subscribe()
     return () => { ch.unsubscribe() }
@@ -59,9 +63,41 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     await supabase.from('trip_messages').insert({
       trip_id: tripId,
       sender_id: userId,
-      role,
-      content: v
+      message_content: v
     } as any)
+  }
+  const triggerImage = () => { try { fileRef.current?.click() } catch {} }
+  const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    try {
+      const name = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name.replace(/\s+/g,'_')}`
+      const path = `${tripId}/${name}`
+      const { error } = await supabase.storage.from('chat_images').upload(path, file, { upsert: true, contentType: file.type })
+      if (error) throw error
+      const { data } = await supabase.storage.from('chat_images').getPublicUrl(path)
+      const url = data?.publicUrl
+      if (!url) throw new Error('no url')
+      await supabase.from('trip_messages').insert({ trip_id: tripId, sender_id: userId, message_content: '', image_url: url } as any)
+    } catch {}
+    try { if (fileRef.current) fileRef.current.value = '' } catch {}
+  }
+  const sendLocation = async () => {
+    try {
+      await new Promise<void>((resolve, reject) => {
+        navigator.geolocation.getCurrentPosition(
+          async (pos) => {
+            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
+            try {
+              await supabase.from('trip_messages').insert({ trip_id: tripId, sender_id: userId, message_content: '', location_data: loc } as any)
+              resolve()
+            } catch (e) { reject(e as any) }
+          },
+          () => reject(new Error('geolocation_failed')),
+          { enableHighAccuracy: true, maximumAge: 5000 }
+        )
+      })
+    } catch {}
   }
 
   return (
@@ -99,18 +135,38 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
           <div key={m.id} className="text-sm" style={{ color: m.type === 'notify' ? '#a78bfa' : (m.from === role ? '#60a5fa' : '#e5e7eb') }}>
             <span className="font-medium">{m.type === 'notify' ? '系統' : m.from}</span>
             <span className="mx-1">·</span>
-            <span>{m.text}</span>
+            {m.imageUrl ? (
+              <img src={m.imageUrl} alt="" style={{ maxWidth:'60%', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer' }} onClick={()=>setPreviewUrl(m.imageUrl!)} />
+            ) : m.loc ? (
+              <button onClick={()=>{ const u = `https://www.google.com/maps?q=${m.loc!.lat},${m.loc!.lng}`; window.open(u,'_blank') }} className="px-2 py-1 rounded text-xs" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+                📍 我目前的位置
+              </button>
+            ) : (
+              <span>{m.text}</span>
+            )}
           </div>
         ))}
         {messages.length === 0 && <div className="text-xs" style={{ color:'#9ca3af' }}>尚無訊息</div>}
       </div>
       <div className="flex items-center p-2 space-x-2">
         <input value={text} onChange={e => setText(e.target.value)} placeholder="輸入訊息..." className="flex-1 px-2 py-2" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb', borderRadius:8 }} />
+        <input ref={fileRef} type="file" accept="image/*" onChange={handleImageSelect} style={{ display:'none' }} />
+        <button onClick={triggerImage} className="px-2 py-2 rounded-lg hover:opacity-90" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+          <ImageIcon className="w-4 h-4" />
+        </button>
+        <button onClick={sendLocation} className="px-2 py-2 rounded-lg hover:opacity-90" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
+          <MapPin className="w-4 h-4" />
+        </button>
         <button onClick={send} className="px-3 py-2 rounded-lg hover:opacity-90 flex items-center space-x-1" style={{ backgroundImage:'linear-gradient(to right, #3b82f6, #2563eb)', color:'#111' }}>
           <Send className="w-4 h-4" />
           <span className="text-sm">送出</span>
         </button>
       </div>
+      {previewUrl && (
+        <div style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.7)', zIndex:10000, display:'flex', alignItems:'center', justifyContent:'center' }} onClick={()=>setPreviewUrl(null)}>
+          <img src={previewUrl} alt="" style={{ maxWidth:'90%', maxHeight:'90%', borderRadius:10, border:'2px solid rgba(255,255,255,0.2)' }} />
+        </div>
+      )}
     </div>
   )
 }

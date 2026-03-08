@@ -253,7 +253,7 @@ export default function AdminCommandCenter() {
           const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
           const lastSeen = JSON.parse(lastSeenRaw)
           const unread = lastSeen[row.trip_id] && new Date(row.created_at) <= new Date(lastSeen[row.trip_id]) ? 0 : 1
-          setChatSummaries(prev => [{ trip_id: row.trip_id, last_text: row.content || row.text || '', at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.trip_id)])
+          setChatSummaries(prev => [{ trip_id: row.trip_id, last_text: row.message_content || row.content || row.text || '', at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.trip_id)])
         })
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter:'event_type=eq.chat' }, (p:any)=>{
           const row = p.new
@@ -282,7 +282,7 @@ export default function AdminCommandCenter() {
     ;(async () => {
       try {
         const { data } = await supabase.from('trip_messages').select('*').eq('trip_id', activeChat).order('created_at', { ascending: true })
-        setChatMessages((data || []).map((row:any)=>({ id: row.id, role: row.role, text: row.content || row.text || '', created_at: row.created_at })))
+        setChatMessages((data || []).map((row:any)=>({ id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at })))
       } catch { setChatMessages([]) }
     })()
     const ch = supabase
@@ -290,7 +290,7 @@ export default function AdminCommandCenter() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${activeChat}` }, (p:any)=>{
         const row = p.new
         if (!row) return
-        setChatMessages(prev => [...prev, { id: row.id, role: row.role, text: row.content || row.text || '', created_at: row.created_at }])
+        setChatMessages(prev => [...prev, { id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at }])
       })
       .subscribe()
     return () => { ch.unsubscribe() }
@@ -299,7 +299,7 @@ export default function AdminCommandCenter() {
     const v = chatText.trim()
     if (!v || !activeChat) return
     setChatText('')
-    await supabase.from('trip_messages').insert({ trip_id: activeChat, sender_id: user?.id || null, role: 'admin', content: v } as any)
+    await supabase.from('trip_messages').insert({ trip_id: activeChat, sender_id: user?.id || null, message_content: v } as any)
   }
   const assignToDriver = async (tripId: string, driverId: string) => {
     try {

@@ -1322,7 +1322,7 @@ export default function PassengerHome() {
           </div>
         )}
         {showRatingModal && currentTrip && (
-          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="固定 inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
             <div className="rounded-2xl p-6 max-w-sm w-full mx-4" style={{ background:'#1A1A1A', border:'1px solid rgba(218,165,32,0.35)', color:'#e5e7eb' }}>
               <h3 className="text-lg font-semibold text-gray-900 mb-4">本次行程評分</h3>
               <div className="mb-4">
@@ -1398,6 +1398,12 @@ export default function PassengerHome() {
             </div>
           </div>
         )}
+        <button
+          onClick={() => setShowSupportModal(true)}
+          style={{ position:'fixed', right:12, bottom:72, zIndex:12000, borderRadius:9999, padding:'10px 14px', boxShadow:'0 6px 20px rgba(0,0,0,0.35)', background:'#D4AF37', color:'#111', border:'1px solid rgba(218,165,32,0.5)' }}
+        >
+          聯絡客服/司機
+        </button>
       </div>
     )
   }
