@@ -47,6 +47,17 @@ export default function AdminCommandCenter() {
   const [overdueRequested, setOverdueRequested] = useState<any[]>([])
   const [showOverdueAlert, setShowOverdueAlert] = useState(false)
   const [driverSummary, setDriverSummary] = useState<{ id?: string; trips: number; revenue: number } | null>(null)
+  const reloadRequested = async () => {
+    try {
+      const { data: req } = await supabase
+        .from('trips')
+        .select('id,pickup_location,estimated_price,passenger_id,created_at')
+        .eq('status','requested')
+        .order('created_at',{ ascending:false })
+        .limit(100)
+      setRequestedTrips(req || [])
+    } catch { setRequestedTrips([]) }
+  }
 
   useEffect(() => {
     ;(async () => {
@@ -247,10 +258,10 @@ export default function AdminCommandCenter() {
   useEffect(() => {
     try {
       const ch = supabase
-        .channel('admin-cc-chat')
+        .channel('admin-chat')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
           const row = p.new
-          try { console.log('管理端收到新訊息:', p) } catch {}
+          try { console.log('Realtime收到訊息:', p) } catch {}
           if (!row?.trip_id) return
           const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
           const lastSeen = JSON.parse(lastSeenRaw)
@@ -292,7 +303,7 @@ export default function AdminCommandCenter() {
       .channel('admin-chat-thread')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${activeChat}` }, (p:any)=>{
         const row = p.new
-        try { console.log('收到新訊息 (thread):', p) } catch {}
+        try { console.log('Realtime收到訊息:', p) } catch {}
         if (!row) return
         setChatMessages(prev => [...prev, { id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at }])
       })
@@ -618,10 +629,10 @@ export default function AdminCommandCenter() {
                     return ''
                   })()}
                 </div>
-                  <div className="mt-3 flex items-center justify-between">
-                    <button onClick={async ()=>{ try { await supabase.from('trips').update({ status:'closed' }).eq('id', selectedTrip.id); setRequestedTrips(prev=>prev.filter(t=>t.id!==selectedTrip.id)); alert('已關閉訂單'); setSelectedTrip(null) } catch { alert('關閉失敗') } }} className="px-3 py-2 rounded text-xs bg-red-600 text-white">關閉訂單</button>
-                    <button onClick={async ()=>{ try { await supabase.from('trips').delete().eq('id', selectedTrip.id); setRequestedTrips(prev=>prev.filter(t=>t.id!==selectedTrip.id)); alert('已刪除訂單'); setSelectedTrip(null) } catch { alert('刪除失敗') } }} className="px-3 py-2 rounded text-xs" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>刪除</button>
-                  </div>
+                <div className="mt-3 flex items-center justify-between">
+                    <button onClick={async ()=>{ try { await supabase.from('trips').update({ status:'closed' }).eq('id', selectedTrip.id); await reloadRequested(); alert('已關閉訂單'); setSelectedTrip(null) } catch { alert('關閉失敗') } }} className="px-3 py-2 rounded text-xs bg-red-600 text-white">關閉訂單</button>
+                    <button onClick={async ()=>{ try { await supabase.from('trips').delete().eq('id', selectedTrip.id); await reloadRequested(); alert('已刪除訂單'); setSelectedTrip(null) } catch { alert('刪除失敗') } }} className="px-3 py-2 rounded text-xs" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>刪除</button>
+                </div>
                 </div>
                 <div className="mt-4 text-right">
                   <button onClick={()=>setSelectedTrip(null)} className="px-3 py-2 rounded text-xs" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>關閉</button>
