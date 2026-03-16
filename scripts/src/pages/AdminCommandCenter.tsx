@@ -616,6 +616,9 @@ export default function AdminCommandCenter() {
                 </div>
                 <div className="flex items-center gap-2">
                   <input value={chatText} onChange={e=>setChatText(e.target.value)} placeholder="輸入訊息…" className="flex-1 px-2 py-2 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
+                  <input ref={fileRef} type="file" accept="image/*" onChange={handleImageSelect} style={{ display:'none' }} />
+                  <button onClick={triggerImage} className="px-2 py-2 rounded text-xs" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>🖼️</button>
+                  <button onClick={sendLocation} className="px-2 py-2 rounded text-xs" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>📍</button>
                   <button onClick={sendAdminMessage} className="px-3 py-2 text-xs rounded bg-indigo-600 text-white">發送</button>
                 </div>
                 {imgPreview && (
