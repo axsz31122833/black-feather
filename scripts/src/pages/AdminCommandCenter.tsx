@@ -277,7 +277,7 @@ export default function AdminCommandCenter() {
           const text = (row.payload && row.payload.text) || '(系統)'
           setChatSummaries(prev => [{ trip_id: row.ref_id, last_text: text, at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.ref_id)])
         })
-        .subscribe()
+        .subscribe((status: any) => { try { console.log('頻道狀態:', status) } catch {} })
       return () => { ch.unsubscribe() }
     } catch {}
   }, [])
@@ -307,7 +307,7 @@ export default function AdminCommandCenter() {
         if (!row) return
         setChatMessages(prev => [...prev, { id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at }])
       })
-      .subscribe()
+      .subscribe((status: any) => { try { console.log('頻道狀態:', status) } catch {} })
     return () => { ch.unsubscribe() }
   }, [activeChat])
   const sendAdminMessage = async () => {
