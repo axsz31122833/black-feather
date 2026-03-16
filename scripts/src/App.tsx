@@ -92,7 +92,7 @@ function App() {
           {/* deploy trigger: 2026-01-29 */}
           <div className="brand flex items-center gap-3" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
             Black Feather 車隊
-            <span style={{ fontSize: 12, color:'#93c5fd', opacity: 0.9 }}>v1.5.0-Full-Media-UI</span>
+            <span style={{ fontSize: 12, color:'#93c5fd', opacity: 0.9 }}>v1.5.2-Column-Sync-Fixed</span>
           </div>
           {isAuthenticated && userType && (userType === 'admin' || userType === 'driver') && !window.location.pathname.startsWith('/passenger') && (
             <nav className="nav flex items-center gap-12" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
@@ -191,7 +191,7 @@ function App() {
           </Suspense>
           <GlobalMonitor />
           <div style={{ position:'fixed', right:12, bottom:10, fontSize:12, color:'#93c5fd', opacity:0.9, background:'rgba(0,0,0,0.35)', padding:'4px 8px', borderRadius:8, border:'1px solid rgba(147,197,253,0.4)' }}>
-            v1.5.0-Full-Media-UI
+            v1.5.2-Column-Sync-Fixed
           </div>
         </main>
       </BrowserRouter>
