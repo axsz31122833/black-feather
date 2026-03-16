@@ -41,12 +41,13 @@ export default function AdminCommandCenter() {
   const [activeLeft, setActiveLeft] = useState<'overview'|'users'|'support'>('overview')
   const [chatSummaries, setChatSummaries] = useState<Array<{ trip_id: string; last_text: string; at: string; unread: number }>>([])
   const [activeChat, setActiveChat] = useState<string | null>(null)
-  const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: string; text: string; created_at: string }>>([])
+  const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: string; text: string; created_at: string; image_url?: string | null; location_data?: any }>>([])
   const [chatText, setChatText] = useState('')
   const [focusedDriver, setFocusedDriver] = useState<any>(null)
   const [overdueRequested, setOverdueRequested] = useState<any[]>([])
   const [showOverdueAlert, setShowOverdueAlert] = useState(false)
   const [driverSummary, setDriverSummary] = useState<{ id?: string; trips: number; revenue: number } | null>(null)
+  const [imgPreview, setImgPreview] = useState<string | null>(null)
   const reloadRequested = async () => {
     try {
       const { data: req } = await supabase
@@ -277,7 +278,33 @@ export default function AdminCommandCenter() {
           const text = (row.payload && row.payload.text) || '(系統)'
           setChatSummaries(prev => [{ trip_id: row.ref_id, last_text: text, at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.ref_id)])
         })
-        .subscribe((status: any) => { try { console.log('頻道狀態:', status) } catch {} })
+        .subscribe((status: any) => {
+          try { console.log('頻道狀態:', status) } catch {}
+          if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+            try { ch.unsubscribe() } catch {}
+            const ch2 = supabase
+              .channel('admin-chat')
+              .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
+                const row = p.new
+                try { console.log('Realtime收到訊息:', p) } catch {}
+                if (!row?.trip_id) return
+                const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
+                const lastSeen = JSON.parse(lastSeenRaw)
+                const unread = lastSeen[row.trip_id] && new Date(row.created_at) <= new Date(lastSeen[row.trip_id]) ? 0 : 1
+                setChatSummaries(prev => [{ trip_id: row.trip_id, last_text: row.message_content || row.content || row.text || '', at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.trip_id)])
+              })
+              .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter:'event_type=eq.chat' }, (p:any)=>{
+                const row = p.new
+                if (!row?.ref_id) return
+                const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
+                const lastSeen = JSON.parse(lastSeenRaw)
+                const unread = lastSeen[row.ref_id] && new Date(row.created_at) <= new Date(lastSeen[row.ref_id]) ? 0 : 1
+                const text = (row.payload && row.payload.text) || '(系統)'
+                setChatSummaries(prev => [{ trip_id: row.ref_id, last_text: text, at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.ref_id)])
+              })
+              .subscribe()
+          }
+        })
       return () => { ch.unsubscribe() }
     } catch {}
   }, [])
@@ -296,7 +323,7 @@ export default function AdminCommandCenter() {
       try {
         const { data } = await supabase.from('trip_messages').select('*').eq('trip_id', activeChat).order('created_at', { ascending: true })
         try { console.log('載入訊息筆數:', (data || []).length) } catch {}
-        setChatMessages((data || []).map((row:any)=>({ id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at })))
+        setChatMessages((data || []).map((row:any)=>({ id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at, image_url: row.image_url || null, location_data: row.location_data || null })))
       } catch { setChatMessages([]) }
     })()
     const ch = supabase
@@ -305,16 +332,31 @@ export default function AdminCommandCenter() {
         const row = p.new
         try { console.log('Realtime收到訊息:', p) } catch {}
         if (!row) return
-        setChatMessages(prev => [...prev, { id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at }])
+        setChatMessages(prev => [...prev, { id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at, image_url: row.image_url || null, location_data: row.location_data || null }])
       })
-      .subscribe((status: any) => { try { console.log('頻道狀態:', status) } catch {} })
+      .subscribe((status: any) => {
+        try { console.log('頻道狀態:', status) } catch {}
+        if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          try { ch.unsubscribe() } catch {}
+          const ch2 = supabase
+            .channel('admin-chat-thread')
+            .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${activeChat}` }, (p:any)=>{
+              const row = p.new
+              try { console.log('Realtime收到訊息:', p) } catch {}
+              if (!row) return
+              setChatMessages(prev => [...prev, { id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at, image_url: row.image_url || null, location_data: row.location_data || null }])
+            })
+            .subscribe()
+        }
+      })
     return () => { ch.unsubscribe() }
   }, [activeChat])
   const sendAdminMessage = async () => {
     const v = chatText.trim()
     if (!v || !activeChat) return
     setChatText('')
-    await supabase.from('trip_messages').insert({ trip_id: activeChat, sender_id: user?.id || null, message_content: v } as any)
+    const { data, error } = await supabase.from('trip_messages').insert({ trip_id: activeChat, sender_id: user?.id || null, message_content: v } as any)
+    if (error) { try { alert('發送失敗：' + (error.message || '未知錯誤')) } catch {} }
   }
   const assignToDriver = async (tripId: string, driverId: string) => {
     try {
@@ -559,7 +601,15 @@ export default function AdminCommandCenter() {
                     <div key={m.id} className="text-sm" style={{ color: m.role==='admin' ? '#60a5fa' : (m.role==='driver' ? '#34d399' : '#e5e7eb') }}>
                       <span style={{ fontWeight:600 }}>{m.role}</span>
                       <span className="mx-1">·</span>
-                      <span>{m.text}</span>
+                      {m.image_url ? (
+                        <img src={m.image_url || ''} alt="" style={{ maxWidth:'50%', borderRadius:8, border:'1px solid rgba(255,255,255,0.1)', cursor:'pointer' }} onClick={()=>setImgPreview(m.image_url || '')} />
+                      ) : m.location_data ? (
+                        <button onClick={()=>{ const u = `https://www.google.com/maps?q=${m.location_data.lat},${m.location_data.lng}`; window.open(u,'_blank') }} className="px-2 py-1 rounded text-xs" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>
+                          📍 查看乘客位置
+                        </button>
+                      ) : (
+                        <span>{m.text}</span>
+                      )}
                     </div>
                   ))}
                   {chatMessages.length===0 && <div className="text-xs" style={{ color:'#9ca3af' }}>尚無訊息</div>}
@@ -568,6 +618,11 @@ export default function AdminCommandCenter() {
                   <input value={chatText} onChange={e=>setChatText(e.target.value)} placeholder="輸入訊息…" className="flex-1 px-2 py-2 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
                   <button onClick={sendAdminMessage} className="px-3 py-2 text-xs rounded bg-indigo-600 text-white">發送</button>
                 </div>
+                {imgPreview && (
+                  <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50" onClick={()=>setImgPreview(null)}>
+                    <img src={imgPreview} alt="" style={{ maxWidth:'90%', maxHeight:'90%', borderRadius:10, border:'2px solid rgba(255,255,255,0.2)' }} />
+                  </div>
+                )}
               </div>
             )}
           </div>
