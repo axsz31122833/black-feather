@@ -61,9 +61,18 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     if (!v) return
     setText('')
     const tid = (tripId && String(tripId)) || (`support_${userId}`)
-    const payload = { trip_id: tid, sender_id: userId, message_content: v }
+    const payload: any = { trip_id: tid, sender_id: userId, message_content: v }
+    try {
+      const { data: auth } = await supabase.auth.getUser()
+      const authId = auth?.user?.id || null
+      if (authId && authId !== userId) payload.sender_id = authId
+    } catch {}
     try { console.log('正在發送的 Payload:', JSON.stringify(payload)) } catch {}
-    await supabase.from('trip_messages').insert(payload as any)
+    const { data, error } = await supabase.from('trip_messages').insert([payload] as any)
+    if (error) {
+      try { console.error('【Supabase 報錯詳情】:', { message: error.message, code: (error as any).code, details: (error as any).details, hint: (error as any).hint }) } catch {}
+      try { window.alert(`發送失敗！原因：${error.message}${(error as any).code ? ` (${(error as any).code})` : ''}`) } catch {}
+    }
   }
   const triggerImage = () => { try { fileRef.current?.click() } catch {} }
   const handleImageSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
