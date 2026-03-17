@@ -355,7 +355,14 @@ export default function AdminCommandCenter() {
     const v = chatText.trim()
     if (!v || !activeChat) return
     setChatText('')
-    const { data, error } = await supabase.from('trip_messages').insert({ trip_id: activeChat, sender_id: user?.id || null, message_content: v } as any)
+    let sid = user?.id || null
+    try {
+      const { data: au } = await supabase.auth.getUser()
+      if (au?.user?.id) sid = au.user.id
+    } catch {}
+    if (!sid) sid = 'anonymous'
+    const payload: any = { trip_id: String(activeChat), sender_id: sid, message_content: v, content: v }
+    const { data, error } = await supabase.from('trip_messages').insert([payload] as any)
     if (error) { try { alert('發送失敗：' + (error.message || '未知錯誤')) } catch {} }
   }
   const assignToDriver = async (tripId: string, driverId: string) => {

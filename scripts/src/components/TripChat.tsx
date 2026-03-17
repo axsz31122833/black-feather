@@ -80,13 +80,23 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     if (!file) return
     try {
       const name = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name.replace(/\s+/g,'_')}`
-      const path = `${tripId}/${name}`
+      const tid = (tripId && String(tripId)) || (`support_${userId}`)
+      const path = `${tid}/${name}`
       const { error } = await supabase.storage.from('chat_images').upload(path, file, { upsert: true, contentType: file.type })
       if (error) throw error
       const { data } = await supabase.storage.from('chat_images').getPublicUrl(path)
       const url = data?.publicUrl
       if (!url) throw new Error('no url')
-      await supabase.from('trip_messages').insert({ trip_id: tripId, sender_id: userId, message_content: '', image_url: url } as any)
+      let sid = userId
+      try {
+        const { data: au } = await supabase.auth.getUser()
+        if (au?.user?.id) sid = au.user.id
+      } catch {}
+      if (!sid) sid = 'anonymous'
+      const payload: any = { trip_id: tid, sender_id: sid, message_content: '', content: '', image_url: url }
+      try { console.log('正在發送的 Payload:', JSON.stringify(payload)) } catch {}
+      const { error: insErr } = await supabase.from('trip_messages').insert([payload] as any)
+      if (insErr) { try { alert('圖片發送失敗：' + (insErr.message || '未知錯誤')) } catch {} }
     } catch {}
     try { if (fileRef.current) fileRef.current.value = '' } catch {}
   }
@@ -97,7 +107,17 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
           async (pos) => {
             const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
             try {
-              await supabase.from('trip_messages').insert({ trip_id: tripId, sender_id: userId, message_content: '', location_data: loc } as any)
+              const tid = (tripId && String(tripId)) || (`support_${userId}`)
+              let sid = userId
+              try {
+                const { data: au } = await supabase.auth.getUser()
+                if (au?.user?.id) sid = au.user.id
+              } catch {}
+              if (!sid) sid = 'anonymous'
+              const payload: any = { trip_id: tid, sender_id: sid, message_content: '', content: '', location_data: loc }
+              try { console.log('正在發送的 Payload:', JSON.stringify(payload)) } catch {}
+              const { error } = await supabase.from('trip_messages').insert([payload] as any)
+              if (error) throw error
               resolve()
             } catch (e) { reject(e as any) }
           },
