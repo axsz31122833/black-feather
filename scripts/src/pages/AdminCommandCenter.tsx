@@ -345,13 +345,15 @@ export default function AdminCommandCenter() {
   }
   useEffect(() => {
     if (!activeChat) return
-    ;(async () => {
+    const fetchThread = async () => {
       try {
         const { data } = await supabase.from('trip_messages').select('*').eq('trip_id', activeChat).order('created_at', { ascending: true })
         try { console.log('載入訊息筆數:', (data || []).length) } catch {}
         setChatMessages((data || []).map((row:any)=>({ id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at, image_url: row.image_url || null, location_data: row.location_data || null })))
-      } catch { setChatMessages([]) }
-    })()
+      } catch { /* 保持現況 */ }
+    }
+    ;(async () => { await fetchThread() })()
+    const intId = window.setInterval(fetchThread, 5000)
     const ch = supabase
       .channel('admin-chat-thread')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${activeChat}` }, (p:any)=>{
@@ -375,7 +377,7 @@ export default function AdminCommandCenter() {
             .subscribe()
         }
       })
-    return () => { ch.unsubscribe() }
+    return () => { try { ch.unsubscribe() } catch {}; try { clearInterval(intId) } catch {} }
   }, [activeChat])
   const sendAdminMessage = async () => {
     const v = chatText.trim()
