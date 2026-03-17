@@ -60,7 +60,8 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     const v = text.trim()
     if (!v) return
     setText('')
-    const payload = { trip_id: tripId, sender_id: userId, message_content: v }
+    const tid = (tripId && String(tripId)) || (`support_${userId}`)
+    const payload = { trip_id: tid, sender_id: userId, message_content: v }
     try { console.log('正在發送的 Payload:', JSON.stringify(payload)) } catch {}
     await supabase.from('trip_messages').insert(payload as any)
   }
