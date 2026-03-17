@@ -84,32 +84,22 @@ export default function AdminCommandCenter() {
         setPendingCount((profs || []).length)
       } catch { setPendingCount(0) }
       try {
-        try { console.log('【發送請求前檢查】表名:', 'drivers', '過濾條件:', null) } catch {}
-        const { data } = await supabase.from('drivers').select('*').order('last_seen_at',{ ascending:false })
-        setDrivers(data || [])
+        try { console.log('【發送請求前檢查】表名:', 'driver_profiles', '過濾條件:', null) } catch {}
+        const { data } = await supabase.from('driver_profiles').select('user_id,is_online,current_location,car_plate,car_model,updated_at')
+        setDrivers((data || []).map((d:any)=>({ id: d.user_id, is_online: !!d.is_online, current_location: d.current_location || null, car_plate: d.car_plate, car_model: d.car_model, updated_at: d.updated_at })))
       } catch { setDrivers([]) }
       try {
-        try { console.log('【發送請求前檢查】表名:', 'drivers', '過濾條件:', { is_online_eq: true }) } catch {}
-        const { data } = await supabase.from('drivers').select('*').eq('is_online', true)
-        setOnlineDrivers(data || [])
+        try { console.log('【發送請求前檢查】表名:', 'driver_profiles', '過濾條件:', { is_online_eq: true }) } catch {}
+        const { data } = await supabase.from('driver_profiles').select('user_id,is_online').eq('is_online', true)
+        setOnlineDrivers((data || []).map((d:any)=>({ id: d.user_id, is_online: !!d.is_online })))
       } catch {}
       try {
-        try { console.log('【發送請求前檢查】表名:', 'users', '過濾條件:', null) } catch {}
-        const { data: users } = await supabase.from('users').select('id,phone,name,user_type')
         try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', null) } catch {}
         const { data: profs } = await supabase.from('profiles').select('user_id,full_name,phone,recommended_by_phone,role')
-        const pmap: Record<string, any> = {}
-        ;(profs || []).forEach((p:any)=>{ if (p?.user_id) pmap[p.user_id] = p })
-        setProfilesMap(pmap)
-        const list = (users || []).map((u:any)=>({
-          ...u,
-          full_name: pmap[u.id]?.full_name || u.name || '',
-          phone: u.phone || pmap[u.id]?.phone || '',
-          recommended_by_phone: pmap[u.id]?.recommended_by_phone || ''
-        }))
-        setUsersPassengers(list.filter((u:any)=>u.user_type==='passenger'))
-        setUsersDrivers(list.filter((u:any)=>u.user_type==='driver'))
-        setUsersAdmins(list.filter((u:any)=>u.user_type==='admin'))
+        const list = (profs || []).map((p:any)=>({ id: p.user_id, full_name: p.full_name || '', phone: p.phone || '', recommended_by_phone: p.recommended_by_phone || '', role: p.role || '' }))
+        setUsersPassengers(list.filter((u:any)=>u.role==='passenger'))
+        setUsersDrivers(list.filter((u:any)=>u.role==='driver'))
+        setUsersAdmins(list.filter((u:any)=>u.role==='admin'))
       } catch {}
       try {
         try { console.log('【發送請求前檢查】表名:', 'fare_config', '過濾條件:', { id_eq: 'global' }) } catch {}
@@ -141,14 +131,16 @@ export default function AdminCommandCenter() {
 
   useEffect(() => {
     const ch1 = supabase.channel('admin-cc-drivers')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'drivers' }, (payload: any) => {
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'driver_profiles' }, (payload: any) => {
         const d = payload.new || payload.old
-        if (!d?.id) return
+        const did = d?.user_id || d?.id
+        if (!did) return
+        const mapped = { id: did, is_online: !!d.is_online, current_location: d.current_location || null, car_plate: d.car_plate, car_model: d.car_model, updated_at: d.updated_at }
         setDrivers(prev => {
-          const idx = prev.findIndex(x => x.id === d.id)
+          const idx = prev.findIndex((x:any) => x.id === did)
           const list = [...prev]
-          if (idx >= 0) list[idx] = { ...list[idx], ...d }
-          else list.unshift(d)
+          if (idx >= 0) list[idx] = { ...list[idx], ...mapped }
+          else list.unshift(mapped)
           return list
         })
       }).subscribe()
@@ -167,8 +159,8 @@ export default function AdminCommandCenter() {
         supabase.from('trips').select('id,pickup_location,estimated_price,passenger_id,created_at').eq('status','requested').order('created_at',{ ascending:false }).limit(100).then((res:any)=>{
           setRequestedTrips(res.data || [])
         })
-        try { console.log('【發送請求前檢查】表名:', 'drivers', '過濾條件:', { is_online_eq: true }) } catch {}
-        supabase.from('drivers').select('*').eq('is_online', true).then((res:any)=> setOnlineDrivers(res.data || []))
+        try { console.log('【發送請求前檢查】表名:', 'driver_profiles', '過濾條件:', { is_online_eq: true }) } catch {}
+        supabase.from('driver_profiles').select('user_id,is_online').eq('is_online', true).then((res:any)=> setOnlineDrivers((res.data || []).map((d:any)=>({ id:d.user_id, is_online: !!d.is_online }))))
       }).subscribe()
     return () => { ch1.unsubscribe(); ch2.unsubscribe() }
   }, [])
@@ -209,11 +201,14 @@ export default function AdminCommandCenter() {
       if (!g || !g.maps || !mapRef.current) return
       const m = mapRef.current
       const mk = markersRef.current
-      drivers.forEach(d => {
-        if (typeof d.current_lat !== 'number' || typeof d.current_lng !== 'number') return
+      drivers.forEach((d:any) => {
         const key = d.id
-        const pos = { lat: d.current_lat!, lng: d.current_lng! }
-        const color = d.status === 'on_trip' ? '#EF4444' : '#10B981'
+        let lat: number | null = null, lng: number | null = null
+        if (typeof d.current_lat === 'number' && typeof d.current_lng === 'number') { lat = d.current_lat; lng = d.current_lng }
+        else if (d.current_location && typeof d.current_location.lat === 'number' && typeof d.current_location.lng === 'number') { lat = d.current_location.lat; lng = d.current_location.lng }
+        if (lat == null || lng == null) return
+        const pos = { lat, lng }
+        const color = d.is_online ? '#10B981' : '#6b7280'
         if (mk[key]) {
           try { mk[key].setPosition(pos) } catch {}
           try { mk[key].setIcon({ path: 'M12 2 L2 9 L2 14 L22 14 L22 9 L12 2 Z', scale: 1, fillColor: color, fillOpacity: 1, strokeColor: color, strokeWeight: 1 }) } catch {}
@@ -221,7 +216,7 @@ export default function AdminCommandCenter() {
           mk[key] = new g.maps.Marker({ position: pos, map: m, icon: { path: 'M12 2 L2 9 L2 14 L22 14 L22 9 L12 2 Z', scale: 1, fillColor: color, fillOpacity: 1, strokeColor: color, strokeWeight: 1 } })
           mk[key].addListener('click', () => {
             try {
-              const drv = drivers.find(x => x.id === d.id)
+              const drv = drivers.find((x:any) => x.id === d.id)
               ;(window as any).__focusDriver = drv
               setFocusedDriver(drv || null)
             } catch {}
