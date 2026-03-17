@@ -43,6 +43,7 @@ export default function AdminCommandCenter() {
   const [activeChat, setActiveChat] = useState<string | null>(null)
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: string; text: string; created_at: string; image_url?: string | null; location_data?: any }>>([])
   const [chatText, setChatText] = useState('')
+  const activeChatRef = useRef<string | null>(null)
   const [focusedDriver, setFocusedDriver] = useState<any>(null)
   const [overdueRequested, setOverdueRequested] = useState<any[]>([])
   const [showOverdueAlert, setShowOverdueAlert] = useState(false)
@@ -125,6 +126,10 @@ export default function AdminCommandCenter() {
       } catch {}
     })()
   }, [])
+
+  useEffect(() => {
+    activeChatRef.current = activeChat
+  }, [activeChat])
 
   useEffect(() => {
     const ch1 = supabase.channel('admin-cc-drivers')
@@ -261,6 +266,24 @@ export default function AdminCommandCenter() {
       const ch = supabase
         .channel('admin-chat')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
+          try { console.log('【核心除錯】Realtime 捕捉到任何訊息變動:', p) } catch {}
+          const row = p?.new
+          try {
+            const current = (activeChatRef.current || '').toString().trim()
+            const incoming = (row?.trip_id || '').toString().trim()
+            if (current && incoming && current === incoming) {
+              setChatMessages(prev => [...prev, {
+                id: row.id,
+                role: row.role,
+                text: row.message_content || row.content || row.text || '',
+                created_at: row.created_at,
+                image_url: row.image_url || null,
+                location_data: row.location_data || null
+              }])
+            }
+          } catch {}
+        })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
           const row = p.new
           try { console.log('Realtime收到訊息:', p) } catch {}
           if (!row?.trip_id) return
@@ -307,6 +330,9 @@ export default function AdminCommandCenter() {
         })
       return () => { ch.unsubscribe() }
     } catch {}
+  }, [])
+  useEffect(() => {
+    try { console.warn('請確認 trip_messages 已設置 REPLICA IDENTITY FULL，並檢查 RLS 對 admin 是否開放') } catch {}
   }, [])
   const markChatRead = (tripId: string) => {
     try {
