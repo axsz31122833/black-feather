@@ -95,8 +95,8 @@ export default function AdminCommandCenter() {
       } catch {}
       try {
         try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', null) } catch {}
-        const { data: profs } = await supabase.from('profiles').select('user_id,full_name,phone,recommended_by_phone,role')
-        const list = (profs || []).map((p:any)=>({ id: p.user_id, full_name: p.full_name || '', phone: p.phone || '', recommended_by_phone: p.recommended_by_phone || '', role: p.role || '' }))
+        const { data: profs } = await supabase.from('profiles').select('id,user_id,full_name,phone,role')
+        const list = (profs || []).map((p:any)=>({ id: p.id, user_id: p.user_id, full_name: p.full_name || '', phone: p.phone || '', role: p.role || '' }))
         setUsersPassengers(list.filter((u:any)=>u.role==='passenger'))
         setUsersDrivers(list.filter((u:any)=>u.role==='driver'))
         setUsersAdmins(list.filter((u:any)=>u.role==='admin'))
@@ -416,8 +416,8 @@ export default function AdminCommandCenter() {
   }
   const promoteToDriver = async (userId: string) => {
     try {
-      await supabase.from('users').update({ user_type:'driver' }).eq('id', userId)
-      await supabase.from('driver_profiles').upsert({ user_id: userId }, { onConflict:'user_id' } as any)
+      await supabase.from('profiles').update({ role:'driver' }).eq('id', userId)
+      try { await supabase.from('driver_profiles').upsert({ user_id: userId }, { onConflict:'user_id' } as any) } catch {}
       alert('已升等為司機')
     } catch { alert('操作失敗') }
   }
