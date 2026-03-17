@@ -68,28 +68,35 @@ export default function AdminCommandCenter() {
         const start = new Date()
         start.setHours(0,0,0,0)
         const startIso = start.toISOString()
+        try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { gte_created_at: startIso }) } catch {}
         const { data: tripsData } = await supabase.from('trips').select('id,final_price,status,created_at').gte('created_at', startIso)
         setTripsToday((tripsData || []).length)
         setRevenueToday((tripsData || []).filter(t=>t.status==='completed').reduce((s: number, t:any)=> s + Number(t.final_price||0), 0))
       } catch {}
       try {
+        try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { status_eq: 'requested' }) } catch {}
         const { data: req } = await supabase.from('trips').select('id,pickup_location,estimated_price,passenger_id,created_at').eq('status','requested').order('created_at',{ ascending:false }).limit(100)
         setRequestedTrips(req || [])
       } catch {}
       try {
+        try { console.log('【發送請求前檢查】表名:', 'driver_profiles', '過濾條件:', { status_eq: 'pending' }) } catch {}
         const { data: profs } = await supabase.from('driver_profiles').select('id').eq('status','pending')
         setPendingCount((profs || []).length)
       } catch { setPendingCount(0) }
       try {
+        try { console.log('【發送請求前檢查】表名:', 'drivers', '過濾條件:', null) } catch {}
         const { data } = await supabase.from('drivers').select('*').order('last_seen_at',{ ascending:false })
         setDrivers(data || [])
       } catch { setDrivers([]) }
       try {
+        try { console.log('【發送請求前檢查】表名:', 'drivers', '過濾條件:', { is_online_eq: true }) } catch {}
         const { data } = await supabase.from('drivers').select('*').eq('is_online', true)
         setOnlineDrivers(data || [])
       } catch {}
       try {
+        try { console.log('【發送請求前檢查】表名:', 'users', '過濾條件:', null) } catch {}
         const { data: users } = await supabase.from('users').select('id,phone,name,user_type')
+        try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', null) } catch {}
         const { data: profs } = await supabase.from('profiles').select('user_id,full_name,phone,recommended_by_phone,role')
         const pmap: Record<string, any> = {}
         ;(profs || []).forEach((p:any)=>{ if (p?.user_id) pmap[p.user_id] = p })
@@ -105,6 +112,7 @@ export default function AdminCommandCenter() {
         setUsersAdmins(list.filter((u:any)=>u.user_type==='admin'))
       } catch {}
       try {
+        try { console.log('【發送請求前檢查】表名:', 'fare_config', '過濾條件:', { id_eq: 'global' }) } catch {}
         const { data } = await supabase.from('fare_config').select('*').eq('id','global').single()
         if (data) {
           setFareBase(Number(data.base||70))
@@ -149,14 +157,17 @@ export default function AdminCommandCenter() {
         const start = new Date()
         start.setHours(0,0,0,0)
         const startIso = start.toISOString()
+        try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { gte_created_at: startIso }) } catch {}
         supabase.from('trips').select('id,final_price,status,created_at').gte('created_at', startIso).then((res:any)=>{
           const arr = res.data || []
           setTripsToday(arr.length)
           setRevenueToday(arr.filter((t:any)=>t.status==='completed').reduce((s:number,t:any)=>s+Number(t.final_price||0),0))
         })
+        try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { status_eq: 'requested' }) } catch {}
         supabase.from('trips').select('id,pickup_location,estimated_price,passenger_id,created_at').eq('status','requested').order('created_at',{ ascending:false }).limit(100).then((res:any)=>{
           setRequestedTrips(res.data || [])
         })
+        try { console.log('【發送請求前檢查】表名:', 'drivers', '過濾條件:', { is_online_eq: true }) } catch {}
         supabase.from('drivers').select('*').eq('is_online', true).then((res:any)=> setOnlineDrivers(res.data || []))
       }).subscribe()
     return () => { ch1.unsubscribe(); ch2.unsubscribe() }
