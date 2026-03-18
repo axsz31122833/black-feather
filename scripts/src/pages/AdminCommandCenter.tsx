@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { supabase, ensureAuth } from '../lib/supabaseClient'
+import { getSupabaseUrl } from '../lib/supabase'
 import { useAuthStore } from '../stores/auth'
 import BottomNav from '../components/BottomNav'
 
@@ -57,6 +58,7 @@ export default function AdminCommandCenter() {
   const [showOverdueAlert, setShowOverdueAlert] = useState(false)
   const [driverSummary, setDriverSummary] = useState<{ id?: string; trips: number; revenue: number } | null>(null)
   const [imgPreview, setImgPreview] = useState<string | null>(null)
+  const [connDiag, setConnDiag] = useState<{ url: string; session: string }>({ url: '', session: 'unknown' })
   const reloadRequested = async () => {
     try {
       const { data: req } = await supabase
@@ -130,6 +132,16 @@ export default function AdminCommandCenter() {
           }
         }
       } catch {}
+    })()
+  }, [])
+  useEffect(() => {
+    ;(async ()=>{
+      try {
+        const url = (getSupabaseUrl() || '').slice(0, 10)
+        const { data: { session } } = await supabase.auth.getSession()
+        const s = session?.access_token ? 'valid' : 'none'
+        setConnDiag({ url, session: s })
+      } catch { setConnDiag({ url:'', session:'error' }) }
     })()
   }, [])
 
@@ -537,7 +549,7 @@ export default function AdminCommandCenter() {
                     <div className="text-xs" style={{ color:'#9ca3af' }}>推薦人：{u.recommended_by_phone || '—'}</div>
                     <div className="mt-1">
                       <button onClick={()=>promoteToDriver(u.id)} className="px-2 py-1 text-xs bg-indigo-600 text-white rounded">升等為司機</button>
-                      <button onClick={()=>{ setActiveLeft('support'); const tid = `support_${u.id}`; setActiveChat(tid); activeChatRef.current = tid; }} className="ml-2 px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>客服對話</button>
+                      <button onClick={()=>{ const tid = `support_${String(u.id).trim()}`; try { console.log('【點擊動作偵測】:', { target:'用戶列表', data:u, generated_trip_id: tid }) } catch {}; setActiveLeft('support'); setActiveChat(tid); activeChatRef.current = tid; }} className="ml-2 px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>客服對話</button>
                     </div>
                   </div>
                 ))}
@@ -555,7 +567,7 @@ export default function AdminCommandCenter() {
                       <input placeholder="車色" value={vehicleEdit[u.id]?.color || ''} onChange={e=>setVehicleEdit(v=>({ ...v, [u.id]: { ...v[u.id], color:e.target.value } }))} className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
                     </div>
                     <button onClick={()=>saveVehicle(u.id)} className="px-2 py-1 text-xs bg-emerald-600 text-white rounded">保存車輛資料</button>
-                    <button onClick={()=>{ setActiveLeft('support'); const tid = `support_${u.id}`; setActiveChat(tid); activeChatRef.current = tid; }} className="ml-2 px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>客服對話</button>
+                    <button onClick={()=>{ const tid = `support_${String(u.id).trim()}`; try { console.log('【點擊動作偵測】:', { target:'用戶列表', data:u, generated_trip_id: tid }) } catch {}; setActiveLeft('support'); setActiveChat(tid); activeChatRef.current = tid; }} className="ml-2 px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>客服對話</button>
                   </div>
                 ))}
               </div>
@@ -567,7 +579,7 @@ export default function AdminCommandCenter() {
                   <div key={u.id} className="p-2 rounded border" style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
                     <div className="text-sm">{u.name || '—'} · {u.phone || '—'}</div>
                     <div className="mt-1">
-                      <button onClick={()=>{ setActiveLeft('support'); const tid = `support_${u.id}`; setActiveChat(tid); activeChatRef.current = tid; }} className="px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>客服對話</button>
+                      <button onClick={()=>{ const tid = `support_${String(u.id).trim()}`; try { console.log('【點擊動作偵測】:', { target:'用戶列表', data:u, generated_trip_id: tid }) } catch {}; setActiveLeft('support'); setActiveChat(tid); activeChatRef.current = tid; }} className="px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>客服對話</button>
                     </div>
                   </div>
                 ))}
@@ -618,7 +630,7 @@ export default function AdminCommandCenter() {
               {chatSummaries.length === 0 ? (
                 <div className="text-xs" style={{ color:'#9ca3af' }}>尚無對話</div>
               ) : chatSummaries.map(c => (
-                <button key={c.trip_id} onClick={()=>{ setActiveChat(c.trip_id); markChatRead(c.trip_id) }} className="w-full text-left p-2 rounded border" style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
+                <button key={c.trip_id} onClick={()=>{ try { console.log('【點擊動作偵測】:', { target:'對話列表', data:c, trip_id:c.trip_id }) } catch {}; const tid = String(c.trip_id).trim(); setActiveChat(tid); activeChatRef.current = tid; markChatRead(tid) }} className="w-full text-left p-2 rounded border" style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
                   <div className="flex items-center justify-between">
                     <div className="text-sm">Trip {c.trip_id.slice(0,6)}…</div>
                     {c.unread>0 && <span style={{ width:8, height:8, borderRadius:'50%', background:'#ef4444', display:'inline-block' }} />}
@@ -736,6 +748,9 @@ export default function AdminCommandCenter() {
         </main>
         <div style={{ position:'fixed', left:0, right:0, bottom:0 }}>
           <BottomNav role="admin" />
+        </div>
+        <div style={{ position:'fixed', left:12, bottom:10, fontSize:12, color:'#93c5fd', opacity:0.9, background:'rgba(0,0,0,0.35)', padding:'4px 8px', borderRadius:8, border:'1px solid rgba(147,197,253,0.4)' }}>
+          連線診斷 · URL:{connDiag.url || '—'} · Session:{connDiag.session}
         </div>
       </div>
     </div>

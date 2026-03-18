@@ -24,6 +24,7 @@ import PushInit from './components/PushInit'
 import { supabase } from './lib/supabaseClient'
 import ConnectionChecker from './components/ConnectionChecker'
 import ManifestManager from './components/ManifestManager'
+import { installFetchPatch } from './lib/fetchPatch'
 
 function AuthRouter() {
   const navigate = useNavigate()
@@ -51,6 +52,7 @@ function AuthRouter() {
 function App() {
   const { checkAuth, isAuthenticated, userType } = useAuthStore() as any
   useEffect(() => {
+    try { installFetchPatch() } catch {}
     if (window.location.search.includes('dev=1')) return
     checkAuth()
   }, [])
@@ -92,7 +94,7 @@ function App() {
           {/* deploy trigger: 2026-01-29 */}
           <div className="brand flex items-center gap-3" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
             Black Feather 車隊
-            <span style={{ fontSize: 12, color:'#93c5fd', opacity: 0.9 }}>v1.7.2-Message-Sync-Final</span>
+            <span style={{ fontSize: 12, color:'#93c5fd', opacity: 0.9 }}>v1.7.3-Global-Diagnostic-Mode</span>
           </div>
           {isAuthenticated && userType && (userType === 'admin' || userType === 'driver') && !window.location.pathname.startsWith('/passenger') && (
             <nav className="nav flex items-center gap-12" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
@@ -191,7 +193,7 @@ function App() {
           </Suspense>
           <GlobalMonitor />
           <div style={{ position:'fixed', right:12, bottom:10, fontSize:12, color:'#93c5fd', opacity:0.9, background:'rgba(0,0,0,0.35)', padding:'4px 8px', borderRadius:8, border:'1px solid rgba(147,197,253,0.4)' }}>
-            v1.7.2-Message-Sync-Final
+            v1.7.3-Global-Diagnostic-Mode
           </div>
         </main>
       </BrowserRouter>
