@@ -44,6 +44,14 @@ export default function AdminCommandCenter() {
   const [chatMessages, setChatMessages] = useState<Array<{ id: string; role: string; text: string; created_at: string; image_url?: string | null; location_data?: any }>>([])
   const [chatText, setChatText] = useState('')
   const activeChatRef = useRef<string | null>(null)
+  const reloadActiveThread = async () => {
+    try {
+      const id = (activeChatRef.current || '').toString()
+      if (!id) return
+      const { data } = await supabase.from('trip_messages').select('*').eq('trip_id', id).order('created_at', { ascending: true })
+      setChatMessages((data || []).map((row:any)=>({ id: row.id, role: row.role, text: row.message_content || row.content || row.text || '', created_at: row.created_at, image_url: row.image_url || null, location_data: row.location_data || null })))
+    } catch {}
+  }
   const [focusedDriver, setFocusedDriver] = useState<any>(null)
   const [overdueRequested, setOverdueRequested] = useState<any[]>([])
   const [showOverdueAlert, setShowOverdueAlert] = useState(false)
@@ -69,13 +77,13 @@ export default function AdminCommandCenter() {
         start.setHours(0,0,0,0)
         const startIso = start.toISOString()
         try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { gte_created_at: startIso }) } catch {}
-        const { data: tripsData } = await supabase.from('trips').select('id,final_price,status,created_at').gte('created_at', startIso)
+        const { data: tripsData } = await supabase.from('trips').select('*').gte('created_at', startIso)
         setTripsToday((tripsData || []).length)
         setRevenueToday((tripsData || []).filter(t=>t.status==='completed').reduce((s: number, t:any)=> s + Number(t.final_price||0), 0))
       } catch {}
       try {
         try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { status_eq: 'requested' }) } catch {}
-        const { data: req } = await supabase.from('trips').select('id,pickup_location,estimated_price,passenger_id,created_at').eq('status','requested').order('created_at',{ ascending:false }).limit(100)
+        const { data: req } = await supabase.from('trips').select('*').eq('status','requested').order('created_at',{ ascending:false }).limit(100)
         setRequestedTrips(req || [])
       } catch {}
       try {
@@ -150,13 +158,13 @@ export default function AdminCommandCenter() {
         start.setHours(0,0,0,0)
         const startIso = start.toISOString()
         try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { gte_created_at: startIso }) } catch {}
-        supabase.from('trips').select('id,final_price,status,created_at').gte('created_at', startIso).then((res:any)=>{
+        supabase.from('trips').select('*').gte('created_at', startIso).then((res:any)=>{
           const arr = res.data || []
           setTripsToday(arr.length)
           setRevenueToday(arr.filter((t:any)=>t.status==='completed').reduce((s:number,t:any)=>s+Number(t.final_price||0),0))
         })
         try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { status_eq: 'requested' }) } catch {}
-        supabase.from('trips').select('id,pickup_location,estimated_price,passenger_id,created_at').eq('status','requested').order('created_at',{ ascending:false }).limit(100).then((res:any)=>{
+        supabase.from('trips').select('*').eq('status','requested').order('created_at',{ ascending:false }).limit(100).then((res:any)=>{
           setRequestedTrips(res.data || [])
         })
         try { console.log('【發送請求前檢查】表名:', 'driver_profiles', '過濾條件:', { is_online_eq: true }) } catch {}
@@ -272,31 +280,17 @@ export default function AdminCommandCenter() {
       const ch = supabase
         .channel('admin-chat')
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
-          try { console.log('【核心除錯】Realtime 捕捉到任何訊息變動:', p) } catch {}
-          const row = p?.new
+          try { console.log('【收到任何訊息】', p?.new) } catch {}
           try {
-            const current = (activeChatRef.current || '').toString().trim()
-            const incoming = (row?.trip_id || '').toString().trim()
-            if (current && incoming && current === incoming) {
-              setChatMessages(prev => [...prev, {
-                id: row.id,
-                role: row.role,
-                text: row.message_content || row.content || row.text || '',
-                created_at: row.created_at,
-                image_url: row.image_url || null,
-                location_data: row.location_data || null
-              }])
+            const row = p.new
+            if (row?.trip_id) {
+              const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
+              const lastSeen = JSON.parse(lastSeenRaw)
+              const unread = lastSeen[row.trip_id] && new Date(row.created_at) <= new Date(lastSeen[row.trip_id]) ? 0 : 1
+              setChatSummaries(prev => [{ trip_id: row.trip_id, last_text: row.message_content || row.content || row.text || '', at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.trip_id)])
             }
           } catch {}
-        })
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
-          const row = p.new
-          try { console.log('Realtime收到訊息:', p) } catch {}
-          if (!row?.trip_id) return
-          const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
-          const lastSeen = JSON.parse(lastSeenRaw)
-          const unread = lastSeen[row.trip_id] && new Date(row.created_at) <= new Date(lastSeen[row.trip_id]) ? 0 : 1
-          setChatSummaries(prev => [{ trip_id: row.trip_id, last_text: row.message_content || row.content || row.text || '', at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.trip_id)])
+          reloadActiveThread()
         })
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter:'event_type=eq.chat' }, (p:any)=>{
           const row = p.new
@@ -314,13 +308,8 @@ export default function AdminCommandCenter() {
             const ch2 = supabase
               .channel('admin-chat')
               .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
-                const row = p.new
-                try { console.log('Realtime收到訊息:', p) } catch {}
-                if (!row?.trip_id) return
-                const lastSeenRaw = localStorage.getItem('bf_admin_chat_seen') || '{}'
-                const lastSeen = JSON.parse(lastSeenRaw)
-                const unread = lastSeen[row.trip_id] && new Date(row.created_at) <= new Date(lastSeen[row.trip_id]) ? 0 : 1
-                setChatSummaries(prev => [{ trip_id: row.trip_id, last_text: row.message_content || row.content || row.text || '', at: row.created_at, unread }, ...prev.filter(x=>x.trip_id!==row.trip_id)])
+                try { console.log('【收到任何訊息】', p?.new) } catch {}
+                reloadActiveThread()
               })
               .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter:'event_type=eq.chat' }, (p:any)=>{
                 const row = p.new
@@ -548,6 +537,7 @@ export default function AdminCommandCenter() {
                     <div className="text-xs" style={{ color:'#9ca3af' }}>推薦人：{u.recommended_by_phone || '—'}</div>
                     <div className="mt-1">
                       <button onClick={()=>promoteToDriver(u.id)} className="px-2 py-1 text-xs bg-indigo-600 text-white rounded">升等為司機</button>
+                      <button onClick={()=>{ setActiveLeft('support'); const tid = `support_${u.id}`; setActiveChat(tid); activeChatRef.current = tid; }} className="ml-2 px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>客服對話</button>
                     </div>
                   </div>
                 ))}
@@ -565,6 +555,7 @@ export default function AdminCommandCenter() {
                       <input placeholder="車色" value={vehicleEdit[u.id]?.color || ''} onChange={e=>setVehicleEdit(v=>({ ...v, [u.id]: { ...v[u.id], color:e.target.value } }))} className="px-2 py-1 rounded text-sm" style={{ background:'#121212', border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }} />
                     </div>
                     <button onClick={()=>saveVehicle(u.id)} className="px-2 py-1 text-xs bg-emerald-600 text-white rounded">保存車輛資料</button>
+                    <button onClick={()=>{ setActiveLeft('support'); const tid = `support_${u.id}`; setActiveChat(tid); activeChatRef.current = tid; }} className="ml-2 px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>客服對話</button>
                   </div>
                 ))}
               </div>
@@ -575,6 +566,9 @@ export default function AdminCommandCenter() {
                 {usersAdmins.map(u=>(
                   <div key={u.id} className="p-2 rounded border" style={{ borderColor:'rgba(255,255,255,0.08)', color:'#e5e7eb' }}>
                     <div className="text-sm">{u.name || '—'} · {u.phone || '—'}</div>
+                    <div className="mt-1">
+                      <button onClick={()=>{ setActiveLeft('support'); const tid = `support_${u.id}`; setActiveChat(tid); activeChatRef.current = tid; }} className="px-2 py-1 text-xs rounded" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>客服對話</button>
+                    </div>
                   </div>
                 ))}
               </div>
