@@ -24,9 +24,15 @@ export default function ProtectedRoute({ children, roles }: Props) {
         } else {
           const { data: { user } } = await supabase.auth.getUser()
           if (!user?.id) { if (mounted) setLoading(false); return }
-          const { data } = await supabase.from('profiles').select('id,role,full_name,phone').eq('id', user.id).limit(1).maybeSingle()
-          try { console.log('【登入狀態檢查】User:', user, 'Profile:', data) } catch {}
-          if (mounted) setRole(data?.role || '')
+          let data: any = null
+          for (let i = 0; i < 3; i++) {
+            const r = await supabase.from('profiles').select('id,role,full_name,phone').eq('id', user.id).limit(1).maybeSingle()
+            data = r.data || null
+            try { console.log(`【身分檢查】UID: ${user.id}, 是否有 Profile: ${!!data}, 嘗試次數: ${i+1}`) } catch {}
+            if (data) break
+            await new Promise(res => setTimeout(res, 1000))
+          }
+          if (mounted) setRole((data?.role as any) || '')
         }
       } catch {}
       if (mounted) setLoading(false)

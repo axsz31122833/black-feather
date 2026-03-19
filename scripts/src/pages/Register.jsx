@@ -28,22 +28,25 @@ export default function Register() {
           if (!inviter) { setRes({ error:'查無此邀請人，請確認推薦人電話號碼' }); return }
         }
       }
-      await signUp(emailAlias, password, normalized, adminPhone ? 'admin' : 'passenger', adminPhone ? '豐家' : name)
-      const { data: me } = await supabase.from('users').select('id').eq('email', emailAlias).maybeSingle()
-      if (me?.id) {
-        const payload = {
-          id: me.id,
-          user_id: me.id,
-          name: adminPhone ? '豐家' : name,
-          full_name: adminPhone ? '豐家' : name,
-          phone: normalized,
-          role: adminPhone ? 'admin' : 'passenger',
-          recommended_by_phone: adminPhone ? null : (invite || null),
-          created_at: new Date().toISOString()
-        }
-        const { error: upErr } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
-        if (upErr) { try { alert('註冊檔案建立失敗：' + (upErr.message || '未知錯誤')) } catch {} }
+      const { data: signData, error: signErr } = await supabase.auth.signUp({ email: emailAlias, password })
+      if (signErr) { try { alert('註冊失敗：' + (signErr.message || '未知錯誤')) } catch {}; setRes({ error: signErr.message }); return }
+      const uid = signData?.user?.id
+      if (!uid) { setRes({ error:'未取得使用者 ID' }); return }
+      const { error: usersErr } = await supabase.from('users').upsert({ id: uid, email: emailAlias, phone: normalized, user_type: adminPhone ? 'admin' : 'passenger', name: adminPhone ? '豐家' : name }, { onConflict:'id' })
+      if (usersErr) { try { alert('建立 users 資料失敗：' + (usersErr.message || '未知錯誤')) } catch {}; setRes({ error: usersErr.message }); return }
+      const payload = {
+        id: uid,
+        user_id: uid,
+        name: adminPhone ? '豐家' : name || '新乘客',
+        full_name: adminPhone ? '豐家' : name || '新乘客',
+        phone: normalized,
+        role: adminPhone ? 'admin' : 'passenger',
+        recommended_by_phone: adminPhone ? null : (invite || null),
+        created_at: new Date().toISOString()
       }
+      const { error: upErr } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
+      if (upErr) { try { alert('註冊檔案建立失敗：' + (upErr.message || '未知錯誤')) } catch {}; setRes({ error: upErr.message }); return }
+      try { await supabase.from('driver_profiles').upsert({ user_id: uid }, { onConflict:'user_id' }) } catch {}
       setRes({ ok:true, phone: normalized, role: adminPhone ? 'admin' : 'passenger' })
       setTimeout(() => navigate('/'), 300)
     } catch (e) { setRes({ error: String(e) }); try { alert('註冊失敗：' + String(e)) } catch {} }

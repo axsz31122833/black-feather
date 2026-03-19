@@ -111,24 +111,25 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true })
       const client = supabase
       const email = `u-${(phone || '').trim()}-${Date.now()}@blackfeather.com`
-      const createdId =
-        (typeof (globalThis as any).crypto?.randomUUID === 'function')
-          ? (globalThis as any).crypto.randomUUID()
-          : Math.random().toString(36).slice(2)
-      const { error: profileError } = await client
+      const { data: signData, error: signErr } = await client.auth.signUp({ email, password })
+      if (signErr) { try { alert('註冊失敗：' + (signErr.message || '未知錯誤')) } catch {}; throw signErr }
+      const uid = signData?.user?.id
+      if (!uid) { throw new Error('未取得使用者 ID') }
+      const { error: usersErr } = await client
         .from('users')
         .upsert({
-          id: createdId!,
+          id: uid!,
           email,
           phone,
           user_type: userType,
           name: name || null,
         }, { onConflict: 'id' } as any)
-      if (profileError) throw profileError
+      if (usersErr) { try { alert('建立 users 資料失敗：' + (usersErr.message || '未知錯誤')) } catch {}; throw usersErr }
       const pPayload: any = {
-        id: createdId!,
-        user_id: createdId!,
-        full_name: name || '',
+        id: uid!,
+        user_id: uid!,
+        full_name: name || '新乘客',
+        name: name || '新乘客',
         phone,
         role: userType || 'passenger',
       }
@@ -138,7 +139,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const { error: driverError } = await client
           .from('driver_profiles')
           .upsert({
-            user_id: createdId!,
+            user_id: uid!,
             license_number: '',
             car_model: '',
             car_plate: '',
@@ -148,7 +149,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       set({ 
         user: {
-          id: createdId!,
+          id: uid!,
           email,
           phone,
           user_type: userType,
