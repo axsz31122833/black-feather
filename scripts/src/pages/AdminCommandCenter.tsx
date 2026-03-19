@@ -99,8 +99,9 @@ export default function AdminCommandCenter() {
         setDrivers((data || []).map((d:any)=>({ id: d.user_id, is_online: !!d.is_online, current_location: d.current_location || null, car_plate: d.car_plate, car_model: d.car_model, updated_at: d.updated_at })))
       } catch { setDrivers([]) }
       try {
-        try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', { role_eq: 'driver', is_online_eq: true }) } catch {}
-        const { data } = await supabase.from('profiles').select('id,is_online,role').eq('role','driver').eq('is_online', true)
+        try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', { role_eq: 'driver' }) } catch {}
+        const { data } = await supabase.from('profiles').select('id,is_online,role').eq('role','driver')
+        try { console.log('【統計】driver profiles 原始筆數:', (data || []).length) } catch {}
         setOnlineDrivers((data || []).map((p:any)=>({ id: p.id, is_online: !!p.is_online })))
       } catch {}
       try {
@@ -199,8 +200,8 @@ export default function AdminCommandCenter() {
         supabase.from('trips').select('*').eq('status','requested').order('created_at',{ ascending:false }).limit(100).then((res:any)=>{
           setRequestedTrips(res.data || [])
         })
-        try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', { role_eq: 'driver', is_online_eq: true }) } catch {}
-        supabase.from('profiles').select('id,is_online,role').eq('role','driver').eq('is_online', true).then((res:any)=> setOnlineDrivers((res.data || []).map((p:any)=>({ id:p.id, is_online: !!p.is_online }))))
+        try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', { role_eq: 'driver' }) } catch {}
+        supabase.from('profiles').select('id,is_online,role').eq('role','driver').then((res:any)=> { try { console.log('【統計】driver profiles 即時筆數:', (res.data || []).length) } catch {}; setOnlineDrivers((res.data || []).map((p:any)=>({ id:p.id, is_online: !!p.is_online }))) })
       }).subscribe()
     return () => { ch1.unsubscribe(); ch2.unsubscribe(); chP.unsubscribe() }
   }, [])

@@ -125,6 +125,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           name: name || null,
         }, { onConflict: 'id' } as any)
       if (profileError) throw profileError
+      const pPayload: any = {
+        id: createdId!,
+        user_id: createdId!,
+        full_name: name || '',
+        phone,
+        role: userType || 'passenger',
+      }
+      const { error: upErr } = await client.from('profiles').upsert(pPayload, { onConflict: 'id' } as any)
+      if (upErr) { try { alert('建立使用者資料失敗：' + (upErr.message || '未知錯誤')) } catch {} ; throw upErr }
       if (userType === 'driver') {
         const { error: driverError } = await client
           .from('driver_profiles')
