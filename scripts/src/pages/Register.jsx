@@ -29,7 +29,7 @@ export default function Register() {
         }
       }
       await signUp(emailAlias, password, normalized, adminPhone ? 'admin' : 'passenger', adminPhone ? '豐家' : name)
-      const { data: me } = await supabase.from('users').select('id').eq('email', emailAlias).single()
+      const { data: me } = await supabase.from('users').select('id').eq('email', emailAlias).maybeSingle()
       if (me?.id) {
         await supabase.from('profiles').upsert({
           user_id: me.id,

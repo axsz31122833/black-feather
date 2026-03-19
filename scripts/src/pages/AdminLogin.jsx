@@ -19,7 +19,7 @@ export default function AdminLogin() {
       const u = useAuthStore.getState().user
       const id = u?.id || ''
       if (!id) throw new Error('未登入')
-      const { data } = await supabase.from('profiles').select('role').eq('id', id).limit(1).single()
+      const { data } = await supabase.from('profiles').select('role').eq('id', id).limit(1).maybeSingle()
       if (data?.role !== 'admin') throw new Error('非管理員帳號')
       try { window.localStorage.setItem('bf_role', 'admin') } catch {}
       window.location.href = '/admin/dashboard'

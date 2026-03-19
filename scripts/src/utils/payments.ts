@@ -42,7 +42,7 @@ export const processPayment = async (
         .from('payments')
         .insert(paymentData)
         .select()
-        .single() as any
+        .maybeSingle() as any
     )
     const { data, error } = res0 as any
 
@@ -81,7 +81,7 @@ export const recordPayment = async (
         .from('payments')
         .insert(paymentData)
         .select()
-        .single() as any
+        .maybeSingle() as any
     )
     const { data, error } = res1 as any
     if (error) throw error
@@ -101,7 +101,7 @@ export const confirmPayment = async (tripId: string): Promise<PaymentResult> => 
         .eq('trip_id', tripId)
         .order('created_at', { ascending: false })
         .limit(1)
-        .single() as any
+        .maybeSingle() as any
     )
     const { data: p } = res3 as any
     if (!p?.id) {

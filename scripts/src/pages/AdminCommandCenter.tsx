@@ -99,9 +99,9 @@ export default function AdminCommandCenter() {
         setDrivers((data || []).map((d:any)=>({ id: d.user_id, is_online: !!d.is_online, current_location: d.current_location || null, car_plate: d.car_plate, car_model: d.car_model, updated_at: d.updated_at })))
       } catch { setDrivers([]) }
       try {
-        try { console.log('【發送請求前檢查】表名:', 'driver_profiles', '過濾條件:', { is_online_eq: true }) } catch {}
-        const { data } = await supabase.from('driver_profiles').select('user_id,is_online').eq('is_online', true)
-        setOnlineDrivers((data || []).map((d:any)=>({ id: d.user_id, is_online: !!d.is_online })))
+        try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', { role_eq: 'driver', is_online_eq: true }) } catch {}
+        const { data } = await supabase.from('profiles').select('id,is_online,role').eq('role','driver').eq('is_online', true)
+        setOnlineDrivers((data || []).map((p:any)=>({ id: p.id, is_online: !!p.is_online })))
       } catch {}
       try {
         try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', null) } catch {}
@@ -113,7 +113,7 @@ export default function AdminCommandCenter() {
       } catch {}
       try {
         try { console.log('【發送請求前檢查】表名:', 'fare_config', '過濾條件:', { id_eq: 'global' }) } catch {}
-        const { data } = await supabase.from('fare_config').select('*').eq('id','global').single()
+        const { data } = await supabase.from('fare_config').select('*').eq('id','global').maybeSingle()
         if (data) {
           setFareBase(Number(data.base||70))
           setFarePerKm(Number(data.per_km||15))
@@ -179,8 +179,8 @@ export default function AdminCommandCenter() {
         supabase.from('trips').select('*').eq('status','requested').order('created_at',{ ascending:false }).limit(100).then((res:any)=>{
           setRequestedTrips(res.data || [])
         })
-        try { console.log('【發送請求前檢查】表名:', 'driver_profiles', '過濾條件:', { is_online_eq: true }) } catch {}
-        supabase.from('driver_profiles').select('user_id,is_online').eq('is_online', true).then((res:any)=> setOnlineDrivers((res.data || []).map((d:any)=>({ id:d.user_id, is_online: !!d.is_online }))))
+        try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', { role_eq: 'driver', is_online_eq: true }) } catch {}
+        supabase.from('profiles').select('id,is_online,role').eq('role','driver').eq('is_online', true).then((res:any)=> setOnlineDrivers((res.data || []).map((p:any)=>({ id:p.id, is_online: !!p.is_online }))))
       }).subscribe()
     return () => { ch1.unsubscribe(); ch2.unsubscribe() }
   }, [])
@@ -228,7 +228,8 @@ export default function AdminCommandCenter() {
         else if (d.current_location && typeof d.current_location.lat === 'number' && typeof d.current_location.lng === 'number') { lat = d.current_location.lat; lng = d.current_location.lng }
         if (lat == null || lng == null) return
         const pos = { lat, lng }
-        const color = d.is_online ? '#10B981' : '#6b7280'
+        const isOnline = (onlineDrivers || []).some((x:any)=> x.id === d.id)
+        const color = isOnline ? '#10B981' : '#6b7280'
         if (mk[key]) {
           try { mk[key].setPosition(pos) } catch {}
           try { mk[key].setIcon({ path: 'M12 2 L2 9 L2 14 L22 14 L22 9 L12 2 Z', scale: 1, fillColor: color, fillOpacity: 1, strokeColor: color, strokeWeight: 1 }) } catch {}

@@ -17,7 +17,7 @@ export default function AppSelector() {
         const id = user?.id || ''
         setUid(id)
         if (id) {
-          const { data } = await supabase.from('profiles').select('role').eq('id', id).limit(1).single()
+          const { data } = await supabase.from('profiles').select('role').eq('id', id).limit(1).maybeSingle()
           setRole(data?.role || '')
         } else {
           setRole('')

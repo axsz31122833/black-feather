@@ -40,7 +40,7 @@ export const useTripStore = create<TripState>((set, get) => ({
         .from('trips')
         .insert(tripData)
         .select()
-        .single()
+        .maybeSingle()
 
       if (error) throw error
 
@@ -101,7 +101,7 @@ export const useTripStore = create<TripState>((set, get) => ({
         .update(updateData)
         .eq('id', tripId)
         .select()
-        .single()
+        .maybeSingle()
 
       if (error) throw error
 
@@ -131,7 +131,7 @@ export const useTripStore = create<TripState>((set, get) => ({
         .in('status', ['requested', 'accepted', 'in_progress'])
         .order('created_at', { ascending: false })
         .limit(1)
-        .single()
+        .maybeSingle()
 
       if (error && error.code !== 'PGRST116') throw error
 

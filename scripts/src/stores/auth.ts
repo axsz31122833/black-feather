@@ -192,7 +192,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           .from('users')
           .select('*')
           .eq('id', user.id)
-          .single()
+          .maybeSingle()
 
         if (error) throw error
 
@@ -225,7 +225,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .from('driver_profiles')
         .select('*')
         .eq('user_id', user.id)
-        .single()
+        .maybeSingle()
 
       if (error) throw error
       set({ driverProfile: data })

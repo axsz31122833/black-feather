@@ -76,7 +76,7 @@ export default function PassengerHome() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase.from('fare_config').select('*').eq('id','global').single()
+        const { data } = await supabase.from('fare_config').select('*').eq('id','global').maybeSingle()
         if (data) setFareConfig({ base: Number(data.base||70), per_km: Number(data.per_km||15), per_min: Number(data.per_min||3), long_threshold: Number(data.long_threshold||20), long_rate: Number(data.long_rate||10) })
         else {
           const s = localStorage.getItem('bf_fare_config')
@@ -326,7 +326,7 @@ export default function PassengerHome() {
     if (!currentTrip?.driver_id) { setDriverProfile(null); return }
     ;(async ()=>{
       try {
-        const { data } = await supabase.from('driver_profiles').select('user_id,name,phone,car_plate,car_model,car_color').eq('user_id', currentTrip.driver_id).single()
+        const { data } = await supabase.from('driver_profiles').select('user_id,name,phone,car_plate,car_model,car_color').eq('user_id', currentTrip.driver_id).maybeSingle()
         setDriverProfile(data || null)
       } catch { setDriverProfile(null) }
     })()

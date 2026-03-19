@@ -280,7 +280,7 @@ export async function runScheduleChecker() {
 
 async function readMinutesBefore() {
   try {
-    const { data } = await supabase.from('scheduler_config').select('minutes_before').eq('id', 'global').single()
+    const { data } = await supabase.from('scheduler_config').select('minutes_before').eq('id', 'global').maybeSingle()
     return (data?.minutes_before || 15)
   } catch { return 15 }
 }
@@ -320,7 +320,7 @@ async function runLocalScheduleChecker(minutesBefore) {
         driver_id: driverId || null
       })
       .select('id')
-      .single()
+      .maybeSingle()
     if (!terr && trip?.id) {
       try {
         await supabase.from('scheduled_rides').update({ processed: true, status: 'dispatched' }).eq('id', s.id)

@@ -152,7 +152,7 @@ export default function AdminDashboard() {
     (async () => {
       try {
         await ensureAuth()
-        const { data } = await supabase.from('dispatch_settings').select('weights').eq('id', 'global').single()
+        const { data } = await supabase.from('dispatch_settings').select('weights').eq('id', 'global').maybeSingle()
         if (data?.weights) {
           setWeights(data.weights)
         } else {
@@ -417,7 +417,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     (async () => {
       try {
-        const { data } = await supabase.from('fare_config').select('*').eq('id','global').single()
+        const { data } = await supabase.from('fare_config').select('*').eq('id','global').maybeSingle()
         if (data) {
           setFareBase(Number(data.base ?? 70))
           setFarePerKm(Number(data.per_km ?? 15))

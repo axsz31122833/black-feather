@@ -24,7 +24,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
         } else {
           const { data: { user } } = await supabase.auth.getUser()
           if (!user?.id) { if (mounted) setLoading(false); return }
-          const { data } = await supabase.from('profiles').select('role').eq('id', user.id).limit(1).single()
+          const { data } = await supabase.from('profiles').select('role').eq('id', user.id).limit(1).maybeSingle()
           if (mounted) setRole(data?.role || '')
         }
       } catch {}
