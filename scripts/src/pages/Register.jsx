@@ -31,18 +31,22 @@ export default function Register() {
       await signUp(emailAlias, password, normalized, adminPhone ? 'admin' : 'passenger', adminPhone ? '豐家' : name)
       const { data: me } = await supabase.from('users').select('id').eq('email', emailAlias).maybeSingle()
       if (me?.id) {
-        await supabase.from('profiles').upsert({
+        const payload = {
+          id: me.id,
           user_id: me.id,
           name: adminPhone ? '豐家' : name,
           full_name: adminPhone ? '豐家' : name,
           phone: normalized,
+          role: adminPhone ? 'admin' : 'passenger',
           recommended_by_phone: adminPhone ? null : (invite || null),
           created_at: new Date().toISOString()
-        }, { onConflict: 'user_id' })
+        }
+        const { error: upErr } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
+        if (upErr) { try { alert('註冊檔案建立失敗：' + (upErr.message || '未知錯誤')) } catch {} }
       }
       setRes({ ok:true, phone: normalized, role: adminPhone ? 'admin' : 'passenger' })
       setTimeout(() => navigate('/'), 300)
-    } catch (e) { setRes({ error: String(e) }) }
+    } catch (e) { setRes({ error: String(e) }); try { alert('註冊失敗：' + String(e)) } catch {} }
   }
 
   return (

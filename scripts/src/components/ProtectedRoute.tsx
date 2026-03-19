@@ -24,7 +24,8 @@ export default function ProtectedRoute({ children, roles }: Props) {
         } else {
           const { data: { user } } = await supabase.auth.getUser()
           if (!user?.id) { if (mounted) setLoading(false); return }
-          const { data } = await supabase.from('profiles').select('role').eq('id', user.id).limit(1).maybeSingle()
+          const { data } = await supabase.from('profiles').select('id,role,full_name,phone').eq('id', user.id).limit(1).maybeSingle()
+          try { console.log('【登入狀態檢查】User:', user, 'Profile:', data) } catch {}
           if (mounted) setRole(data?.role || '')
         }
       } catch {}

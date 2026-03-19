@@ -164,6 +164,26 @@ export default function AdminCommandCenter() {
           return list
         })
       }).subscribe()
+    const chP = supabase.channel('admin-cc-profiles')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'profiles' }, (payload: any) => {
+        try {
+          const p = payload.new || payload.old
+          if (!p) return
+          const one = { id: p.id, user_id: p.user_id, full_name: p.full_name || '', phone: p.phone || '', role: p.role || '' }
+          setUsersPassengers(prev => {
+            const arr = prev.filter((x:any)=>x.id!==one.id)
+            return (one.role==='passenger') ? [one, ...arr] : arr
+          })
+          setUsersDrivers(prev => {
+            const arr = prev.filter((x:any)=>x.id!==one.id)
+            return (one.role==='driver') ? [one, ...arr] : arr
+          })
+          setUsersAdmins(prev => {
+            const arr = prev.filter((x:any)=>x.id!==one.id)
+            return (one.role==='admin') ? [one, ...arr] : arr
+          })
+        } catch {}
+      }).subscribe()
     const ch2 = supabase.channel('admin-cc-trips')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'trips' }, () => {
         const start = new Date()
@@ -182,7 +202,7 @@ export default function AdminCommandCenter() {
         try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', { role_eq: 'driver', is_online_eq: true }) } catch {}
         supabase.from('profiles').select('id,is_online,role').eq('role','driver').eq('is_online', true).then((res:any)=> setOnlineDrivers((res.data || []).map((p:any)=>({ id:p.id, is_online: !!p.is_online }))))
       }).subscribe()
-    return () => { ch1.unsubscribe(); ch2.unsubscribe() }
+    return () => { ch1.unsubscribe(); ch2.unsubscribe(); chP.unsubscribe() }
   }, [])
 
   useEffect(() => {
