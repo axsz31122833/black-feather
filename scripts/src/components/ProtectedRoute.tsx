@@ -56,6 +56,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
   if (!isAuthenticated) {
     const storedRole = typeof window !== 'undefined' ? (localStorage.getItem('bf_role') || '') : ''
     if (storedRole === 'admin') return children
+    try { console.error('【強制登出診斷】原因:', 'not_authenticated', '目前 Profile 狀態:', null) } catch {}
     if (path.startsWith('/admin')) return <Navigate to="/admin/login" replace />
     if (path.startsWith('/driver')) return <Navigate to="/driver/login" replace />
     return <Navigate to="/passenger/login" replace />
@@ -68,6 +69,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
   // Driver area: only driver/admin may enter
   if (path.startsWith('/driver')) {
     if (!(role === 'driver' || role === 'admin')) {
+      try { console.error('【強制登出診斷】原因:', 'driver_role_mismatch', '目前 Profile 狀態:', { role }) } catch {}
       alert('請使用司機帳號登入')
       return <Navigate to="/passenger" replace />
     }
@@ -76,6 +78,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
   // Admin area: only admin; if not, show "無權存取"
   if (path.startsWith('/admin')) {
     if (role !== 'admin') {
+      try { console.error('【強制登出診斷】原因:', 'admin_role_mismatch', '目前 Profile 狀態:', { role }) } catch {}
       try { alert('無權存取管理後台') } catch {}
       return <Navigate to="/" replace />
     }

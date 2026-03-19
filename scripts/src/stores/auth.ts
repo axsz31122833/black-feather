@@ -171,6 +171,11 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   signOut: async () => {
     try {
       const client = supabase
+      try {
+        const { data: { user } } = await client.auth.getUser()
+        const { data: prof } = await client.from('profiles').select('id,role,full_name,phone').eq('id', user?.id || '').limit(1).maybeSingle()
+        console.error('【強制登出診斷】原因:', 'manual_or_unknown', '目前 Profile 狀態:', prof || null)
+      } catch {}
       const { error } = await client.auth.signOut()
       if (error) throw error
       

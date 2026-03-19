@@ -25,11 +25,16 @@ export function installFetchPatch() {
           let err: any = {}
           try { err = await clone.json() } catch { try { err.text = await clone.text() } catch {} }
           try {
-            console.error('【Supabase 請求失敗】:', { url, status: res.status, ...err })
+            const info = { url, status: res.status, ...err }
+            console.error('【Supabase 請求失敗】:', info)
             const msg = [err.message, err.code, err.details, err.hint].filter(Boolean).join(' | ')
             if (err?.code === 'PGRST116') {
               console.info('【正常情況】PGRST116：無資料列，已忽略彈窗')
             } else {
+              try {
+                ;(window as any).__bf_last_error = { message: msg || ('HTTP '+res.status), code: err?.code || String(res.status), details: err?.details || err?.text || '' }
+                window.dispatchEvent(new CustomEvent('bf_error', { detail: (window as any).__bf_last_error }))
+              } catch {}
               alert(`資料請求失敗：${msg || ('HTTP '+res.status)}`)
             }
           } catch {}

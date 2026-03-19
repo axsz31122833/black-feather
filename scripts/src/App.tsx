@@ -1,4 +1,4 @@
-import React, { useEffect, Suspense, lazy } from 'react'
+import React, { useEffect, Suspense, lazy, useState } from 'react'
 import { BrowserRouter, Routes, Route, Link, useNavigate } from 'react-router-dom'
 const Login = lazy(() => import('./pages/PassengerLogin.jsx'))
 const PassengerLogin = lazy(() => import('./pages/PassengerLogin.jsx'))
@@ -62,10 +62,18 @@ function AuthRouter() {
 
 function App() {
   const { checkAuth, isAuthenticated, userType } = useAuthStore() as any
+  const [errorBanner, setErrorBanner] = useState<{ message: string; code?: string; details?: string } | null>(null)
   useEffect(() => {
     try { installFetchPatch() } catch {}
     if (window.location.search.includes('dev=1')) return
     checkAuth()
+  }, [])
+  useEffect(() => {
+    const onErr = (e: any) => {
+      try { setErrorBanner(e?.detail || (window as any).__bf_last_error || null) } catch {}
+    }
+    window.addEventListener('bf_error', onErr)
+    return () => { window.removeEventListener('bf_error', onErr) }
   }, [])
   useEffect(() => {
     return () => {}
@@ -127,6 +135,11 @@ function App() {
           )}
         </header>
         <main className="container" style={{ background: 'transparent', position: 'relative', overflow: 'visible' }}>
+          {errorBanner && (
+            <div style={{ position:'fixed', top:0, left:0, right:0, zIndex:9999, background:'#7f1d1d', color:'#fff', padding:'8px 12px', borderBottom:'2px solid #dc2626' }}>
+              <strong>錯誤</strong>：{errorBanner.message} {errorBanner.code ? `(code: ${errorBanner.code})` : ''} {errorBanner.details ? `· ${errorBanner.details}` : ''}
+            </div>
+          )}
           <ConnectionChecker />
           <PushInit />
           <ManifestManager />
@@ -204,7 +217,7 @@ function App() {
           </Suspense>
           <GlobalMonitor />
           <div style={{ position:'fixed', right:12, bottom:10, fontSize:12, color:'#93c5fd', opacity:0.9, background:'rgba(0,0,0,0.35)', padding:'4px 8px', borderRadius:8, border:'1px solid rgba(147,197,253,0.4)' }}>
-            v1.8.3-Registration-Gatekeeper-Fix
+            v1.8.4-Deep-Diagnostic-Trace
           </div>
         </main>
       </BrowserRouter>

@@ -313,6 +313,8 @@ export default function AdminCommandCenter() {
     try {
       const ch = supabase
         .channel('admin-chat')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_messages' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'ops_events' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
           try { console.log('【收到任何訊息】', p?.new) } catch {}
           try {
@@ -338,9 +340,11 @@ export default function AdminCommandCenter() {
         .subscribe((status: any) => {
           try { console.log('頻道狀態:', status) } catch {}
           if (status === 'CLOSED' || status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
-            try { ch.unsubscribe() } catch {}
-            const ch2 = supabase
-              .channel('admin-chat')
+          try { ch.unsubscribe() } catch {}
+          const ch2 = supabase
+            .channel('admin-chat')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_messages' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'ops_events' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
               .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
                 try { console.log('【收到任何訊息】', p?.new) } catch {}
                 reloadActiveThread()
