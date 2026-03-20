@@ -61,13 +61,13 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     if (!v) return
     setText('')
     const tid = (tripId && String(tripId)) || (`support_${userId}`)
-    const payload: any = { trip_id: tid, sender_id: userId, message_content: v }
+    const payload: any = { trip_id: tid, sender_id: userId, message_content: v, content: v }
     try {
       const { data: auth } = await supabase.auth.getUser()
       const authId = auth?.user?.id || null
       if (authId && authId !== userId) payload.sender_id = authId
     } catch {}
-    try { console.log('正在發送的 Payload:', JSON.stringify(payload)) } catch {}
+    try { console.log('【發送前檢查】Payload:', payload) } catch {}
     const { data, error } = await supabase.from('trip_messages').insert([payload] as any)
     if (error) {
       try { console.error('【Supabase 報錯詳情】:', { message: error.message, code: (error as any).code, details: (error as any).details, hint: (error as any).hint }) } catch {}
@@ -94,7 +94,7 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
       } catch {}
       if (!sid) sid = 'anonymous'
       const payload: any = { trip_id: tid, sender_id: sid, message_content: '', content: '', image_url: url }
-      try { console.log('正在發送的 Payload:', JSON.stringify(payload)) } catch {}
+      try { console.log('【發送前檢查】Payload:', payload) } catch {}
       const { error: insErr } = await supabase.from('trip_messages').insert([payload] as any)
       if (insErr) { try { alert('圖片發送失敗：' + (insErr.message || '未知錯誤')) } catch {} }
     } catch {}
@@ -111,16 +111,16 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
               let sid = userId
               try {
                 const { data: au } = await supabase.auth.getUser()
-                if (au?.user?.id) sid = au.user.id
-              } catch {}
-              if (!sid) sid = 'anonymous'
-              const payload: any = { trip_id: tid, sender_id: sid, message_content: '', content: '', location_data: loc }
-              try { console.log('正在發送的 Payload:', JSON.stringify(payload)) } catch {}
-              const { error } = await supabase.from('trip_messages').insert([payload] as any)
-              if (error) throw error
-              resolve()
-            } catch (e) { reject(e as any) }
-          },
+              if (au?.user?.id) sid = au.user.id
+            } catch {}
+            if (!sid) sid = 'anonymous'
+            const payload: any = { trip_id: tid, sender_id: sid, message_content: '', content: '', location_data: loc }
+            try { console.log('【發送前檢查】Payload:', payload) } catch {}
+            const { error } = await supabase.from('trip_messages').insert([payload] as any)
+            if (error) throw error
+            resolve()
+          } catch (e) { reject(e as any) }
+        },
           () => reject(new Error('geolocation_failed')),
           { enableHighAccuracy: true, maximumAge: 5000 }
         )

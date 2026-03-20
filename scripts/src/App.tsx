@@ -38,6 +38,17 @@ function AuthRouter() {
           if (user?.id) {
             const { data } = await supabase.from('profiles').select('id,role,full_name,phone').eq('id', user.id).limit(1).maybeSingle()
             prof = data || null
+            if (user && !prof) {
+              try {
+                const payload: any = { id: user.id, user_id: user.id, role: 'passenger', full_name: '新乘客', name: '新乘客' }
+                const { error: upErr } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' } as any)
+                if (upErr) { try { console.error('【自動補建 Profile 失敗】', upErr) } catch {} }
+                else {
+                  const { data: d2 } = await supabase.from('profiles').select('id,role,full_name,phone').eq('id', user.id).limit(1).maybeSingle()
+                  prof = d2 || payload
+                }
+              } catch {}
+            }
           }
         } catch {}
         try { console.log('【登入狀態檢查】User:', user, 'Profile:', prof); console.log(`【身分檢查】UID: ${user?.id || '—'}, 是否有 Profile: ${!!prof}`) } catch {}
@@ -113,7 +124,7 @@ function App() {
           {/* deploy trigger: 2026-01-29 */}
           <div className="brand flex items-center gap-3" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
             Black Feather 車隊
-            <span style={{ fontSize: 12, color:'#93c5fd', opacity: 0.9 }}>v1.8.3-Registration-Gatekeeper-Fix</span>
+            <span style={{ fontSize: 12, color:'#93c5fd', opacity: 0.9 }}>v1.8.5-Content-Recovery-And-Auth-Buffer</span>
           </div>
           {isAuthenticated && userType && (userType === 'admin' || userType === 'driver') && !window.location.pathname.startsWith('/passenger') && (
             <nav className="nav flex items-center gap-12" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
@@ -217,7 +228,7 @@ function App() {
           </Suspense>
           <GlobalMonitor />
           <div style={{ position:'fixed', right:12, bottom:10, fontSize:12, color:'#93c5fd', opacity:0.9, background:'rgba(0,0,0,0.35)', padding:'4px 8px', borderRadius:8, border:'1px solid rgba(147,197,253,0.4)' }}>
-            v1.8.4-Deep-Diagnostic-Trace
+            v1.8.5-Content-Recovery-And-Auth-Buffer
           </div>
         </main>
       </BrowserRouter>

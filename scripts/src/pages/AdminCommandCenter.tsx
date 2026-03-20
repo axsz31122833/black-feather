@@ -423,6 +423,7 @@ export default function AdminCommandCenter() {
     } catch {}
     if (!sid) sid = 'anonymous'
     const payload: any = { trip_id: String(activeChat), sender_id: sid, message_content: v, content: v }
+    try { console.log('【發送前檢查】Payload:', payload) } catch {}
     const { data, error } = await supabase.from('trip_messages').insert([payload] as any)
     if (error) { try { alert('發送失敗：' + (error.message || '未知錯誤')) } catch {} }
   }
