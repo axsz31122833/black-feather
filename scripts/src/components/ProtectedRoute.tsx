@@ -13,6 +13,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
   const [role, setRole] = useState<string>('')
   const [loading, setLoading] = useState<boolean>(true)
   const [provisioning, setProvisioning] = useState<boolean>(false)
+  const [authUserExists, setAuthUserExists] = useState<boolean>(false)
   const path = typeof window !== 'undefined' ? window.location.pathname : '/'
 
   useEffect(() => {
@@ -24,6 +25,7 @@ export default function ProtectedRoute({ children, roles }: Props) {
           if (mounted) setRole(storedRole)
         } else {
           const { data: { user } } = await supabase.auth.getUser()
+          if (mounted) setAuthUserExists(!!user?.id)
           if (!user?.id) { if (mounted) setLoading(false); return }
           let data: any = null
           for (let i = 0; i < 3; i++) {
@@ -75,6 +77,18 @@ export default function ProtectedRoute({ children, roles }: Props) {
             <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid #D4AF37', borderTopColor:'transparent', margin:'0 auto', animation:'spin 1s linear infinite' }} />
             <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
             <div style={{ color:'#9ca3af', marginTop:8 }}>正在建立檔案…</div>
+          </div>
+        </div>
+      )
+    }
+    if (authUserExists) {
+      return (
+        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', background:'#0a0a0a' }}>
+          <div style={{ textAlign:'center' }}>
+            <div style={{ fontSize:28, fontWeight:900, color:'#D4AF37', marginBottom:12 }}>Black Feather</div>
+            <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid #D4AF37', borderTopColor:'transparent', margin:'0 auto', animation:'spin 1s linear infinite' }} />
+            <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
+            <div style={{ color:'#9ca3af', marginTop:8 }}>資料加載中…</div>
           </div>
         </div>
       )

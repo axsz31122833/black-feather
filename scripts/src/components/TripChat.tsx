@@ -63,7 +63,7 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     try { console.log('【發送檢查】文字內容:', v) } catch {}
     setText('')
     const tid = (tripId && String(tripId)) || (`support_${userId}`)
-    const payload: any = { trip_id: tid, sender_id: userId, message_content: v, content: v }
+    const payload: any = { trip_id: tid, sender_id: userId, message_content: String(v), content: String(v), created_at: new Date().toISOString() }
     try {
       const { data: auth } = await supabase.auth.getUser()
       const authId = auth?.user?.id || null

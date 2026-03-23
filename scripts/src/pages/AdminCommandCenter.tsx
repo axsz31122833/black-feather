@@ -317,6 +317,7 @@ export default function AdminCommandCenter() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'ops_events' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
           try { console.log('【收到訊息】內容:', p?.new?.content, '原始封包:', p?.new) } catch {}
+          try { if (!p?.new?.content && !p?.new?.message_content) console.error('【嚴重錯誤】收到空訊息封包', p?.new) } catch {}
           try {
             const row = p.new
             if (row?.trip_id) {
@@ -347,6 +348,7 @@ export default function AdminCommandCenter() {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'ops_events' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
               .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
                 try { console.log('【收到訊息】內容:', p?.new?.content, '原始封包:', p?.new) } catch {}
+                try { if (!p?.new?.content && !p?.new?.message_content) console.error('【嚴重錯誤】收到空訊息封包', p?.new) } catch {}
                 reloadActiveThread()
               })
               .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter:'event_type=eq.chat' }, (p:any)=>{
@@ -423,7 +425,7 @@ export default function AdminCommandCenter() {
       if (au?.user?.id) sid = au.user.id
     } catch {}
     if (!sid) sid = 'anonymous'
-    const payload: any = { trip_id: String(activeChat), sender_id: sid, message_content: v, content: v }
+    const payload: any = { trip_id: String(activeChat), sender_id: sid, message_content: String(v), content: String(v), created_at: new Date().toISOString() }
     try { console.log('【發送前檢查】Payload:', payload) } catch {}
     const { data, error } = await supabase.from('trip_messages').insert([payload] as any)
     if (error) { try { alert('發送失敗：' + (error.message || '未知錯誤')) } catch {} }
