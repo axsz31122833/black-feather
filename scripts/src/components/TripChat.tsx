@@ -27,9 +27,10 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     const ch = supabase
       .channel('trip-chat-' + tripId)
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages', filter: `trip_id=eq.${tripId}` }, (payload: any) => {
+        try { console.log('【收到訊息】內容:', payload?.new?.content, '原始封包:', payload?.new) } catch {}
         const row = payload.new
         if (!row) return
-        setMessages(prev => [...prev, { id: row.id, type: 'chat', text: row.message_content || row.content || row.text || '', from: (row.role || 'unknown'), time: row.created_at, eventType: 'chat', imageUrl: row.image_url || null, loc: row.location_data || null }])
+        setMessages(prev => [...prev, { id: row.id, type: 'chat', text: (row.content || row.message_content || '內容載入失敗'), from: (row.role || 'unknown'), time: row.created_at, eventType: 'chat', imageUrl: row.image_url || null, loc: row.location_data || null }])
       })
       .subscribe()
     return () => { ch.unsubscribe() }
@@ -59,6 +60,7 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
   const send = async () => {
     const v = text.trim()
     if (!v) return
+    try { console.log('【發送檢查】文字內容:', v) } catch {}
     setText('')
     const tid = (tripId && String(tripId)) || (`support_${userId}`)
     const payload: any = { trip_id: tid, sender_id: userId, message_content: v, content: v }

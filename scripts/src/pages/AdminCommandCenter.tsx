@@ -316,7 +316,7 @@ export default function AdminCommandCenter() {
         .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_messages' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
         .on('postgres_changes', { event: '*', schema: 'public', table: 'ops_events' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
         .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
-          try { console.log('【收到任何訊息】', p?.new) } catch {}
+          try { console.log('【收到訊息】內容:', p?.new?.content, '原始封包:', p?.new) } catch {}
           try {
             const row = p.new
             if (row?.trip_id) {
@@ -346,7 +346,7 @@ export default function AdminCommandCenter() {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'trip_messages' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
             .on('postgres_changes', { event: '*', schema: 'public', table: 'ops_events' }, (p:any)=>{ try { console.log('【Realtime 原始信號】', p) } catch {} })
               .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'trip_messages' }, (p:any)=>{
-                try { console.log('【收到任何訊息】', p?.new) } catch {}
+                try { console.log('【收到訊息】內容:', p?.new?.content, '原始封包:', p?.new) } catch {}
                 reloadActiveThread()
               })
               .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'ops_events', filter:'event_type=eq.chat' }, (p:any)=>{
@@ -415,6 +415,7 @@ export default function AdminCommandCenter() {
   const sendAdminMessage = async () => {
     const v = chatText.trim()
     if (!v || !activeChat) return
+    try { console.log('【發送檢查】文字內容:', v) } catch {}
     setChatText('')
     let sid = user?.id || null
     try {
