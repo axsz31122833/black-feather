@@ -58,6 +58,7 @@ export default function AdminCommandCenter() {
   const [showOverdueAlert, setShowOverdueAlert] = useState(false)
   const [driverSummary, setDriverSummary] = useState<{ id?: string; trips: number; revenue: number } | null>(null)
   const [imgPreview, setImgPreview] = useState<string | null>(null)
+  const [driverProfilesError, setDriverProfilesError] = useState<boolean>(false)
   const [connDiag, setConnDiag] = useState<{ url: string; session: string }>({ url: '', session: 'unknown' })
   const reloadRequested = async () => {
     try {
@@ -97,10 +98,17 @@ export default function AdminCommandCenter() {
       } catch { setPendingCount(0) }
       try {
         try { console.log('【發送請求前檢查】表名:', 'driver_profiles', '過濾條件:', null) } catch {}
-        const { data } = await supabase.from('driver_profiles').select('user_id,is_online,current_location,car_plate,car_model,updated_at')
-        try { console.log('【統計原始數據】driver_profiles:', data) } catch {}
-        setDrivers((data || []).map((d:any)=>({ id: d.user_id, is_online: !!d.is_online, current_location: d.current_location || null, car_plate: d.car_plate, car_model: d.car_model, updated_at: d.updated_at })))
-      } catch { setDrivers([]) }
+        const { data, error } = await supabase.from('driver_profiles').select('user_id,is_online,current_location,car_plate,car_model,updated_at')
+        if (error) {
+          try { console.warn('司機資料同步中：', error) } catch {}
+          setDriverProfilesError(true)
+          setDrivers([])
+        } else {
+          setDriverProfilesError(false)
+          try { console.log('【統計原始數據】driver_profiles:', data) } catch {}
+          setDrivers((data || []).map((d:any)=>({ id: d.user_id, is_online: !!d.is_online, current_location: d.current_location || null, car_plate: d.car_plate, car_model: d.car_model, updated_at: d.updated_at })))
+        }
+      } catch { setDrivers([]); setDriverProfilesError(true) }
       try {
         try { console.log('【發送請求前檢查】表名:', 'profiles', '過濾條件:', { role_eq: 'driver' }) } catch {}
         const { data } = await supabase.from('profiles').select('id,is_online,role').eq('role','driver')
@@ -451,7 +459,17 @@ export default function AdminCommandCenter() {
   const promoteToDriver = async (userId: string) => {
     try {
       await supabase.from('profiles').update({ role:'driver' }).eq('id', userId)
-      try { await supabase.from('driver_profiles').upsert({ user_id: userId }, { onConflict:'user_id' } as any) } catch {}
+      try {
+        const { data: au } = await supabase.auth.getUser()
+        const cur = au?.user?.id || ''
+        if (!cur || cur !== userId) {
+          console.error('【錯誤】目標用戶不存在於 Auth 系統，無法建立司機檔案', { current: cur, target: userId })
+        } else {
+          await supabase.from('driver_profiles').upsert({ user_id: userId }, { onConflict:'user_id' } as any)
+        }
+      } catch (e) {
+        console.error('建立司機檔案失敗：', e)
+      }
       alert('已升等為司機')
     } catch { alert('操作失敗') }
   }
@@ -785,6 +803,11 @@ export default function AdminCommandCenter() {
         <div style={{ position:'fixed', left:12, bottom:10, fontSize:12, color:'#93c5fd', opacity:0.9, background:'rgba(0,0,0,0.35)', padding:'4px 8px', borderRadius:8, border:'1px solid rgba(147,197,253,0.4)' }}>
           連線診斷 · URL:{connDiag.url || '—'} · Session:{connDiag.session}
         </div>
+        {driverProfilesError && (
+          <div style={{ position:'fixed', left:12, bottom:40, fontSize:12, color:'#fca5a5', opacity:0.95, background:'rgba(127,29,29,0.6)', padding:'6px 10px', borderRadius:8, border:'1px solid rgba(239,68,68,0.6)' }}>
+            司機資料同步中
+          </div>
+        )}
       </div>
     </div>
   )

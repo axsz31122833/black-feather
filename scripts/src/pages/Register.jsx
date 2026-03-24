@@ -46,7 +46,15 @@ export default function Register() {
       }
       const { error: upErr } = await supabase.from('profiles').upsert(payload, { onConflict: 'id' })
       if (upErr) { try { alert('註冊檔案建立失敗：' + (upErr.message || '未知錯誤')) } catch {}; setRes({ error: upErr.message }); return }
-      try { await supabase.from('driver_profiles').upsert({ user_id: uid }, { onConflict:'user_id' }) } catch {}
+      try {
+        const { data: au } = await supabase.auth.getUser()
+        const cur = au?.user?.id || ''
+        if (!cur || cur !== uid) {
+          console.error('【錯誤】目標用戶不存在於 Auth 系統，無法建立司機檔案', { current: cur, target: uid })
+        } else {
+          await supabase.from('driver_profiles').upsert({ user_id: uid }, { onConflict:'user_id' })
+        }
+      } catch {}
       setRes({ ok:true, phone: normalized, role: adminPhone ? 'admin' : 'passenger' })
       setTimeout(() => navigate('/'), 300)
     } catch (e) { setRes({ error: String(e) }); try { alert('註冊失敗：' + String(e)) } catch {} }

@@ -139,16 +139,26 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { error: upErr } = await client.from('profiles').upsert(pPayload, { onConflict: 'id' } as any)
       if (upErr) { try { alert('建立使用者資料失敗：' + (upErr.message || '未知錯誤')) } catch {} ; throw upErr }
       if (userType === 'driver') {
-        const { error: driverError } = await client
-          .from('driver_profiles')
-          .upsert({
-            user_id: uid!,
-            license_number: '',
-            car_model: '',
-            car_plate: '',
-            status: 'pending',
-          }, { onConflict: 'user_id' } as any)
-        if (driverError) throw driverError
+        try {
+          const { data: au } = await client.auth.getUser()
+          const cur = au?.user?.id || ''
+          if (!cur || cur !== uid) {
+            console.error('【錯誤】目標用戶不存在於 Auth 系統，無法建立司機檔案', { current: cur, target: uid })
+          } else {
+            const { error: driverError } = await client
+              .from('driver_profiles')
+              .upsert({
+                user_id: uid!,
+                license_number: '',
+                car_model: '',
+                car_plate: '',
+                status: 'pending',
+              }, { onConflict: 'user_id' } as any)
+            if (driverError) throw driverError
+          }
+        } catch (e) {
+          console.error('建立司機檔案失敗：', e)
+        }
       }
       set({ 
         user: {
