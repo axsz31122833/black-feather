@@ -265,7 +265,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   setUser: (u) => {
     const now = new Date().toISOString()
     const user: User = {
-      id: (u.id as string) || ((typeof (globalThis as any).crypto?.randomUUID === 'function') ? (globalThis as any).crypto.randomUUID() : Math.random().toString(36).slice(2)),
+      id: (u.id as string) || '',
       email: (u as any).email || '',
       phone: (u as any).phone || '',
       user_type: u.user_type,
