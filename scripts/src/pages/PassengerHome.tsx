@@ -961,7 +961,7 @@ export default function PassengerHome() {
         }
         if (!passengerId) {
           try {
-            const { data: oneAdmin } = await supabase.from('users').select('id').eq('user_type','admin').order('created_at',{ ascending:false }).limit(1).single()
+            const { data: oneAdmin } = await supabase.from('users').select('id').eq('user_type','admin').order('created_at',{ ascending:false }).limit(1).maybeSingle()
             if (oneAdmin?.id) passengerId = oneAdmin.id
           } catch {}
         }
