@@ -70,6 +70,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         .maybeSingle()
       if (!prof) throw new Error('找不到帳戶或密碼錯誤')
       if (userType === 'admin' && (prof as any).role !== 'admin') throw new Error('非管理員帳號')
+      try {
+        await client.from('profiles').upsert({ id: prof.id, user_id: prof.id, full_name: prof.full_name || '新乘客', name: prof.full_name || '新乘客', phone: prof.phone, role: (prof.role as any) || userType } as any, { onConflict:'id' } as any)
+      } catch (e) { try { alert('使用者檔案同步失敗：' + (e instanceof Error ? e.message : String(e))) } catch {}; throw e }
       const now = new Date().toISOString()
       const tempUser: any = {
         id: prof.id,

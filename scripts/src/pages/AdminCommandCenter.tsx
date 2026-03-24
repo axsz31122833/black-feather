@@ -80,12 +80,14 @@ export default function AdminCommandCenter() {
         const startIso = start.toISOString()
         try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { gte_created_at: startIso }) } catch {}
         const { data: tripsData } = await supabase.from('trips').select('*').gte('created_at', startIso)
+        try { console.log('【統計原始數據】trips(當日):', tripsData) } catch {}
         setTripsToday((tripsData || []).length)
         setRevenueToday((tripsData || []).filter(t=>t.status==='completed').reduce((s: number, t:any)=> s + Number(t.final_price||0), 0))
       } catch {}
       try {
         try { console.log('【發送請求前檢查】表名:', 'trips', '過濾條件:', { status_eq: 'requested' }) } catch {}
         const { data: req } = await supabase.from('trips').select('*').eq('status','requested').order('created_at',{ ascending:false }).limit(100)
+        try { console.log('【統計原始數據】trips(requested):', req) } catch {}
         setRequestedTrips(req || [])
       } catch {}
       try {
@@ -96,6 +98,7 @@ export default function AdminCommandCenter() {
       try {
         try { console.log('【發送請求前檢查】表名:', 'driver_profiles', '過濾條件:', null) } catch {}
         const { data } = await supabase.from('driver_profiles').select('user_id,is_online,current_location,car_plate,car_model,updated_at')
+        try { console.log('【統計原始數據】driver_profiles:', data) } catch {}
         setDrivers((data || []).map((d:any)=>({ id: d.user_id, is_online: !!d.is_online, current_location: d.current_location || null, car_plate: d.car_plate, car_model: d.car_model, updated_at: d.updated_at })))
       } catch { setDrivers([]) }
       try {
