@@ -50,17 +50,6 @@ function AuthRouter() {
               } catch {}
             }
             if (event === 'SIGNED_IN' && !prof) {
-              try {
-                if (!(window as any).__bf_prompted_profile) {
-                  (window as any).__bf_prompted_profile = true
-                  const nm = window.prompt('歡迎加入，請輸入您的姓名以完成檔案建立：','')
-                  if (nm && nm.trim()) {
-                    const p2: any = { id: user.id, user_id: user.id, role: 'passenger', full_name: nm.trim(), name: nm.trim() }
-                    const { error: upE2 } = await supabase.from('profiles').upsert(p2, { onConflict:'id' } as any)
-                    if (!upE2) prof = p2
-                  }
-                }
-              } catch {}
               let tries = 0
               const timer = setInterval(async () => {
                 try {
@@ -158,7 +147,7 @@ function App() {
           {/* deploy trigger: 2026-01-29 */}
           <div className="brand flex items-center gap-3" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
             Black Feather 車隊
-            <span style={{ fontSize: 12, color:'#93c5fd', opacity: 0.9 }}>v1.9.6-Signup-Integrity-Fix</span>
+            <span style={{ fontSize: 12, color:'#93c5fd', opacity: 0.9 }}>v1.9.7-Sync-Auth-And-Profile-Final</span>
           </div>
           {isAuthenticated && userType && (userType === 'admin' || userType === 'driver') && !window.location.pathname.startsWith('/passenger') && (
             <nav className="nav flex items-center gap-12" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
@@ -262,7 +251,7 @@ function App() {
           </Suspense>
           <GlobalMonitor />
           <div style={{ position:'fixed', right:12, bottom:10, fontSize:12, color:'#93c5fd', opacity:0.9, background:'rgba(0,0,0,0.35)', padding:'4px 8px', borderRadius:8, border:'1px solid rgba(147,197,253,0.4)' }}>
-            v1.9.6-Signup-Integrity-Fix
+            v1.9.7-Sync-Auth-And-Profile-Final
           </div>
         </main>
       </BrowserRouter>

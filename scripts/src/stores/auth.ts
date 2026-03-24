@@ -128,6 +128,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           name: name || null,
         }, { onConflict: 'id' } as any)
       if (usersErr) { try { alert('建立 users 資料失敗：' + (usersErr.message || '未知錯誤')) } catch {}; throw usersErr }
+      try { console.log('【註冊同步檢查】Auth ID:', uid, '準備寫入 Profile...') } catch {}
       const pPayload: any = {
         id: uid!,
         user_id: uid!,

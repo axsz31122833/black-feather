@@ -34,6 +34,7 @@ export default function Register() {
       if (!uid) { setRes({ error:'未取得使用者 ID' }); return }
       const { error: usersErr } = await supabase.from('users').upsert({ id: uid, email: emailAlias, phone: normalized, user_type: adminPhone ? 'admin' : 'passenger', name: adminPhone ? '豐家' : name }, { onConflict:'id' })
       if (usersErr) { try { alert('建立 users 資料失敗：' + (usersErr.message || '未知錯誤')) } catch {}; setRes({ error: usersErr.message }); return }
+      try { console.log('【註冊同步檢查】Auth ID:', uid, '準備寫入 Profile...') } catch {}
       const payload = {
         id: uid,
         user_id: uid,
