@@ -68,30 +68,12 @@ export default function ProtectedRoute({ children, roles }: Props) {
   if (!isAuthenticated) {
     const storedRole = typeof window !== 'undefined' ? (localStorage.getItem('bf_role') || '') : ''
     if (storedRole === 'admin') return children
-    try { console.error('【強制登出診斷】原因:', 'not_authenticated', '目前 Profile 狀態:', null) } catch {}
+    try { console.warn('【強制登出診斷】原因:', 'not_authenticated', '目前 Profile 狀態:', null) } catch {}
     if (provisioning) {
-      return (
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', background:'#0a0a0a' }}>
-          <div style={{ textAlign:'center' }}>
-            <div style={{ fontSize:28, fontWeight:900, color:'#D4AF37', marginBottom:12 }}>Black Feather</div>
-            <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid #D4AF37', borderTopColor:'transparent', margin:'0 auto', animation:'spin 1s linear infinite' }} />
-            <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
-            <div style={{ color:'#9ca3af', marginTop:8 }}>正在建立檔案…</div>
-          </div>
-        </div>
-      )
+      return (<div className="loading">正在同步車隊資料...</div>)
     }
     if (authUserExists) {
-      return (
-        <div style={{ display:'flex', alignItems:'center', justifyContent:'center', minHeight:'60vh', background:'#0a0a0a' }}>
-          <div style={{ textAlign:'center' }}>
-            <div style={{ fontSize:28, fontWeight:900, color:'#D4AF37', marginBottom:12 }}>Black Feather</div>
-            <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid #D4AF37', borderTopColor:'transparent', margin:'0 auto', animation:'spin 1s linear infinite' }} />
-            <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
-            <div style={{ color:'#9ca3af', marginTop:8 }}>資料加載中…</div>
-          </div>
-        </div>
-      )
+      return (<div className="loading">正在同步車隊資料...</div>)
     }
     if (path.startsWith('/admin')) return <Navigate to="/admin/login" replace />
     if (path.startsWith('/driver')) return <Navigate to="/driver/login" replace />
