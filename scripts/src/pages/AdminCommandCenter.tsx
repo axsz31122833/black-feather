@@ -436,6 +436,8 @@ export default function AdminCommandCenter() {
       if (au?.user?.id) sid = au.user.id
     } catch {}
     if (!sid) sid = 'anonymous'
+    const isValidId = (s: any) => typeof s === 'string' && s.length >= 30
+    if (!isValidId(sid)) { try { console.warn('【Query Guard】sender_id 無效，已阻止送出') } catch {}; return }
     const payload: any = { trip_id: String(activeChat), sender_id: sid, message_content: String(v), content: String(v), created_at: new Date().toISOString() }
     try { console.log('【發送前檢查】Payload:', payload) } catch {}
     const { data, error } = await supabase.from('trip_messages').insert([payload] as any)

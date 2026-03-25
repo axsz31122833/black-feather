@@ -22,6 +22,7 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
   const lastSeenKey = `bf_chat_seen_${tripId}_${role}`
   const fileRef = useRef<HTMLInputElement>(null)
   const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const isValidId = (s: any) => typeof s === 'string' && s.length >= 30
 
   useEffect(() => {
     const ch = supabase
@@ -60,6 +61,7 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
   const send = async () => {
     const v = text.trim()
     if (!v) return
+    if (!isValidId(userId)) { try { console.warn('【Query Guard】sender_id 無效，已阻止送出') } catch {}; return }
     try { console.log('【發送檢查】文字內容:', v) } catch {}
     setText('')
     const tid = (tripId && String(tripId)) || (`support_${userId}`)
@@ -81,6 +83,7 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
     const file = e.target.files?.[0]
     if (!file) return
     try {
+      if (!isValidId(userId)) { try { console.warn('【Query Guard】sender_id 無效，已阻止圖片送出') } catch {}; return }
       const name = `${Date.now()}_${Math.random().toString(36).slice(2)}_${file.name.replace(/\s+/g,'_')}`
       const tid = (tripId && String(tripId)) || (`support_${userId}`)
       const path = `${tid}/${name}`
@@ -107,20 +110,21 @@ export default function TripChat({ tripId, userId, role }: { tripId: string; use
       await new Promise<void>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(
           async (pos) => {
-            const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
-            try {
-              const tid = (tripId && String(tripId)) || (`support_${userId}`)
-              let sid = userId
+              const loc = { lat: pos.coords.latitude, lng: pos.coords.longitude }
               try {
-                const { data: au } = await supabase.auth.getUser()
-              if (au?.user?.id) sid = au.user.id
-            } catch {}
-            if (!sid) sid = 'anonymous'
-            const payload: any = { trip_id: tid, sender_id: sid, message_content: '', content: '', location_data: loc }
-            try { console.log('【發送前檢查】Payload:', payload) } catch {}
-            const { error } = await supabase.from('trip_messages').insert([payload] as any)
-            if (error) throw error
-            resolve()
+                const tid = (tripId && String(tripId)) || (`support_${userId}`)
+                let sid = userId
+                try {
+                  const { data: au } = await supabase.auth.getUser()
+                  if (au?.user?.id) sid = au.user.id
+                } catch {}
+                if (!sid) sid = 'anonymous'
+                if (!isValidId(sid)) { try { console.warn('【Query Guard】sender_id 無效，已阻止位置送出') } catch {}; resolve(); return }
+                const payload: any = { trip_id: tid, sender_id: sid, message_content: '', content: '', location_data: loc }
+                try { console.log('【發送前檢查】Payload:', payload) } catch {}
+                const { error } = await supabase.from('trip_messages').insert([payload] as any)
+                if (error) throw error
+                resolve()
           } catch (e) { reject(e as any) }
         },
           () => reject(new Error('geolocation_failed')),

@@ -139,6 +139,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       }
       const { error: upErr } = await client.from('profiles').upsert(pPayload, { onConflict: 'id' } as any)
       if (upErr) { try { alert('建立使用者資料失敗：' + (upErr.message || '未知錯誤')) } catch {} ; throw upErr }
+      try {
+        const { data: chk, error: chkErr } = await client.from('profiles').select('id').eq('id', uid).maybeSingle()
+        if (chkErr || !chk?.id) throw (chkErr || new Error('無法確認 Profile 已建立'))
+      } catch (e) { try { alert('Profile 建立驗證失敗：' + (e instanceof Error ? e.message : String(e))) } catch {}; throw e }
       if (userType === 'driver') {
         try {
           const { data: au } = await client.auth.getUser()

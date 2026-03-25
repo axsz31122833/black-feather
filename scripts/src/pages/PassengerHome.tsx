@@ -25,6 +25,10 @@ export default function PassengerHome() {
   const { user, signOut, setUser, userType } = useAuthStore()
   const { createTrip, currentTrip, getCurrentTrip, subscribeToDriverLocation, subscribeToTrips, driverLocation, processTripPayment } = useTripStore()
   
+  const isValidId = (s: any) => typeof s === 'string' && s.length >= 30
+  if (!isValidId(user?.id)) {
+    return <div style={{ minHeight:'70vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#e5e7eb' }}>正在載入身分資訊...</div>
+  }
   const mapRef = useRef<HTMLDivElement>(null)
   const [map, setMap] = useState<google.maps.Map | null>(null)
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lng: number } | null>(null)
