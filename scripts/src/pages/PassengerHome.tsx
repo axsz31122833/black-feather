@@ -45,6 +45,7 @@ export default function PassengerHome() {
   const [distance, setDistance] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
   const [searchingDriver, setSearchingDriver] = useState(false)
+  const [orderStatus, setOrderStatus] = useState<string | null>(null)
   const [showMenu, setShowMenu] = useState(false)
   const [suggestions, setSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number } }>>([])
   const [suggestionMarkers, setSuggestionMarkers] = useState<google.maps.Marker[]>([])
@@ -54,6 +55,7 @@ export default function PassengerHome() {
   const directionsServiceRef = useRef<any>(null)
   const [showEstimate, setShowEstimate] = useState(false)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
+  const [driverSmoothPos, setDriverSmoothPos] = useState<{ lat: number; lng: number } | null>(null)
   const [fareConfig, setFareConfig] = useState<{ base: number; per_km: number; per_min: number; long_threshold: number; long_rate: number } | null>(null)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
   const [nearbyDriversCount, setNearbyDriversCount] = useState<number | null>(null)
@@ -161,6 +163,26 @@ export default function PassengerHome() {
       return (json || []).map((r: any) => ({ name: r.display_name || '推薦地點', location: { lat: parseFloat(r.lat), lng: parseFloat(r.lon) } }))
     } catch { return [] }
   }
+
+  // Smooth driver marker movement
+  useEffect(() => {
+    let timer: any = null
+    if (driverOverlayPos) {
+      if (!driverSmoothPos) setDriverSmoothPos(driverOverlayPos)
+      timer = setInterval(() => {
+        setDriverSmoothPos(prev => {
+          if (!prev) return driverOverlayPos
+          const ax = prev.lat, ay = prev.lng
+          const bx = driverOverlayPos.lat, by = driverOverlayPos.lng
+          const nx = ax + (bx - ax) * 0.25
+          const ny = ay + (by - ay) * 0.25
+          const done = Math.abs(nx - bx) < 0.00005 && Math.abs(ny - by) < 0.00005
+          return done ? driverOverlayPos : { lat: nx, lng: ny }
+        })
+      }, 120)
+    }
+    return () => { if (timer) clearInterval(timer) }
+  }, [driverOverlayPos?.lat, driverOverlayPos?.lng])
 
   const carTypes: CarType[] = [
     {
@@ -997,14 +1019,15 @@ export default function PassengerHome() {
                   .channel('order-'+created.id)
                   .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${created.id}` }, async (p:any)=>{
                     const nv = p?.new
+                    if (nv?.status) setOrderStatus(nv.status)
                     if (nv?.status === 'accepted') {
                       setSearchingDriver(false)
                       try {
                         const did = nv?.driver_id
                         if (did) {
-                          const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', did).maybeSingle()
+                          const { data: prof } = await supabase.from('profiles').select('full_name,phone,license_plate').eq('id', did).maybeSingle()
                           const { data: car } = await supabase.from('driver_profiles').select('car_plate,car_model,current_location,current_lat,current_lng').eq('user_id', did).maybeSingle()
-                          setDriverSheet({ name: (prof?.full_name || '司機'), plate: (car?.car_plate || null) })
+                          setDriverSheet({ name: (prof?.full_name || '司機'), plate: (prof?.license_plate || car?.car_plate || null), phone: (prof as any)?.phone || null })
                           const loc = (car as any)?.current_location
                           if (loc && typeof loc.lat === 'number' && typeof loc.lng === 'number') setDriverOverlayPos({ lat: loc.lat, lng: loc.lng })
                           else if (typeof (car as any)?.current_lat === 'number' && typeof (car as any)?.current_lng === 'number') setDriverOverlayPos({ lat: (car as any).current_lat, lng: (car as any).current_lng })
@@ -1532,7 +1555,7 @@ export default function PassengerHome() {
             center={mapCenter}
             pickup={pickupCoords || undefined}
             dropoff={dropoffCoords || undefined}
-            driver={driverOverlayPos || driverLocation || undefined}
+            driver={driverSmoothPos || driverOverlayPos || driverLocation || undefined}
             path={routePath}
             suggestions={mapSuggestions}
             onMapClick={handleLeafletClick}
@@ -1889,7 +1912,22 @@ export default function PassengerHome() {
             <button onClick={()=>setDriverSheet(null)} className="text-xs" style={{ color:'#9ca3af' }}>關閉</button>
           </div>
           <div className="text-sm mb-2" style={{ color:'#e5e7eb' }}>{driverSheet.name} · {driverSheet.plate || '—'}</div>
-          <div className="text-xs" style={{ color:'#9ca3af' }}>司機正前往您的位置</div>
+          <div className="text-xs mb-3" style={{ color:'#9ca3af' }}>
+            {orderStatus === 'arrived' ? '司機已到達' : (orderStatus === 'picked_up' ? '行程中...' : '司機前往中')}
+          </div>
+          <div className="flex items-center gap-2">
+            <a href={driverSheet.phone ? `tel:${driverSheet.phone}` : undefined} aria-disabled={!driverSheet.phone} className="px-4 py-2 rounded-2xl text-black" style={{ background:'linear-gradient(90deg, #D4AF37 0%, #B8860B 100%)', opacity: driverSheet.phone ? 1 : 0.5, pointerEvents: driverSheet.phone ? 'auto' : 'none' }}>
+              撥打電話
+            </a>
+            <button onClick={() => {
+              try {
+                const el = document.getElementById('chat-panel')
+                el?.scrollIntoView({ behavior: 'smooth' })
+              } catch {}
+            }} className="px-4 py-2 rounded-2xl" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>
+              傳送訊息
+            </button>
+          </div>
         </div>
       </div>
     )}
