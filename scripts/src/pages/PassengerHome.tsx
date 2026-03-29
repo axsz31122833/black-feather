@@ -88,6 +88,8 @@ export default function PassengerHome() {
   const directionsServiceRef = useRef<any>(null)
   const [showEstimate, setShowEstimate] = useState(false)
   const [driverMarker, setDriverMarker] = useState<google.maps.Marker | null>(null)
+  const [driverOverlayPos, setDriverOverlayPos] = useState<{ lat: number; lng: number } | null>(null)
+  const [driverSheet, setDriverSheet] = useState<{ name: string; plate?: string | null; phone?: string | null } | null>(null)
   const [driverSmoothPos, setDriverSmoothPos] = useState<{ lat: number; lng: number } | null>(null)
   const [fareConfig, setFareConfig] = useState<{ base: number; per_km: number; per_min: number; long_threshold: number; long_rate: number } | null>(null)
   const [showCancelConfirm, setShowCancelConfirm] = useState(false)
