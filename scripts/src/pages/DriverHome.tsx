@@ -58,6 +58,7 @@ export default function DriverHome() {
   const [orderCountdown, setOrderCountdown] = useState<number>(0)
   const orderTimerRef = useRef<any>(null)
   const isValidId = (s: any) => typeof s === 'string' && String(s).length >= 30
+  const [activeOrder, setActiveOrder] = useState<any>(null)
 
   useEffect(() => {
     if (user) {
@@ -398,12 +399,57 @@ export default function DriverHome() {
     try {
       const { error } = await supabase.from('orders').update({ driver_id: user.id, status: 'accepted', accepted_at: new Date().toISOString() } as any).eq('id', orderSheet.id)
       if (error) throw error
+      setActiveOrder({ ...orderSheet, status: 'accepted', driver_id: user.id })
       setOrderSheet(null)
       if (orderTimerRef.current) { clearInterval(orderTimerRef.current); orderTimerRef.current = null }
     } catch (e) {
       try { alert('接單失敗，請重試') } catch {}
     }
   }
+
+  const updateOrderStatus = async (next: 'arrived' | 'picked_up' | 'dropped_off') => {
+    if (!user || !activeOrder) return
+    try {
+      const payload: any = { status: next, updated_at: new Date().toISOString() }
+      if (next === 'picked_up') payload.picked_up_at = new Date().toISOString()
+      if (next === 'arrived') payload.arrived_at = new Date().toISOString()
+      if (next === 'dropped_off') payload.completed_at = new Date().toISOString()
+      const { error } = await supabase.from('orders').update(payload as any).eq('id', activeOrder.id)
+      if (error) throw error
+      setActiveOrder({ ...activeOrder, status: next })
+    } catch { alert('更新狀態失敗，請重試') }
+  }
+
+  // Compute navigation path based on order status and position
+  useEffect(() => {
+    try {
+      if (!activeOrder || !driverLocation) return
+      const target = (activeOrder.status === 'accepted' || activeOrder.status === 'arrived')
+        ? { lat: activeOrder.pickup_lat, lng: activeOrder.pickup_lng }
+        : { lat: activeOrder.dropoff_lat, lng: activeOrder.dropoff_lng }
+      ;(async () => {
+        try {
+          const r = await getRouteWithFallbacks(driverLocation as any, target as any)
+          setRoutePath(r.path || [])
+        } catch {}
+      })()
+    } catch {}
+  }, [activeOrder?.status, activeOrder?.id, driverLocation?.lat, driverLocation?.lng])
+
+  // In-trip location upload (profiles.last_location) every ~7s
+  useEffect(() => {
+    if (!user) return
+    if (!activeOrder || !['accepted','arrived','picked_up'].includes(activeOrder.status)) return
+    let t: any = null
+    t = setInterval(async () => {
+      try {
+        if (driverLocation) {
+          await supabase.from('profiles').update({ last_location: driverLocation, last_seen_at: new Date().toISOString() } as any).eq('id', user.id)
+        }
+      } catch {}
+    }, 7000)
+    return () => { if (t) clearInterval(t) }
+  }, [activeOrder?.status, user?.id, driverLocation?.lat, driverLocation?.lng])
 
   const showRidePath = async () => {
     if (!currentTrip) return
@@ -846,8 +892,8 @@ export default function DriverHome() {
       <div id="driver-map" style={{ height: '60vh', width: '100vw', position:'relative' }}>
       <RideLeafletMap
         center={mapCenter}
-        pickup={currentTrip?.pickup_location || undefined}
-        dropoff={currentTrip?.dropoff_location || undefined}
+        pickup={activeOrder ? { lat: activeOrder.pickup_lat, lng: activeOrder.pickup_lng } : (currentTrip?.pickup_location || undefined)}
+        dropoff={activeOrder ? { lat: activeOrder.dropoff_lat, lng: activeOrder.dropoff_lng } : (currentTrip?.dropoff_location || undefined)}
         driver={driverLocation || undefined}
         path={routePath}
         suggestions={[]}
@@ -879,6 +925,26 @@ export default function DriverHome() {
             </div>
             <TripChat tripId={`support_driver_${user.id}`} userId={user.id} role="driver" />
           </div>
+        </div>
+      )}
+
+      {activeOrder && (
+        <div className="fixed left-0 right-0 bottom-24 z-40 flex justify-center">
+          {activeOrder.status === 'accepted' && (
+            <button onClick={()=>updateOrderStatus('arrived')} className="px-6 py-4 rounded-2xl font-bold text-black" style={{ background:'linear-gradient(90deg, #D4AF37 0%, #B8860B 100%)' }}>
+              我已到達接客點
+            </button>
+          )}
+          {activeOrder.status === 'arrived' && (
+            <button onClick={()=>updateOrderStatus('picked_up')} className="px-6 py-4 rounded-2xl font-bold text-black" style={{ background:'linear-gradient(90deg, #D4AF37 0%, #B8860B 100%)' }}>
+              乘客已上車
+            </button>
+          )}
+          {activeOrder.status === 'picked_up' && (
+            <button onClick={()=>updateOrderStatus('dropped_off')} className="px-6 py-4 rounded-2xl font-bold text黑" style={{ background:'linear-gradient(90deg, #D4AF37 0%, #B8860B 100%)' }}>
+              行程結束
+            </button>
+          )}
         </div>
       )}
 
