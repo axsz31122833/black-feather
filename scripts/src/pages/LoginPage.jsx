@@ -8,45 +8,62 @@ export default function LoginPage() {
   const [role, setRole] = useState('passenger')
   const [password, setPassword] = useState('')
   const [res, setRes] = useState(null)
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
   async function loginPhoneOnly() {
     try {
+      setLoading(true)
+      let watchdog = null
+      try {
+        watchdog = setTimeout(() => {
+          setLoading(false)
+          setRes({ error: '伺服器無回應，請重新整理' })
+        }, 10000)
+      } catch {}
       const normalized = String(phone || '').trim()
       if (!normalized || normalized.length < 8) {
         setRes({ error: '請輸入有效的手機號碼' })
+        setLoading(false)
         return
       }
       // role guard
       if (role === 'admin') {
-        const adminPwd = import.meta.env.VITE_ADMIN_PASSWORD || ''
-        if (!isAdmin() || password !== adminPwd) {
-          setRes({ error: '管理員驗證失敗（手機或密碼不正確）' })
-          return
-        }
+        try {
+          const adminPwd = import.meta.env.VITE_ADMIN_PASSWORD || ''
+          if (!isAdmin() || password !== adminPwd) {
+            setRes({ error: '管理員驗證失敗（手機或密碼不正確）' })
+            setLoading(false)
+            return
+          }
+        } catch (e) { console.error('登入過程崩潰: admin 檢查', e); setLoading(false); setRes({ error: '驗證失敗' }); return }
       } else {
         if (!password || password.length < 6) {
           setRes({ error: '請輸入密碼（至少 6 碼）' })
+          setLoading(false)
           return
         }
       }
       // persist
-      localStorage.setItem('bf_role', role)
-      localStorage.setItem('bf_auth_phone', normalized)
+      try { localStorage.setItem('bf_role', role); localStorage.setItem('bf_auth_phone', normalized) } catch {}
       // write to DB accordingly
-      if (role === 'driver') {
-        await supabase.from('passengers').upsert({ phone: normalized, name: normalized }, { onConflict: 'phone' })
-        await supabase.from('drivers').upsert({ phone: normalized, name: normalized, is_online: false }, { onConflict: 'phone' })
-      } else {
-        await supabase.from('passengers').upsert({ phone: normalized, name: normalized }, { onConflict: 'phone' })
-      }
+      try {
+        if (role === 'driver') {
+          await supabase.from('passengers').upsert({ phone: normalized, name: normalized }, { onConflict: 'phone' })
+          await supabase.from('drivers').upsert({ phone: normalized, name: normalized, is_online: false }, { onConflict: 'phone' })
+        } else {
+          await supabase.from('passengers').upsert({ phone: normalized, name: normalized }, { onConflict: 'phone' })
+        }
+      } catch (e) { console.error('登入過程崩潰: upsert 失敗', e); setLoading(false); setRes({ error: '資料庫連線失敗' }); return }
       setRes({ ok: true, phone: normalized, role })
       setTimeout(() => {
         if (role === 'driver') navigate('/driver')
         else if (role === 'admin') navigate('/admin')
         else navigate('/passenger')
       }, 300)
-    } catch (e) { setRes({ error: String(e) }) }
+      try { if (watchdog) clearTimeout(watchdog) } catch {}
+      setLoading(false)
+    } catch (e) { console.error('登入過程崩潰:', e); setLoading(false); setRes({ error: String(e) }) }
   }
 
   async function logout() {
@@ -76,7 +93,7 @@ export default function LoginPage() {
           <input className="input" type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="請輸入密碼" />
         </div>
         <div style={{ display:'flex', gap:8, alignItems:'center' }}>
-          <button className="btn btn-primary" onClick={loginPhoneOnly}>登入</button>
+          <button className="btn btn-primary" onClick={loginPhoneOnly} disabled={loading}>{loading ? '登入中...' : '登入'}</button>
           <button className="btn" onClick={logout}>登出</button>
           <button className="btn" onClick={() => navigate('/register')}>前往註冊</button>
         </div>

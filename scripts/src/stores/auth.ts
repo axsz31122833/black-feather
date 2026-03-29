@@ -54,6 +54,15 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       set({ isLoading: true })
       const client = supabase
       try { await client.auth.signOut() } catch {}
+      let watchdog: any = null
+      try {
+        watchdog = setTimeout(() => {
+          try {
+            set({ isLoading: false })
+            alert('伺服器無回應，請重新整理')
+          } catch {}
+        }, 10000)
+      } catch {}
       let hash = ''
       try {
         const enc = new TextEncoder().encode(password)
@@ -62,12 +71,19 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } catch {
         hash = password
       }
-      const { data: prof } = await client
-        .from('profiles')
-        .select('id,full_name,phone,role')
-        .eq('phone', phone)
-        .eq('password_hash', hash)
-        .maybeSingle()
+      let prof: any = null
+      try {
+        const r = await client
+          .from('profiles')
+          .select('id,full_name,phone,role')
+          .eq('phone', phone)
+          .eq('password_hash', hash)
+          .maybeSingle()
+        prof = r.data || null
+      } catch (e) {
+        console.error('登入過程崩潰: profiles 查詢失敗', e)
+        throw e
+      }
       if (!prof) throw new Error('找不到帳戶或密碼錯誤')
       if (userType === 'admin' && (prof as any).role !== 'admin') throw new Error('非管理員帳號')
       try {
@@ -90,6 +106,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         userType: tempUser.user_type,
         isLoading: false 
       })
+      try { if (watchdog) clearTimeout(watchdog) } catch {}
       if (tempUser.user_type === 'driver') {
         await get().loadDriverProfile()
       }
@@ -104,6 +121,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       } catch {}
     } catch (error) {
       set({ isLoading: false })
+      try { console.error('登入過程崩潰:', error) } catch {}
       const msg = typeof error === 'string' ? error : (error instanceof Error ? error.message : '登入失敗，請稍後再試')
       throw new Error(msg)
     }
