@@ -26,6 +26,39 @@ export default function PassengerHome() {
   const { createTrip, currentTrip, getCurrentTrip, subscribeToDriverLocation, subscribeToTrips, driverLocation, processTripPayment } = useTripStore()
   
   const isValidId = (s: any) => typeof s === 'string' && s.length >= 30
+  useEffect(() => {
+    try {
+      const id = (user as any)?.id || ''
+      console.log('【身份載入診斷】user.id:', id, 'length:', String(id).length)
+    } catch {}
+  }, [user?.id])
+  useEffect(() => {
+    const t = setTimeout(() => {
+      try {
+        const id = (user as any)?.id || ''
+        if (!id || String(id).length < 30) navigate('/passenger/login', { replace: true })
+      } catch {}
+    }, 5000)
+    return () => clearTimeout(t)
+  }, [user?.id])
+  useEffect(() => {
+    ;(async () => {
+      try {
+        const id = (user as any)?.id || ''
+        if (id && String(id).length >= 30) {
+          const { data: prof } = await supabase.from('profiles').select('id').eq('id', id).maybeSingle()
+          if (!prof) {
+            try {
+              await supabase.from('profiles').upsert({ id, user_id: id, role: 'passenger', full_name: '新乘客', name: '新乘客', created_at: new Date().toISOString() } as any, { onConflict:'id' } as any)
+              console.log('【容錯補建】profiles 已建立（passenger 預設）')
+            } catch (e) {
+              console.warn('【容錯補建失敗】profiles', e)
+            }
+          }
+        }
+      } catch {}
+    })()
+  }, [user?.id])
   if (!isValidId(user?.id)) {
     return <div style={{ minHeight:'70vh', display:'flex', alignItems:'center', justifyContent:'center', color:'#e5e7eb' }}>正在載入身分資訊...</div>
   }
