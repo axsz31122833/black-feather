@@ -221,19 +221,52 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       const { data: { user } } = await client.auth.getUser()
       
       if (user) {
-        const { data: userData, error } = await client
-          .from('users')
-          .select('*')
-          .eq('id', user.id)
-          .maybeSingle()
-
-        if (error) throw error
-
-        set({ 
-          user: userData, 
-          isAuthenticated: true, 
+        let userData: any = null
+        let err: any = null
+        try {
+          const res = await client.from('users').select('*').eq('id', user.id).maybeSingle()
+          userData = res.data || null
+          err = res.error || null
+        } catch (e) { err = e }
+        if (!userData) {
+          const { data: prof } = await client.from('profiles').select('id,role,full_name,phone').eq('id', user.id).maybeSingle()
+          if (prof?.id) {
+            const utype = (prof.role === 'driver' || prof.role === 'admin') ? prof.role : 'passenger'
+            await client.from('users').upsert({
+              id: prof.id,
+              email: (user as any)?.email || null,
+              phone: prof.phone || null,
+              user_type: utype,
+              name: prof.full_name || null,
+              updated_at: new Date().toISOString(),
+              created_at: new Date().toISOString()
+            } as any, { onConflict:'id' } as any)
+            userData = {
+              id: prof.id,
+              email: (user as any)?.email || '',
+              phone: prof.phone || '',
+              user_type: utype,
+              status: 'active',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          } else {
+            userData = {
+              id: user.id,
+              email: (user as any)?.email || '',
+              phone: '',
+              user_type: 'passenger',
+              status: 'active',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            }
+          }
+        }
+        set({
+          user: userData,
+          isAuthenticated: true,
           userType: userData.user_type,
-          isLoading: false 
+          isLoading: false
         })
 
         if (userData.user_type === 'driver') {

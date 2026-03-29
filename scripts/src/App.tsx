@@ -26,10 +26,12 @@ import ConnectionChecker from './components/ConnectionChecker'
 import ManifestManager from './components/ManifestManager'
 import { installFetchPatch } from './lib/fetchPatch'
 
-function AuthRouter() {
+function AuthRouter({ onInitDone }: { onInitDone: () => void }) {
   const navigate = useNavigate()
   const { isAuthenticated, userType, checkAuth } = useAuthStore() as any
+  const [initializing, setInitializing] = useState(true)
   useEffect(() => {
+    let firstHandled = false
     const sub = supabase.auth.onAuthStateChange(async (event, _session) => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
@@ -89,6 +91,11 @@ function AuthRouter() {
         try { console.log('【登入狀態檢查】User:', user, 'Profile:', prof); console.log(`【身分檢查】UID: ${user?.id || '—'}, 是否有 Profile: ${!!prof}`) } catch {}
       } catch {}
       checkAuth()
+      if (!firstHandled) {
+        firstHandled = true
+        setInitializing(false)
+        try { onInitDone && onInitDone() } catch {}
+      }
     })
     return () => { try { (sub as any).data?.subscription?.unsubscribe?.() } catch {} }
   }, [])
@@ -96,6 +103,7 @@ function AuthRouter() {
     ;(async ()=>{
       try {
         const { data: { user } } = await supabase.auth.getUser()
+        if (initializing) return
         if (isAuthenticated) {
           // 留在當前頁或由其他路由控制
         } else {
@@ -108,13 +116,14 @@ function AuthRouter() {
         }
       } catch {}
     })()
-  }, [isAuthenticated, userType])
+  }, [isAuthenticated, userType, initializing])
   return null
 }
 
 function App() {
   const { checkAuth, isAuthenticated, userType } = useAuthStore() as any
   const [errorBanner, setErrorBanner] = useState<{ message: string; code?: string; details?: string } | null>(null)
+  const [authInitDone, setAuthInitDone] = useState(false)
   useEffect(() => {
     try { installFetchPatch() } catch {}
     if (window.location.search.includes('dev=1')) return
@@ -161,6 +170,16 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
+        {!authInitDone && (
+          <div style={{ position:'fixed', inset:0, display:'flex', alignItems:'center', justifyContent:'center', background:'#0a0a0a', zIndex:99999 }}>
+            <div style={{ textAlign:'center' }}>
+              <div style={{ fontSize:28, fontWeight:900, color:'#D4AF37', marginBottom:12 }}>Black Feather</div>
+              <div style={{ width:48, height:48, borderRadius:'50%', border:'3px solid #D4AF37', borderTopColor:'transparent', margin:'0 auto', animation:'spin 1s linear infinite' }} />
+              <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
+              <div style={{ color:'#9ca3af', marginTop:8 }}>初始化登入狀態…</div>
+            </div>
+          </div>
+        )}
         <header className="app-header">
           {/* deploy trigger: 2026-01-29 */}
           <div className="brand flex items-center gap-3" style={{ color: '#FFD700', textShadow: '0 0 10px rgba(255,215,0,0.6)' }}>
@@ -195,7 +214,7 @@ function App() {
           <ConnectionChecker />
           <PushInit />
           <ManifestManager />
-          
+          <AuthRouter onInitDone={() => setAuthInitDone(true)} />
           <Suspense fallback={<div style={{ padding: 24 }}>載入中...</div>}>
             <Routes>
               <Route path="/" element={<PassengerApp />} />
