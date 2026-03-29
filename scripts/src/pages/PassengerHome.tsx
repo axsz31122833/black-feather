@@ -44,6 +44,7 @@ export default function PassengerHome() {
   const [estimatedTime, setEstimatedTime] = useState('')
   const [distance, setDistance] = useState(0)
   const [isLoading, setIsLoading] = useState(false)
+  const [searchingDriver, setSearchingDriver] = useState(false)
   const [showMenu, setShowMenu] = useState(false)
   const [suggestions, setSuggestions] = useState<Array<{ name: string; location: { lat: number; lng: number } }>>([])
   const [suggestionMarkers, setSuggestionMarkers] = useState<google.maps.Marker[]>([])
@@ -969,6 +970,27 @@ export default function PassengerHome() {
             if (oneAdmin?.id) passengerId = oneAdmin.id
           } catch {}
         }
+        // Query Guard for UUID
+        if (!isValidId(passengerId || user?.id)) {
+          setIsLoading(false)
+          try { alert('使用者身分尚未準備完成，請稍候再試') } catch {}
+          return
+        }
+        // Create a lightweight order record for async matching
+        try {
+          if (pickupCoords && dropoffCoords) {
+            await supabase.from('orders').insert({
+              passenger_id: passengerId || user?.id,
+              pickup_lat: pickupCoords.lat,
+              pickup_lng: pickupCoords.lng,
+              dropoff_lat: dropoffCoords.lat,
+              dropoff_lng: dropoffCoords.lng,
+              status: 'pending',
+              created_at: new Date().toISOString()
+            } as any)
+            setSearchingDriver(true)
+          }
+        } catch (e) { try { console.warn('建立 orders 記錄失敗：', e) } catch {} }
         const finalOrder: any = {
           passenger_id: passengerId || user?.id,
           status: 'requested',
@@ -1813,6 +1835,15 @@ export default function PassengerHome() {
         </button>
       )}
     </div>
+    {searchingDriver && !currentTrip && (
+      <div className="fixed inset-0 z-50 flex items-center justify-center" style={{ background: 'rgba(0,0,0,0.6)' }}>
+        <div className="bg-[#0f0f0f] border border-[#D4AF37]/30 rounded-2xl p-6 w-full max-w-sm text-center">
+          <div style={{ width:48, height:48, borderRadius:'50%', border:'4px solid #D4AF37', borderTopColor:'transparent', margin:'0 auto 12px', animation:'spin 1s linear infinite' }} />
+          <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
+          <div className="text-sm" style={{ color:'#e5e7eb' }}>正在尋找附近的司機...</div>
+        </div>
+      </div>
+    )}
     <BottomNav role="passenger" />
     {showSupportModal && (
       <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
