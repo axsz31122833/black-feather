@@ -205,6 +205,22 @@ export default function DriverHome() {
     return () => clearInterval(id)
   }, [isOnline, driverLocation])
 
+  // Background online location sync → profiles.current_lat/current_lng every 10s
+  useEffect(() => {
+    if (!isOnline || !user) return
+    const id = setInterval(async () => {
+      try {
+        if (driverLocation && typeof driverLocation.lat === 'number' && typeof driverLocation.lng === 'number') {
+          await supabase.from('profiles').update({
+            current_lat: driverLocation.lat,
+            current_lng: driverLocation.lng,
+            last_seen_at: new Date().toISOString()
+          } as any).eq('id', user.id)
+        }
+      } catch {}
+    }, 10000)
+    return () => clearInterval(id)
+  }, [isOnline, user?.id, driverLocation?.lat, driverLocation?.lng])
   useEffect(() => {
     if (currentTrip) {
       displayTripRoute()

@@ -8,6 +8,7 @@ export default function Register() {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [invite, setInvite] = useState('')
+  const [plate, setPlate] = useState('')
   const [res, setRes] = useState(null)
   const navigate = useNavigate()
   const { signUp } = useAuthStore()
@@ -40,6 +41,7 @@ export default function Register() {
         user_id: uid,
         name: adminPhone ? '豐家' : name || '新乘客',
         full_name: adminPhone ? '豐家' : name || '新乘客',
+        license_plate: plate || null,
         phone: normalized,
         role: adminPhone ? 'admin' : 'passenger',
         recommended_by_phone: adminPhone ? null : (invite || null),
@@ -83,6 +85,10 @@ export default function Register() {
           <div className="form-group">
             <div className="label" style={{ color:'#FFFFFF', marginBottom:6 }}>密碼</div>
             <input className="input" type="password" value={password} onChange={e=>setPassword(e.target.value)} placeholder="至少 6 碼" style={{ width:'100%', padding:'10px 12px', background:'#1a1a1a', color:'#fff', border:'1px solid #D4AF37', borderRadius:12 }} />
+          </div>
+          <div className="form-group">
+            <div className="label" style={{ color:'#FFFFFF', marginBottom:6 }}>車牌號碼（司機可填，選填）</div>
+            <input className="input" value={plate} onChange={e=>setPlate(e.target.value)} placeholder="例如 ABC-1234" style={{ width:'100%', padding:'10px 12px', background:'#1a1a1a', color:'#fff', border:'1px solid #D4AF37', borderRadius:12 }} />
           </div>
           <div className="form-group">
             <div className="label" style={{ color:'#FFFFFF', marginBottom:6 }}>邀請碼（已註冊之手機號）</div>
