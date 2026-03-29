@@ -33,12 +33,14 @@ export default function PassengerHome() {
     } catch {}
   }, [user?.id])
   useEffect(() => {
-    const t = setTimeout(() => {
+    const t = setTimeout(async () => {
       try {
         const id = (user as any)?.id || ''
-        if (!id || String(id).length < 30) navigate('/passenger/login', { replace: true })
+        const { data: au } = await supabase.auth.getUser()
+        const hasSession = !!au?.user?.id
+        if ((!id || String(id).length < 30) && !hasSession) navigate('/passenger/login', { replace: true })
       } catch {}
-    }, 5000)
+    }, 10000)
     return () => clearTimeout(t)
   }, [user?.id])
   useEffect(() => {
@@ -49,7 +51,7 @@ export default function PassengerHome() {
           const { data: prof } = await supabase.from('profiles').select('id').eq('id', id).maybeSingle()
           if (!prof) {
             try {
-              await supabase.from('profiles').upsert({ id, user_id: id, role: 'passenger', full_name: '新乘客', name: '新乘客', created_at: new Date().toISOString() } as any, { onConflict:'id' } as any)
+              await supabase.from('profiles').upsert({ id, user_id: id, role: (userType || 'passenger'), full_name: '新乘客', name: '新乘客', created_at: new Date().toISOString() } as any, { onConflict:'id' } as any)
               console.log('【容錯補建】profiles 已建立（passenger 預設）')
             } catch (e) {
               console.warn('【容錯補建失敗】profiles', e)
