@@ -57,6 +57,16 @@ function AuthRouter() {
                 }
               } catch {}
             }
+            try {
+              const role = (prof?.role as any) || (localStorage.getItem('bf_role') as any) || 'passenger'
+              useAuthStore.getState().setUser({
+                id: user.id,
+                email: (user as any)?.email || '',
+                phone: (user as any)?.phone || '',
+                user_type: role
+              })
+              try { localStorage.setItem('bf_role', String(role)) } catch {}
+            } catch {}
             if (event === 'SIGNED_IN' && !prof) {
               let tries = 0
               const timer = setInterval(async () => {
