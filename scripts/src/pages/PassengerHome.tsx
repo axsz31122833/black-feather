@@ -1060,11 +1060,13 @@ export default function PassengerHome() {
                       try {
                         const did = nv?.driver_id
                         if (did) {
-                          const { data: prof } = await supabase.from('profiles').select('full_name,phone,license_plate').eq('id', did).maybeSingle()
+                          const { data: prof } = await supabase.from('profiles').select('full_name,phone,license_plate,current_location').eq('id', did).maybeSingle()
                           const { data: car } = await supabase.from('driver_profiles').select('car_plate,car_model,current_location,current_lat,current_lng').eq('user_id', did).maybeSingle()
                           setDriverSheet({ name: (prof?.full_name || '司機'), plate: (prof?.license_plate || car?.car_plate || null), phone: (prof as any)?.phone || null })
-                          const loc = (car as any)?.current_location
-                          if (loc && typeof loc.lat === 'number' && typeof loc.lng === 'number') setDriverOverlayPos({ lat: loc.lat, lng: loc.lng })
+                          const ploc = (prof as any)?.current_location
+                          const dloc = (car as any)?.current_location
+                          if (ploc && typeof ploc.lat === 'number' && typeof ploc.lng === 'number') setDriverOverlayPos({ lat: ploc.lat, lng: ploc.lng })
+                          else if (dloc && typeof dloc.lat === 'number' && typeof dloc.lng === 'number') setDriverOverlayPos({ lat: dloc.lat, lng: dloc.lng })
                           else if (typeof (car as any)?.current_lat === 'number' && typeof (car as any)?.current_lng === 'number') setDriverOverlayPos({ lat: (car as any).current_lat, lng: (car as any).current_lng })
                           const ch2 = supabase
                             .channel('driver-live-'+did)
@@ -1074,6 +1076,16 @@ export default function PassengerHome() {
                                 const loc2 = row?.current_location
                                 if (loc2 && typeof loc2.lat === 'number' && typeof loc2.lng === 'number') setDriverOverlayPos({ lat: loc2.lat, lng: loc2.lng })
                                 else if (typeof row?.current_lat === 'number' && typeof row?.current_lng === 'number') setDriverOverlayPos({ lat: row.current_lat, lng: row.current_lng })
+                              } catch {}
+                            })
+                            .subscribe()
+                          const ch3 = supabase
+                            .channel('driver-prof-'+did)
+                            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'profiles', filter: `id=eq.${did}` }, (u:any)=>{
+                              try {
+                                const row = u?.new
+                                const pl = row?.current_location
+                                if (pl && typeof pl.lat === 'number' && typeof pl.lng === 'number') setDriverOverlayPos({ lat: pl.lat, lng: pl.lng })
                               } catch {}
                             })
                             .subscribe()
