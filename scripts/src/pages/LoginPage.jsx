@@ -78,7 +78,19 @@ export default function LoginPage() {
         <div className="title">手機號碼登入</div>
       <div className="form-group">
         <div className="label">手機號碼（+886 或本地格式）</div>
-        <input className="input" value={phone} onChange={e => setPhone(e.target.value)} placeholder="例如 09xxxxxxxx" />
+        <input
+          className="input"
+          value={phone}
+          inputMode="numeric"
+          pattern="[0-9]*"
+          onChange={e => {
+            const digits = (e.target.value || '').replace(/\D/g, '')
+            const trimmed = digits.length > 10 ? digits.slice(0, 10) : digits
+            setPhone(trimmed)
+          }}
+          placeholder="例如 09xxxxxxxx"
+          maxLength={10}
+        />
       </div>
       <div className="form-group">
         <div className="label">身份</div>

@@ -63,6 +63,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
           } catch {}
         }, 10000)
       } catch {}
+      const raw = String(phone || '').trim()
+      const finalPhone = raw.startsWith('0') ? ('+886' + raw.substring(1)) : (raw.startsWith('+886') ? raw : raw)
+      try { console.log('Sending phone:', finalPhone) } catch {}
       let hash = ''
       try {
         const enc = new TextEncoder().encode(password)
@@ -76,7 +79,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         const r = await client
           .from('profiles')
           .select('id,full_name,phone,role')
-          .eq('phone', phone)
+          .in('phone', [raw, finalPhone.replace('+886','0')])
           .eq('password_hash', hash)
           .maybeSingle()
         prof = r.data || null
@@ -124,6 +127,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       try { console.error('登入過程崩潰:', error) } catch {}
       const msg = typeof error === 'string' ? error : (error instanceof Error ? error.message : '登入失敗，請稍後再試')
       throw new Error(msg)
+    } finally {
+      try { /* ensure loading released */ set({ isLoading: false }) } catch {}
     }
   },
 
