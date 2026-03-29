@@ -979,7 +979,7 @@ export default function PassengerHome() {
         // Create a lightweight order record for async matching
         try {
           if (pickupCoords && dropoffCoords) {
-            await supabase.from('orders').insert({
+            const { data: created, error: oErr } = await supabase.from('orders').insert({
               passenger_id: passengerId || user?.id,
               pickup_lat: pickupCoords.lat,
               pickup_lng: pickupCoords.lng,
@@ -987,8 +987,45 @@ export default function PassengerHome() {
               dropoff_lng: dropoffCoords.lng,
               status: 'pending',
               created_at: new Date().toISOString()
-            } as any)
-            setSearchingDriver(true)
+            } as any).select('id').maybeSingle()
+            if (oErr) throw oErr
+            if (created?.id) {
+              setOrderId(created.id)
+              setSearchingDriver(true)
+              try {
+                const ch = supabase
+                  .channel('order-'+created.id)
+                  .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${created.id}` }, async (p:any)=>{
+                    const nv = p?.new
+                    if (nv?.status === 'accepted') {
+                      setSearchingDriver(false)
+                      try {
+                        const did = nv?.driver_id
+                        if (did) {
+                          const { data: prof } = await supabase.from('profiles').select('full_name').eq('id', did).maybeSingle()
+                          const { data: car } = await supabase.from('driver_profiles').select('car_plate,car_model,current_location,current_lat,current_lng').eq('user_id', did).maybeSingle()
+                          setDriverSheet({ name: (prof?.full_name || '司機'), plate: (car?.car_plate || null) })
+                          const loc = (car as any)?.current_location
+                          if (loc && typeof loc.lat === 'number' && typeof loc.lng === 'number') setDriverOverlayPos({ lat: loc.lat, lng: loc.lng })
+                          else if (typeof (car as any)?.current_lat === 'number' && typeof (car as any)?.current_lng === 'number') setDriverOverlayPos({ lat: (car as any).current_lat, lng: (car as any).current_lng })
+                          const ch2 = supabase
+                            .channel('driver-live-'+did)
+                            .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'driver_profiles', filter: `user_id=eq.${did}` }, (u:any)=>{
+                              try {
+                                const row = u?.new
+                                const loc2 = row?.current_location
+                                if (loc2 && typeof loc2.lat === 'number' && typeof loc2.lng === 'number') setDriverOverlayPos({ lat: loc2.lat, lng: loc2.lng })
+                                else if (typeof row?.current_lat === 'number' && typeof row?.current_lng === 'number') setDriverOverlayPos({ lat: row.current_lat, lng: row.current_lng })
+                              } catch {}
+                            })
+                            .subscribe()
+                        }
+                      } catch {}
+                    }
+                  })
+                  .subscribe()
+              } catch {}
+            }
           }
         } catch (e) { try { console.warn('建立 orders 記錄失敗：', e) } catch {} }
         const finalOrder: any = {
@@ -1495,7 +1532,7 @@ export default function PassengerHome() {
             center={mapCenter}
             pickup={pickupCoords || undefined}
             dropoff={dropoffCoords || undefined}
-            driver={driverLocation || undefined}
+            driver={driverOverlayPos || driverLocation || undefined}
             path={routePath}
             suggestions={mapSuggestions}
             onMapClick={handleLeafletClick}
@@ -1841,6 +1878,18 @@ export default function PassengerHome() {
           <div style={{ width:48, height:48, borderRadius:'50%', border:'4px solid #D4AF37', borderTopColor:'transparent', margin:'0 auto 12px', animation:'spin 1s linear infinite' }} />
           <style>{'@keyframes spin{to{transform:rotate(360deg)}}'}</style>
           <div className="text-sm" style={{ color:'#e5e7eb' }}>正在尋找附近的司機...</div>
+        </div>
+      </div>
+    )}
+    {driverSheet && (
+      <div className="fixed left-0 right-0 bottom-0 z-50">
+        <div className="mx-auto w-full max-w-lg rounded-t-2xl p-4" style={{ background:'rgba(17,17,17,0.9)', borderTop:'1px solid rgba(255,255,255,0.08)', backdropFilter:'blur(6px)' }}>
+          <div className="flex items-center justify-between mb-2">
+            <div className="text-sm font-semibold" style={{ color:'#e5e7eb' }}>已指派司機</div>
+            <button onClick={()=>setDriverSheet(null)} className="text-xs" style={{ color:'#9ca3af' }}>關閉</button>
+          </div>
+          <div className="text-sm mb-2" style={{ color:'#e5e7eb' }}>{driverSheet.name} · {driverSheet.plate || '—'}</div>
+          <div className="text-xs" style={{ color:'#9ca3af' }}>司機正前往您的位置</div>
         </div>
       </div>
     )}
