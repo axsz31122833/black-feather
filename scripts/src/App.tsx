@@ -33,6 +33,14 @@ function AuthRouter() {
     const sub = supabase.auth.onAuthStateChange(async (event, _session) => {
       try {
         const { data: { user } } = await supabase.auth.getUser()
+        if (!user?.id) {
+          try {
+            const { data: sess } = await supabase.auth.getSession()
+            if (sess?.session) {
+              try { await supabase.auth.refreshSession() } catch {}
+            }
+          } catch {}
+        }
         let prof: any = null
         try {
           if (user?.id) {

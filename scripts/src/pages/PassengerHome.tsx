@@ -33,15 +33,31 @@ export default function PassengerHome() {
     } catch {}
   }, [user?.id])
   useEffect(() => {
-    const t = setTimeout(async () => {
+    // Short buffer: wait 2s first; if still missing, attempt refresh; then give up at 10s unless no session
+    let cancelled = false
+    const short = setTimeout(async () => {
       try {
+        if (cancelled) return
+        const id = (user as any)?.id || ''
+        if (!id || String(id).length < 30) {
+          const { data: sessionInfo } = await supabase.auth.getSession()
+          const hasSess = !!sessionInfo?.session
+          if (hasSess) {
+            try { await supabase.auth.refreshSession() } catch {}
+          }
+        }
+      } catch {}
+    }, 2000)
+    const long = setTimeout(async () => {
+      try {
+        if (cancelled) return
         const id = (user as any)?.id || ''
         const { data: au } = await supabase.auth.getUser()
         const hasSession = !!au?.user?.id
         if ((!id || String(id).length < 30) && !hasSession) navigate('/passenger/login', { replace: true })
       } catch {}
     }, 10000)
-    return () => clearTimeout(t)
+    return () => { cancelled = true; clearTimeout(short); clearTimeout(long) }
   }, [user?.id])
   useEffect(() => {
     ;(async () => {
