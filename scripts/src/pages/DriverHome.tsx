@@ -1036,6 +1036,25 @@ export default function DriverHome() {
         </div>
       )}
 
+      {activeOrder && (
+        <div className="fixed left-0 right-0 bottom-24 z-40 flex justify-center">
+          {activeOrder.status === 'accepted' && (
+            <button disabled={actionLoading} onClick={()=>updateOrderStatus('arrived')} className="px-6 py-4 rounded-2xl font-bold" style={{ background:'rgba(17,17,17,0.9)', color:'#D4AF37', border:'1px solid rgba(212,175,55,0.35)', opacity: actionLoading ? 0.7 : 1 }}>
+              {actionLoading ? '處理中…' : '我已到達接客點'}
+            </button>
+          )}
+          {activeOrder.status === 'arrived' && (
+            <button disabled={actionLoading} onClick={()=>updateOrderStatus('picked_up')} className="px-6 py-4 rounded-2xl font-bold" style={{ background:'rgba(17,17,17,0.9)', color:'#D4AF37', border:'1px solid rgba(212,175,55,0.35)', opacity: actionLoading ? 0.7 : 1 }}>
+              {actionLoading ? '處理中…' : '乘客已上車'}
+            </button>
+          )}
+          {activeOrder.status === 'picked_up' && (
+            <button disabled={actionLoading} onClick={()=>updateOrderStatus('dropped_off')} className="px-6 py-4 rounded-2xl font-bold" style={{ background:'rgba(17,17,17,0.9)', color:'#D4AF37', border:'1px solid rgba(212,175,55,0.35)', opacity: actionLoading ? 0.7 : 1 }}>
+              {actionLoading ? '處理中…' : '抵達目的地（行程結束）'}
+            </button>
+          )}
+        </div>
+      )}
       <div style={{ position:'fixed', left:12, bottom:12, zIndex:9999, display:'flex', alignItems:'center', gap:12, padding:'6px 10px', borderRadius:10, background:'rgba(0,0,0,0.4)', border:'1px solid rgba(147,197,253,0.4)' }}>
         <span style={{ display:'flex', alignItems:'center', gap:6 }}>
           <span style={{ width:10, height:10, borderRadius:'50%', background: broadcastConnected ? '#10B981' : '#ef4444' }} />
