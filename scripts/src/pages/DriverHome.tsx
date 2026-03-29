@@ -4,6 +4,7 @@ import { useAuthStore } from '../stores/auth'
 import { useTripStore } from '../stores/trips'
 import RideLeafletMap from '../components/RideLeafletMap'
 import { getRouteWithFallbacks } from '../utils/maps'
+import { calculateFare } from '../utils/fare'
 import { supabase } from '../lib/supabaseClient'
 import { MapPin, Navigation, DollarSign, Clock, User, Power, Menu, Car, TrendingUp } from 'lucide-react'
 import TripChat from '../components/TripChat'
@@ -53,6 +54,10 @@ export default function DriverHome() {
   const [opsConnected, setOpsConnected] = useState(false)
   const [currentPos, setCurrentPos] = useState<{ lat: number; lng: number } | null>(null)
   const [nextQueue, setNextQueue] = useState<any[]>([])
+  const [orderSheet, setOrderSheet] = useState<{ id: string; pickup_lat: number; pickup_lng: number; dropoff_lat: number; dropoff_lng: number; status: string } | null>(null)
+  const [orderCountdown, setOrderCountdown] = useState<number>(0)
+  const orderTimerRef = useRef<any>(null)
+  const isValidId = (s: any) => typeof s === 'string' && String(s).length >= 30
 
   useEffect(() => {
     if (user) {
@@ -136,6 +141,40 @@ export default function DriverHome() {
       return () => { ch2.unsubscribe() }
     } catch {}
   }, [])
+
+  // Realtime: orders pending -> bottom sheet
+  useEffect(() => {
+    if (!user) return
+    const ch = supabase
+      .channel('orders-pending')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'orders', filter: 'status=eq.pending' }, (payload: any) => {
+        const row = payload?.new
+        if (!row) return
+        setOrderSheet({
+          id: row.id,
+          pickup_lat: row.pickup_lat,
+          pickup_lng: row.pickup_lng,
+          dropoff_lat: row.dropoff_lat,
+          dropoff_lng: row.dropoff_lng,
+          status: row.status
+        })
+        setOrderCountdown(35)
+        if (orderTimerRef.current) clearInterval(orderTimerRef.current)
+        orderTimerRef.current = setInterval(() => {
+          setOrderCountdown((c) => {
+            if (c <= 1) {
+              clearInterval(orderTimerRef.current)
+              orderTimerRef.current = null
+              setOrderSheet(null)
+              return 0
+            }
+            return c - 1
+          })
+        }, 1000)
+      })
+      .subscribe()
+    return () => { try { ch.unsubscribe() } catch {}; if (orderTimerRef.current) clearInterval(orderTimerRef.current) }
+  }, [user?.id])
 
   useEffect(() => {
     if (currentTrip) {
@@ -351,6 +390,19 @@ export default function DriverHome() {
         setMapCenter({ lat: (pickupCoords.lat + dropoffCoords.lat) / 2, lng: (pickupCoords.lng + dropoffCoords.lng) / 2 })
       }
     } catch {}
+  }
+
+  const acceptOrder = async () => {
+    if (!user || !orderSheet) return
+    if (!isValidId(user.id)) { try { alert('身分尚未就緒，請稍候') } catch {}; return }
+    try {
+      const { error } = await supabase.from('orders').update({ driver_id: user.id, status: 'accepted', accepted_at: new Date().toISOString() } as any).eq('id', orderSheet.id)
+      if (error) throw error
+      setOrderSheet(null)
+      if (orderTimerRef.current) { clearInterval(orderTimerRef.current); orderTimerRef.current = null }
+    } catch (e) {
+      try { alert('接單失敗，請重試') } catch {}
+    }
   }
 
   const showRidePath = async () => {
@@ -826,6 +878,51 @@ export default function DriverHome() {
               <button onClick={()=>setShowSupportChat(false)} className="px-2 py-1 rounded" style={{ background:'#2A2A2A', color:'#e5e7eb' }}>關閉</button>
             </div>
             <TripChat tripId={`support_driver_${user.id}`} userId={user.id} role="driver" />
+          </div>
+        </div>
+      )}
+
+      {orderSheet && (
+        <div className="fixed inset-0 z-50" style={{ background:'rgba(0,0,0,0.5)', backdropFilter:'blur(6px)' }}>
+          <div className="absolute left-0 right-0 bottom-0 rounded-t-2xl p-4" style={{ background:'rgba(17,17,17,0.9)', borderTop:'1px solid rgba(255,255,255,0.08)' }}>
+            <div className="flex items-center justify-between mb-2">
+              <div className="text-sm font-semibold" style={{ color:'#e5e7eb' }}>新訂單 · 倒數 {orderCountdown} 秒</div>
+              <button onClick={()=>{ setOrderSheet(null); if (orderTimerRef.current) { clearInterval(orderTimerRef.current); orderTimerRef.current=null } }} className="text-xs" style={{ color:'#9ca3af' }}>關閉</button>
+            </div>
+            <div className="text-xs mb-3" style={{ color:'#9ca3af' }}>
+              起點：{Number(orderSheet.pickup_lat)?.toFixed?.(5)},{Number(orderSheet.pickup_lng)?.toFixed?.(5)} ·
+              終點：{Number(orderSheet.dropoff_lat)?.toFixed?.(5)},{Number(orderSheet.dropoff_lng)?.toFixed?.(5)}
+            </div>
+            {(() => {
+              const toRad = (v:number)=> (v*Math.PI)/180
+              const R = 6371
+              const dLat = toRad((orderSheet.dropoff_lat||0) - (orderSheet.pickup_lat||0))
+              const dLng = toRad((orderSheet.dropoff_lng||0) - (orderSheet.pickup_lng||0))
+              const a = Math.sin(dLat/2)**2 + Math.cos(toRad(orderSheet.pickup_lat||0))*Math.cos(toRad(orderSheet.dropoff_lat||0))*Math.sin(dLng/2)**2
+              const dist = 2*R*Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+              const minutes = Math.max(5, Math.round((dist/30)*60))
+              const price = Math.round(Math.max((calculateFare as any)(minutes, dist) || 0, 70))
+              return (
+                <div className="grid grid-cols-3 gap-2 mb-3">
+                  <div className="p-3 rounded-lg" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.06)', color:'#e5e7eb' }}>
+                    <div className="text-[11px]" style={{ color:'#9ca3af' }}>距離</div>
+                    <div className="text-lg font-bold">{dist.toFixed(1)} km</div>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ background:'rgba(255,255,255,0.06)', border:'1px solid rgba(255,255,255,0.06)', color:'#e5e7eb' }}>
+                    <div className="text-[11px]" style={{ color:'#9ca3af' }}>預估時間</div>
+                    <div className="text-lg font-bold">{minutes} 分</div>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ background:'linear-gradient(90deg, #D4AF37 0%, #B8860B 100%)', color:'#111' }}>
+                    <div className="text-[11px]" style={{ opacity:0.8 }}>預估金額</div>
+                    <div className="text-lg font-extrabold">${price}</div>
+                  </div>
+                </div>
+              )
+            })()}
+            <div className="flex items-center gap-2">
+              <button onClick={acceptOrder} className="flex-1 py-3 rounded-2xl font-bold text-black" style={{ background:'linear-gradient(90deg, #D4AF37 0%, #B8860B 100%)' }}>接受</button>
+              <button onClick={()=>{ setOrderSheet(null); if (orderTimerRef.current) { clearInterval(orderTimerRef.current); orderTimerRef.current=null } }} className="px-4 py-3 rounded-2xl" style={{ border:'1px solid rgba(255,255,255,0.1)', color:'#e5e7eb' }}>稍後</button>
+            </div>
           </div>
         </div>
       )}
