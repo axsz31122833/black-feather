@@ -8,17 +8,28 @@ export default function PassengerLogin() {
   const [phone, setPhone] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
+  const [btnLoading, setBtnLoading] = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError('')
+    let timer = null
     try {
-      await signIn(phone, password, 'passenger')
+      setBtnLoading(true)
+      try { timer = setTimeout(() => setBtnLoading(false), 5000) } catch {}
+      const raw = String(phone || '').trim()
+      const onlyDigits = raw.replace(/\D/g, '')
+      const finalPhone = onlyDigits.startsWith('0') ? ('+886' + onlyDigits.substring(1)) : (onlyDigits.startsWith('+886') ? onlyDigits : onlyDigits)
+      try { console.log('Sending phone:', finalPhone) } catch {}
+      await signIn(onlyDigits, password, 'passenger')
       navigate('/passenger')
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err || 'Login failed')
       setError(msg)
       try { alert(msg) } catch {}
+    } finally {
+      setBtnLoading(false)
+      try { if (timer) clearTimeout(timer) } catch {}
     }
   }
 
@@ -36,8 +47,8 @@ export default function PassengerLogin() {
             <label className="block text-sm font-medium text-gray-200 mb-2">密碼</label>
             <input type="password" value={password} onChange={e=>setPassword(e.target.value)} className="w-full px-4 py-3 border border-[#D4AF37]/50 bg-[#1a1a1a] text-white rounded-2xl focus:ring-2 focus:ring-yellow-500 focus:border-transparent" placeholder="請輸入您的密碼" required />
           </div>
-          <button type="submit" disabled={isLoading} className="w-full py-4 px-4 rounded-2xl disabled:opacity-50 font-bold text-black text-lg" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}>
-            {isLoading ? '登入中...' : '登入'}
+          <button type="submit" disabled={isLoading || btnLoading} className="w-full py-4 px-4 rounded-2xl disabled:opacity-50 font-bold text黑 text-lg" style={{ backgroundImage: 'linear-gradient(to right, #D4AF37, #B8860B)' }}>
+            {isLoading || btnLoading ? '登入中...' : '登入'}
           </button>
         </form>
         <div className="mt-6 text-center">

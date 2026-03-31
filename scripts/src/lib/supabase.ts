@@ -27,6 +27,7 @@ export async function getAuthorizedHeaders() {
   } catch { return { apikey: supabaseAnonKey } }
 }
 
+try { if (typeof window !== 'undefined') { (window as any).supabase = supabase } } catch {}
 export type Database = {
   public: {
     Tables: {
